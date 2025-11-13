@@ -22,7 +22,7 @@ return [
     'app.enabled.subsites'       => false,
     'app.enabled.seals'         =>  false,
     'app.enabled.apps'          =>  false,
-    
+
     'mailer.templates' => [
         'welcome' => [
             'title' => i::__("Bem-vindo(a) à PNAB"),
@@ -130,7 +130,7 @@ return [
             'usuario'           => ['user', 'single'],
             'agente'            => ['agent', 'single'],
             'oportunidade'      => ['opportunity', 'single'],
-            
+
             'edicao-de-usuario'           => ['user', 'edit'],
             'edicao-de-agente'            => ['agent', 'edit'],
             'gestao-de-oportunidade'      => ['opportunity', 'edit'],
@@ -138,13 +138,13 @@ return [
             'configuracao-de-formulario'  => ['opportunity', 'formBuilder'],
             'lista-de-inscricoes'  => ['opportunity', 'registrations'],
             'lista-de-avaliacoes'  => ['opportunity', 'allEvaluations'],
-            
+
             'avaliacoes'  => ['opportunity', 'userEvaluations'],
 
             'suporte/lista-de-inscricoes'  => ['support', 'list'],
             'suporte/formulario'  => ['support', 'form'],
             'suporte/configuracao' => ['support', 'supportConfig'],
-            
+
             'baixar-rascunhos' => ['opportunity', 'reportDrafts'],
             'baixar-inscritos' => ['opportunity', 'report'],
             'baixar-avaliacoes' => ['opportunity', 'reportEvaluations'],
@@ -152,17 +152,17 @@ return [
             'avaliacao' => ['registration', 'evaluation'],
 
 
-            'historico'         => ['entityRevision','history'],
-            
+            'historico'         => ['entityRevision', 'history'],
+
             'sair'              => ['auth', 'logout'],
             'sobre'             => ['site', 'page', ['sobre']],
             'como-usar'         => ['site', 'page', ['como-usar']],
-            
+
             // LGPD
-            'termos-de-uso'             => ['lgpd', 'view', ['termsOfUsage']], 
-            'politica-de-privacidade'   => ['lgpd','view', ['privacyPolicy']],
-            'uso-de-imagem'             =>['lgpd', 'view', ['termsUse']],
-            'termos-e-condicoes'        => ['lgpd','accept'],
+            'termos-de-uso'             => ['lgpd', 'view', ['termsOfUsage']],
+            'politica-de-privacidade'   => ['lgpd', 'view', ['privacyPolicy']],
+            'uso-de-imagem'             => ['lgpd', 'view', ['termsUse']],
+            'termos-e-condicoes'        => ['lgpd', 'accept'],
 
             // painel
             'meus-agentes'             => ['panel', 'agents'],
@@ -172,7 +172,7 @@ return [
             'minhas-prestacoes-de-contas'        => ['panel', 'prestacoes-de-conta'],
 
             'aparencia'               => ['theme-customizer', 'index'],
-            
+
             'conta-e-privacidade'        => ['panel', 'my-account'],
 
             'inscricao' => ['registration', 'edit'],
@@ -183,7 +183,7 @@ return [
 
             'gestao-de-usuarios' => ['panel', 'user-management'],
 
-            'certificado' => ['relatedSeal','single'],
+            'certificado' => ['relatedSeal', 'single'],
 
             'perguntas-frequentes' => ['faq', 'index'],
 
@@ -219,11 +219,16 @@ return [
             'panel'         => i::__('Painel'),
             'auth'          => i::__('Autenticação'),
             'site'          => i::__('Site'),
-            'agent'         => i::__('Agente'),       'agents'        => i::__('Agentes'),
-            'opportunity'   => i::__('Oportunidade'), 'opportunities' => i::__('Oportunidades'),
-            'registration'  => i::__('Inscrição'),    'registrations' => i::__('Inscrições'),
-            'file'          => i::__('Arquivo'),      'files'         => i::__('Arquivos'),
-            'entityRevision'=> i::__('Histórico'),    'revisions'     => i::__('Revisões'),
+            'agent'         => i::__('Agente'),
+            'agents'        => i::__('Agentes'),
+            'opportunity'   => i::__('Oportunidade'),
+            'opportunities' => i::__('Oportunidades'),
+            'registration'  => i::__('Inscrição'),
+            'registrations' => i::__('Inscrições'),
+            'file'          => i::__('Arquivo'),
+            'files'         => i::__('Arquivos'),
+            'entityRevision' => i::__('Histórico'),
+            'revisions'     => i::__('Revisões'),
             'sealrelation'  => i::__('Certificado'),
             //actions
             'list'          => i::__('Listando'),
@@ -248,7 +253,7 @@ return [
                 'client_id' => env('AUTH_GOV_BR_CLIENT_ID', null),
                 'client_secret' => env('AUTH_GOV_BR_SECRET', null),
                 'scope' => env('AUTH_GOV_BR_SCOPE', null),
-                'redirect_uri' => env('AUTH_GOV_BR_REDIRECT_URI', null), 
+                'redirect_uri' => env('AUTH_GOV_BR_REDIRECT_URI', null),
                 'auth_endpoint' => env('AUTH_GOV_BR_ENDPOINT', null),
                 'token_endpoint' => env('AUTH_GOV_BR_TOKEN_ENDPOINT', null),
                 'nonce' => env('AUTH_GOV_BR_NONCE', null),
@@ -258,9 +263,35 @@ return [
                 'userinfo_endpoint' => env('AUTH_GOV_BR_USERINFO_ENDPOINT', null),
                 'state_salt' => env('AUTH_GOV_BR_STATE_SALT', null),
                 'applySealId' => env('AUTH_GOV_BR_APPLY_SEAL_ID', null),
-                'menssagem_authenticated' => env('AUTH_GOV_BR_MENSSAGEM_AUTHENTICATED','Usuário já se autenticou pelo GovBr'),
+                'menssagem_authenticated' => env('AUTH_GOV_BR_MENSSAGEM_AUTHENTICATED', 'Usuário já se autenticou pelo GovBr'),
                 'dic_agent_fields_update' => json_decode(env('AUTH_GOV_BR_DICT_AGENT_FIELDS_UPDATE', '{}'), true)
             ]
         ]
     ],
+
+    # METABASE
+    'Metabase' => [
+        'config' => [
+            'links' => []
+        ]
+    ],
+
+    # CAPTCHA
+    'captcha' => [
+        'provider' => env('PNAB_CAPTCHA_PROVIDER', env('CAPTCHA_PROVIDER', 'google')),
+        'providers' => [
+            'google' => [
+                'url' => 'https://www.google.com/recaptcha/api.js?onload=vueRecaptchaApiLoaded&render=explicit',
+                'verify' => 'https://www.google.com/recaptcha/api/siteverify',
+                'key' => env('PNAB_CAPTCHA_SITEKEY', env('CAPTCHA_SITEKEY', null)),
+                'secret' => env('PNAB_CAPTCHA_SECRET', env('CAPTCHA_SECRET', null))
+            ],
+            'cloudflare' => [
+                'url' => 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
+                'verify' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                'key' => env('PNAB_CAPTCHA_SITEKEY', env('CAPTCHA_SITEKEY', null)),
+                'secret' => env('PNAB_CAPTCHA_SECRET', env('CAPTCHA_SECRET', null))
+            ]
+        ]
+    ]
 ];
