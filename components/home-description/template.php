@@ -22,7 +22,7 @@ $mapa_img = $app->view->asset('img/home/home-description/mapa.svg', false);
 
                 Os recursos da Política Nacional Aldir Blanc podem ser direcionados a editais de fomento, ou realização de ações diretas pelos entes federativos, como festejos e festas populares, aquisição de bens culturais, construção e manutenção de espaços culturais, entre outras possibilidades de ações e atividades destinadas a fomentar a cultura local. <br/><br/>
 
-                <strong>Faça parte!</strong> Experimente a plataforma, crie ou atualize seu perfil, registre seus espaços e iniciativas artísticas e divulgue suas atividades. Em rede, as artes são ainda mais potentes!
+                <strong>Faça parte!</strong> Experimente a plataforma, crie ou atualize seu perfil, registre seus espaços e iniciativas artísticas e divulgue suas atividades.
             </p>
         </div>
         <div class="home-network__image">

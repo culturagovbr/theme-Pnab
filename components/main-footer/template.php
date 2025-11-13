@@ -80,10 +80,10 @@ $entities = [
                     <li><a><?php i::_e('Ajuda e privacidade'); ?></a></li>
                     <li><a href="<?= $app->createUrl('faq') ?>"><?php i::_e('Dúvidas frequentes'); ?></a></li>
                     <li>
-                        <a href="https://github.com/redeMapas/mapas" target="_blank"><?php i::_e('Conheça o repositório'); ?></a>
+                        <a href="" target="_blank"><?php i::_e('Conheça o repositório'); ?></a>
                     </li>
                     <li>
-                        <a href="https://manual.rededasartes.Pnab.gov.br/ " target="_blank"><?php i::_e('Acesse os manuais'); ?></a>
+                        <a href="" target="_blank"><?php i::_e('Acesse os manuais'); ?></a>
                     </li>
 
                     <?php if (!empty($app->config['module.LGPD'])): ?>
@@ -116,7 +116,7 @@ $entities = [
             <strong><?php i::_e('Versão Beta') ?></strong>
             <?php i::_e('Você está em uma versão de teste da plataforma. Se encontrar qualquer divergência ou tiver dúvidas, entre em contato com o suporte.') ?>
             <br/>
-            <?php i::_e('Desenvolvido por Laboratório do Futuro da Universidade Federal do Ceará.') ?>
+            <?php i::_e('Desenvolvido pelo minc.') ?>
         </p>
     </div>
 </div>

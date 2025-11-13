@@ -21,7 +21,7 @@ $entities = [
         'title' => 'Agentes',
         'route' => 'search/agents',
         'viewAll' => 'Ver todos',
-        'description' => 'Aqui você conhece participantes da Rede das Artes e pode se inscrever para fazer parte. São agentes das artes, realizadores de festivais, grupos e coletivos de artes visuais, circo, dança, música, teatro e artes integradas. Conheça e se apresente!',
+        'description' => 'Aqui você conhece participantes da Pnab e pode se inscrever para fazer parte. Conheça e se apresente!',
     ],
 ];
 ?>

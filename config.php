@@ -25,11 +25,11 @@ return [
     
     'mailer.templates' => [
         'welcome' => [
-            'title' => i::__("Bem-vindo(a) ao Pnab"),
+            'title' => i::__("Bem-vindo(a) à PNAB"),
             'template' => 'welcome.html'
         ],
         'last_login' => [
-            'title' => i::__("Acesse ao Pnab"),
+            'title' => i::__("Acesse à PNAB"),
             'template' => 'last_login.html'
         ],
         'new' => [
@@ -37,7 +37,7 @@ return [
             'template' => 'new.html'
         ],
         'update_required' => [
-            'title' => i::__("Acesse ao Pnab"),
+            'title' => i::__("Acesse à PNAB"),
             'template' => 'update_required.html'
         ],
         'compliant' => [
