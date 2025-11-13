@@ -1,0 +1,9 @@
+ <?php
+/**
+ * @var MapasCulturais\App $app
+ * @var MapasCulturais\Themes\BaseV2\Theme $this
+ */
+
+$app->pass();
+return;
+

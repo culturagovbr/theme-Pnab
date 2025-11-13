@@ -1,0 +1,46 @@
+.search {
+    &__tabs {
+        //header - tabs
+        .tabs-component__header {
+            @media (max-width: size(800)) {
+                margin-top: size(60);
+                height: size(63);
+            }
+        }
+
+        // tab - list
+        &--list {
+            .search-list {
+                &__filter {
+                    grid-column-start: 10;
+                }
+            }
+
+            @media (max-width: size(900)) {
+                .col-9 {
+                    grid-column-end: span 12;
+                }
+
+                .col-3 {
+                    grid-column-start: 1;
+                    grid-column-end: 13;
+                }
+            }
+        }
+
+        // tab - map
+        &--map {
+            .search-filter {
+                grid-column-start: 10;
+            }
+
+            .search-map {
+                &__filter {
+                    &--filter {
+                        width: size(328);
+                    }
+                }
+            }
+        }
+    }
+}
