@@ -1,0 +1,153 @@
+// Define comportamento dos itens do menu de entidades (em todo o sistema)
+.action {
+    &-index {
+        .mc-header-menu--item.home{
+            .icon {
+                background-color: var(--mc-primary-500);
+            }
+            .label {
+                color: var(--mc-primary-500);
+            }
+        } 
+    }
+
+    &-projects {
+        .mc-header-menu--item.project {
+            .icon {
+                background-color: var(--mc-projects-500);
+            }
+            .label {
+                color: var(--mc-projects-500);
+            }
+        }
+    }
+    
+    &-spaces {
+        .mc-header-menu--item.space {
+            .icon {
+                background-color: var(--mc-spaces-500);
+            }
+            .label {
+                color: var(--mc-spaces-500);
+            }
+        }
+    }
+    
+    &-events {
+        .mc-header-menu--item.event {
+            .icon {
+                background-color: var(--mc-events-500);
+            }
+            .label {
+                color: var(--mc-events-500);
+            }
+        }
+    }
+    
+    &-agents {
+        .mc-header-menu--item.agent {
+            .icon {
+                background-color: var(--mc-agents-500);
+            }
+            .label {
+                color: var(--mc-agents-500);
+            }
+        }
+    }   
+    
+    &-opportunities {
+        .mc-header-menu--item.opportunity {
+            .icon {
+                background-color: var(--mc-opportunities-500);
+            }
+            .label {
+                color: var(--mc-opportunities-500);
+            }
+        }
+    }
+}
+
+
+.main-header {
+    background-color: white;
+    box-shadow: var(--mc-shadow-lv1);
+    width: 100%;
+    padding: size(18) size(135);
+
+    @media (max-width: size(1700)) {
+        padding: size(18) size(60);
+    }
+
+    @media (max-width: size(1400)) {
+        padding: size(18) size(15);
+    }
+
+    &__content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        max-width: 100%;
+        height: size(90);
+
+        .mc-header-logo {
+            max-width: size(286);
+        }
+
+        .mc-header-menu {
+            p {
+                margin: 0;
+            }
+        }
+
+        @media (max-width: size(400)) {
+            height: size(53);
+        }
+
+        .logIn {
+            display: flex;
+            align-items: center;
+            justify-content: center; 
+
+            background: #181b4e;
+            border-radius: 8px;
+            color: var(--mc-white);
+            font-size: size(14);
+            font-weight: 600;
+            line-height: size(20);
+            text-decoration: none;
+
+            width: size(193);
+            height: size(48);
+
+            span {
+                display: flex;
+
+                svg {
+                    transform: matrix(-1, 0, 0, 1, 0, 0);
+                }
+            }
+
+            @media (max-width: size(1170)) {
+                max-width: size(77);
+                justify-content: center;
+            }
+        }
+
+        &__options {
+            &--userOptions {
+                align-items: center;
+                display: flex;
+                gap: size(30);
+            }
+        }
+    }
+
+    &__buttons {
+        align-items: center;
+        display: flex;
+        gap: 0 size(30);
+    }
+}

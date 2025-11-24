@@ -1,0 +1,80 @@
+.home-register{
+    overflow-x: hidden;
+    position: relative;
+
+    &__background{
+        &--mask {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            background-color: $banner-register!important;
+            mix-blend-mode: normal;    
+        }
+    }
+ 
+    .decoration{  
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: auto;
+        height: 100%;
+    }
+
+    .banner-left{
+        left: 0;
+    }
+    
+    .banner-right{
+        right: 0;
+    }
+
+    &__content{
+        width: 100%;
+        max-width: size(506);
+
+        &--description{
+            font-size: $font-size-md;
+            margin: size(30) 0 size(66) 0;
+            text-align: center;
+        }
+        &--title{
+            font-size: size(70);
+            text-align: center;
+            line-height: size(75);
+            font-family: $font-title;
+            text-transform: uppercase;
+            margin: 0 auto;
+        }
+        a{
+            padding: size(16) size(8)!important;
+            max-width: size(204);
+            align-self: center;
+        }
+        .button{
+            background-color: $banner;
+            border-radius: size(8);
+            border: none;
+            font-size:$font-size-xs;
+            font-weight: $font-weight-bold;
+        }
+        .button-primary{
+            border: none;
+            background-color: $banner !important;
+        }
+    }
+
+    @media(max-width:768px){
+        &__content{
+            max-width: size(318);
+            &--description{
+                font-size: $font-size-sm;
+                line-height: 120%;
+            }
+            &--title{
+                font-size: size(60);
+                line-height: size(62);
+                
+            }
+        }
+    }
+}
