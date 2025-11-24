@@ -1,0 +1,51 @@
+.home-network {
+  background-color: #FEFAF6;
+  padding: size(80) size(16);
+
+  &__container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: size(40);
+    margin: 0 auto;
+    max-width: size(1170);
+    width: 100%;
+
+    @media (max-width: size(800)) {
+      flex-direction: column;
+    }
+  }
+
+  &__text {
+    max-width: size(560);
+    flex: 1;
+
+    .title {
+      font-size: size(25);
+      font-weight: 700;
+      line-height: size(34);
+      margin-bottom: size(16);
+      color: var(--mc-title-color, #101010);
+      text-transform: uppercase;
+    }
+
+    .description {
+      font-size: size(20);
+      line-height: size(25);
+      color: var(--mc-low-800, #101010);
+    }
+  }
+
+  &__image {
+    flex: 1;
+    display: flex;
+    justify-content: end;
+
+    img {
+      width: 100%;
+      height: auto;
+      max-width: size(400);
+    }
+  }
+}

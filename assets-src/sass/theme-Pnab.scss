@@ -1,0 +1,645 @@
+@use 'sass:color';
+@import url('https://fonts.googleapis.com/css2?family=League+Gothic&display=swap');
+
+// COLORS
+$black: #1E1E1E !default;
+$error: #D2381B !default;
+$gray-100: #f5f5f5 !default;
+$gray-300: #767676!default;
+$gray-700: #666666 !default;
+$gray-color-txt: #1E1E1E !default;
+$warning: #FFCA3A !default;
+$white: #FFFFFF !default;
+$banner:#181b4e !default;
+$banner-register:#2F4795!default;
+$banner-figure:#E20635!default;
+$button:#2b74d9 !default;
+$pink: #FFCFCF !default;
+$white:#FFFFFF;
+$home-map-title: #575757!default;
+
+// Default lightness deltas
+$lightness-300: 25%;
+$lightness-700: 25%;
+
+// Brand colors
+$primary-500: #117C83 !default;
+$secondary-500: #9eca80 !default;
+
+// Entities colors
+$opportunities-500: #c40c0c;
+$events-500: #117C83;
+$spaces-500: #F0B500;
+$agents-500: #E0720B;
+$projects-500: #F24797;
+
+$seals-500: #1E1E1E;
+
+// Feedback colors
+$danger-500: #B7292E;
+$success-500: #498200;
+$warning-500: #FF9F1C;
+$helper-500: #0074C1;
+
+// home
+$home-opportunities: #f5bb50;
+$home-feature: #45B648;
+$home-register: #036293;
+
+
+
+// // Neutral colors
+$low-500: #2a327f;
+// $high-500: #FFFFFF;
+
+//FONTS
+
+$font-title: 'League Gothic', sans-serif !default;
+// // FONTS
+
+$font-title: 'League Gothic', sans-serif !default;
+
+// // Borders radius
+$border-radius-xxs: 2px;
+
+@import '../../../BaseV2/assets-src/sass/theme-BaseV2';
+
+@import './components/home-entities';
+@import './components/home-header';
+@import './components/home-description';
+@import './layouts/home-register';
+@import './layouts/main-footer';
+@import './layouts/main-header';
+@import './pages/search';
+
+
+.mc-header-logo {
+    max-width: 9rem;
+}
+
+:root{
+    --mc-font-title: #{$font-title};
+}
+
+.controller-search.action-events form .verified,
+.controller-search.action-agents .form > div:nth-child(1) {
+    display: none;
+}
+
+// Estilos para as entidades que possuem o selo
+.seal-entity-card {
+    background: white;
+    border: 1px solid var(--mc-gray-300);
+    border-radius: var(--mc-border-radius-sm);
+    padding: size(16);
+    text-align: center;
+    transition: box-shadow 0.2s ease;
+    margin-bottom: size(16);
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    a {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    h4 {
+        font-size: size(16);
+        font-weight: 700;
+        margin: size(8) 0 size(4) 0;
+        color: var(--mc-primary-500);
+    }
+
+    p {
+        font-size: size(14);
+        color: var(--mc-gray-700);
+        margin: 0;
+        line-height: 1.4;
+    }
+}
+
+// Estilos específicos para entity-cards portrait na seção de selos
+.seal-entities-tabs {
+    .entity-card.portrait {
+        background: #f8f9fa !important;
+        border: 1px solid #e9ecef !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease;
+        margin-bottom: size(16);
+
+        &:hover {
+            background: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            transform: translateY(-2px);
+        }
+    }
+
+    .entity-card {
+        background: #f8f9fa !important;
+        border: 1px solid #e9ecef !important;
+        border-radius: 8px !important;
+        margin-bottom: size(16);
+
+        &:hover {
+            background: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+        }
+    }
+}
+
+.seal-entities-tabs {
+    margin-top: size(24);
+
+    h3 {
+        margin: size(24) 0 size(20) 0;
+        padding-top: size(8);
+        color: var(--mc-primary-500);
+        font-size: size(20);
+        font-weight: 600;
+    }
+
+    .mc-tab-content {
+        padding-top: 0;
+    }
+}
+
+/* Período do Circuito */
+.circuit-dates {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.circuit-dates__title {
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.circuit-dates span {
+    padding: 4px 8px;
+}
+
+/* Lista de Selos */
+.seals {
+    margin-bottom: 15px;
+}
+
+.seals__title {
+    font-weight: bold;
+    color: #333;
+    margin: 0 8px 8px 0;
+    display: inline-block;
+}
+.entity-seals__title {
+    margin:0;
+}
+
+.seals__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: inline-block;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.seals__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+}
+
+.seals__image,
+.seals__icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.seals__name {
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+// Estilos para entity-card-circuitos - estrutura padronizada
+.entity-card {
+
+    .user-info .mc-title {
+        font-size: 24px;
+    }
+
+
+    .entity-card__content {
+        display: inline-block;
+    }
+
+    // Estrutura geral dos campos
+    .field-card {
+
+
+        // Campo inline (ID + TIPO na mesma linha)
+        &.field--inline {
+            display: inline-block !important;
+            margin-right: 12px;
+        }
+
+        margin-bottom: 12px;
+
+        // Labels padrão (ID, TIPO, PERÍODO, SELOS, TAGS)
+        .field__label {
+            font-size: 14px !important;
+            font-weight: normal !important;
+            text-transform: capitalize !important;
+            color: #333;
+            display: inline;
+            margin-right: 3px;
+
+            // Ícones nos labels
+            .iconify {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 24px !important;
+                margin-left: 4px;
+                display: inline;
+                vertical-align: middle;
+            }
+        }
+
+        // Conteúdo padrão dos campos
+        .field__content {
+            font-size: 14px !important;
+            font-weight: bold !important;
+            color: #333;
+            display: inline;
+
+            &.project__color {
+                color: var(--mc-primary-500);
+            }
+
+            .entity-seals {
+                display: inline-block;
+                
+                .entity-seals__seals--seal {
+                    display: inline-block;
+                }
+                .seal-icon,
+                .seal-label {
+                    display: inline-block;
+                    line-height: 24px;
+                    vertical-align: middle;
+                    font-weight: normal;
+                }
+
+                .seal-icon {
+                    width: 24px;
+                    height: 24px;
+                }
+
+                .seal-icon .mc-avatar--small {
+                    width: 24px;
+                    height: 24px;
+                    min-width: 24px;
+                    min-height: 24px;
+                }
+
+                .seal-label {
+                    margin: 0 0 0 5px;
+                }
+            }
+        }
+
+
+        // Campo período - conteúdo especial
+        &.field--period {
+            .field__content {
+                font-size: 16px !important;
+                line-height: 1.4;
+                vertical-align: middle;
+                font-weight: bold !important;
+                color: #333 !important;
+            }
+        }
+
+    }
+    .entity-card__footer {
+        margin-top: 20px;
+    }
+}
+
+
+// Agenda dos Circuitos - Layout horizontal com scroll
+
+.entity-card__agenda {
+    .agenda-section {
+        .agenda-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+
+            .agenda-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: #2c3e50;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+
+                .mc-icon {
+                    font-size: 20px;
+                    color: #2d5f88;
+                }
+            }
+        }
+
+        .agenda-content {
+            .agenda-loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 40px;
+                color: #6c757d;
+            }
+
+            .no-events-message {
+                text-align: center;
+                color: #6c757d;
+
+                .mc-icon {
+                    font-size: 24px;
+                    margin-bottom: 10px;
+                    opacity: 0.5;
+                }
+
+                p {
+                    margin: 0;
+                    font-size: 16px;
+                }
+            }
+
+            .agenda-events {
+                .event-row {
+                    display: inline;
+                    margin-bottom: 25px;
+                    padding: 0;
+                    background: transparent;
+                    border: none;
+                    border-radius: 0;
+
+                    .event-name {
+                        padding: 15px 20px 15px 0;
+                        margin-right: 20px;
+
+                        h4 {
+                            margin: 0;
+                            font-size: 16px;
+                            font-weight: 700;
+                            text-transform: uppercase;
+
+                            a {
+                                color: inherit;
+                                text-decoration: underline;
+
+                                &:hover {
+                                    text-decoration: underline;
+                                }
+                            }
+                        }
+                    }
+
+                    .event-occurrences-wrapper {
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+
+
+
+                        .occurrences-container {
+                            flex: 1;
+                            overflow-x: auto;
+                            overflow-y: hidden;
+                            padding: 8px 0;
+                            display: flex;
+                            gap: 15px;
+                            scroll-behavior: smooth;
+
+                            &::-webkit-scrollbar {
+                                height: 8px;
+                            }
+
+                            &::-webkit-scrollbar-track {
+                                background: #f1f3f4;
+                                border-radius: 4px;
+                            }
+
+                            &::-webkit-scrollbar-thumb {
+                                background: #c1c8cd;
+                                border-radius: 4px;
+
+                                &:hover {
+                                    background: #a6adb4;
+                                }
+                            }
+
+                            .occurrence-item {
+                                min-width: 300px;
+                                max-width: 300px;
+                                padding: 8px;
+                                background: white;
+                                border: 1px solid #dee2e6;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+                                flex-shrink: 0;
+                                transition: all 0.2s ease;
+
+                                &:hover {
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+                                    transform: translateY(-2px);
+                                }
+
+                                .occurrence-date {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 10px;
+                                    margin-bottom: 12px;
+                                    padding-bottom: 8px;
+                                    border-bottom: 1px solid #f8f9fa;
+                                    color: #000;
+
+                                    .iconify {
+                                        font-size: 24px;
+                                    }
+
+                                    span {
+                                        font-size: 16px;
+                                        font-weight: bold;
+                                        line-height: 1.3;
+                                    }
+                                }
+
+                                .occurrence-location {
+                                    display: flex;
+                                    align-items: flex-start;
+                                    gap: 10px;
+
+                                    .iconify {
+                                        font-size: 24px;
+                                        margin-top: 2px;
+                                    }
+
+                                    .location-details {
+                                        flex: 1;
+
+                                        .space-name {
+                                            margin-bottom: 6px;
+                                            font-size: 14px;
+                                            line-height: 1.4;
+                                            color: #000;
+
+                                            strong {
+                                                display: block;
+                                                margin-bottom: 3px;
+                                            }
+
+                                        }
+
+                                        .space-address {
+                                            font-size: 13px;
+                                            color: #6c757d;
+                                            line-height: 1.4;
+                                            font-style: italic;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Responsivo para tablets
+@media (max-width: 768px) {
+    .entity-card__agenda {
+        .agenda-section {
+            .agenda-content {
+                .agenda-events {
+                    .event-row {
+                        flex-direction: column;
+                        align-items: stretch;
+
+                        .event-name {
+                            min-width: unset;
+                            max-width: unset;
+                            border-right: none;
+                            border-bottom: 1px solid #dee2e6;
+                            margin-right: 0;
+                            margin-bottom: 15px;
+                            padding-bottom: 12px;
+
+                            h4 {
+                                font-size: 15px;
+                            }
+                        }
+
+                        .event-occurrences-wrapper {
+
+
+                            .occurrences-container {
+                                .occurrence-item {
+                                    min-width: 280px;
+                                    max-width: 280px;
+                                    padding: 15px;
+
+                                    .occurrence-date {
+                                        span {
+                                            font-size: 14px;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Responsivo para mobile
+@media (max-width: 480px) {
+    .entity-card__agenda {
+        padding: 15px;
+
+        .agenda-section {
+            .agenda-header {
+                .agenda-title {
+                    font-size: 16px;
+                }
+            }
+
+            .agenda-content {
+                .agenda-events {
+                    .event-row {
+                        .event-occurrences-wrapper {
+
+
+                            .occurrences-container {
+                                .occurrence-item {
+                                    min-width: 250px;
+                                    max-width: 250px;
+                                    padding: 12px;
+
+                                    .occurrence-date {
+                                        span {
+                                            font-size: 13px;
+                                        }
+                                    }
+
+                                    .occurrence-location {
+                                        .location-details {
+                                            .space-name {
+                                                font-size: 13px;
+
+                                                strong {
+                                                    font-size: 12px;
+                                                }
+                                            }
+
+                                            .space-address {
+                                                font-size: 12px;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+.controller-circuitos .mc-header-menu--item.project .label {
+  color: var(--mc-projects-500);
+}
+
+.entity-card__footer--action .button {
+    max-width: 272px;
+}
+
+
