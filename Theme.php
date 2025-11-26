@@ -12,9 +12,31 @@ use MapasCulturais\App;
 // class Theme extends \BaseTheme\Theme
 class Theme extends \MapasCulturais\Themes\BaseV2\Theme 
 {
+    public const ROLES_ALLOWED = [
+        'GestorCultBr',
+        'saasSuperAdmin',
+        'saasAdmin',
+        'superAdmin',
+        'admin'
+    ];
+
     static function getThemeFolder()
     {
         return __DIR__;
+    }
+
+    /**
+     * Verifica se o usuário atual da aplicação tem acesso baseado nas roles permitidas
+     * 
+     * @return bool
+     */
+    static function canAccess(): bool
+    {
+        $user = App::i()->user;
+
+        return (bool) array_filter(self::ROLES_ALLOWED, function ($role) use ($user) {
+            return $user->is($role);
+        });
     }
 
     function _init()
@@ -22,10 +44,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         parent::_init();
         $app = App::i();
         
-        $canAccess = $app->user->is('GestorCultBr') ||
-            $app->user->is('saasSuperAdmin') ||
-            $app->user->is('superAdmin') ||
-            $app->user->is('saasAdmin');
+        $canAccess = self::canAccess();
         
         /**
          * Verifica se o usuário tem permissão para acessar a rota de minhas oportunidades
@@ -83,7 +102,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             function (\MapasCulturais\UserInterface $user, $subsite_id) {
                 return false;
             },
-            []
+            [],
         );
         $app->registerRole($def);
     }
