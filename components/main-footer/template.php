@@ -65,7 +65,7 @@ $entities = [
                             if (!isset($entities[$key])) continue;
                             $entity = $entities[$key];
                         ?>
-                            <li v-if="global.enabledEntities.<?= $key ?>">
+                            <li v-if="getVisibility('<?= $key ?>')">
                                 <a href="<?= $app->createUrl('panel', $key) ?>"><?php i::_e($entity['panelLabel']) ?></a>
                             </li>
                     <?php endforeach; ?>
