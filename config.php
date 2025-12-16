@@ -250,10 +250,7 @@ return [
             'govbr' => [
                 'visible' => env('AUTH_GOV_BR_VISIBLE', false),
                 'response_type' => env('AUTH_GOV_BR_RESPONSE_TYPE', 'code'),
-                'client_id' => env('AUTH_GOV_BR_CLIENT_ID', null),
-                'client_secret' => env('AUTH_GOV_BR_SECRET', null),
                 'scope' => env('AUTH_GOV_BR_SCOPE', null),
-                'redirect_uri' => env('AUTH_GOV_BR_REDIRECT_URI', null),
                 'auth_endpoint' => env('AUTH_GOV_BR_ENDPOINT', null),
                 'token_endpoint' => env('AUTH_GOV_BR_TOKEN_ENDPOINT', null),
                 'nonce' => env('AUTH_GOV_BR_NONCE', null),
