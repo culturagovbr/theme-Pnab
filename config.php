@@ -264,7 +264,12 @@ return [
                 'state_salt' => env('AUTH_GOV_BR_STATE_SALT', null),
                 'applySealId' => env('AUTH_GOV_BR_APPLY_SEAL_ID', null),
                 'menssagem_authenticated' => env('AUTH_GOV_BR_MENSSAGEM_AUTHENTICATED', 'Usuário já se autenticou pelo GovBr'),
-                'dic_agent_fields_update' => json_decode(env('AUTH_GOV_BR_DICT_AGENT_FIELDS_UPDATE', '{}'), true)
+                'dic_agent_fields_update' => json_decode(env('AUTH_GOV_BR_DICT_AGENT_FIELDS_UPDATE', '{}'), true),
+
+                # Autenticação customizada
+                'client_id' => env('PNAB_AUTH_GOV_BR_CLIENT_ID', null),
+                'client_secret' => env('PNAB_AUTH_GOV_BR_SECRET', null),
+                'redirect_uri' => env('PNAB_AUTH_GOV_BR_REDIRECT_URI', null),
             ]
         ]
     ],
