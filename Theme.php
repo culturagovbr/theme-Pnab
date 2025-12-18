@@ -65,6 +65,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Bloqueia a renderização e a criação de um novo aplicativo
+         */
+        $app->hook('GET(panel.apps):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
+        $app->hook('POST(app.index):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
+
+        /**
          * Verifica se o usuário tem permissão para acessar o menu de oportunidades no painel
          * removendo o link de minhas oportunidades
          */
@@ -72,6 +78,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($app->user->is('GestorCultBr')) {
                 $nav['admin']['condition'] = function () { return false; };
             }
+
+            // Removendo o menu de "Meus aplicativos"
+            $nav['more']['condition'] = fn() => false;
 
             if (!$canAccess) {
                 $filteredNav = array_filter($nav['opportunities']['items'], function ($item) {
