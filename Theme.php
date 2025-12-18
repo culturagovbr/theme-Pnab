@@ -83,6 +83,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         $this->enqueueStyle('app-v2', 'main', 'css/theme-Pnab.css');
+
+        // Mapeia o ícone do X (antigo Twitter) para o novo logo do X
+        $app->hook('component(mc-icon).iconset', function (&$iconset) {
+            $iconset['twitter'] = 'simple-icons:x';
+        });
     }
 
     function register()
