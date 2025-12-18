@@ -102,19 +102,19 @@ return [
     'social-media' => [
         'facebook-icon' => [
             'title' => 'facebook',
-            'link' => 'https://www.facebook.com/pnab'
+            'link' => 'https://www.facebook.com/mincgovbr'
         ],
         'twitter-icon' => [
             'title' => 'twitter',
-            'link' => 'https://twitter.com/pnab'
+            'link' => 'https://x.com/CulturaGovBr'
         ],
         'instagram-icon' => [
             'title' => 'instagram',
-            'link' => 'https://www.instagram.com/pnab/'
+            'link' => 'https://www.instagram.com/minc'
         ],
         'youtube-icon' => [
             'title' => 'youtube',
-            'link' => 'https://www.youtube.com/pnab'
+            'link' => 'https://www.youtube.com/@ministeriodacultura'
         ]
     ],
 
