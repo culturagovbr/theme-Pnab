@@ -41,6 +41,25 @@ $this->import('
                 </li>
                 <?php $this->applyTemplateHook('mc-header-menu-events', 'after') ?>
 
+                <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'before') ?>
+                <li v-if="global.enabledEntities.opportunities">
+                    <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'begin') ?>
+                    <a href="https://cultbr.cultura.gov.br/transparencia" class="mc-header-menu--item opportunity">
+                        <p class="label"> <?php i::_e('Portal CultBR') ?> </p>
+                    </a>
+                    <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'end') ?>
+                </li>
+                <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'after') ?>
+
+                <?php $this->applyTemplateHook('mc-header-menu-agent', 'before') ?>
+                <li v-if="global.enabledEntities.agents">
+                    <?php $this->applyTemplateHook('mc-header-menu-agent', 'begin') ?>
+                    <a href="https://cultbr.cultura.gov.br/entrar" class="mc-header-menu--item agent">
+                        <p class="label"> <?php i::_e('Rede CultBR') ?> </p>
+                    </a>
+                    <?php $this->applyTemplateHook('mc-header-menu-agent', 'end') ?>
+                </li>
+                <?php $this->applyTemplateHook('mc-header-menu-agent', 'after') ?>
                 <?php $this->applyTemplateHook('mc-header-menu-spaces', 'before') ?>
                 <li v-if="global.enabledEntities.spaces">
                     <?php $this->applyTemplateHook('mc-header-menu-spaces', 'begin') ?>
