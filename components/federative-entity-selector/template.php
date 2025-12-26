@@ -24,9 +24,6 @@ $this->import('
     </div>
 
     <div v-else class="federative-entity-selector__list">
-        <p class="federative-entity-selector__description">
-            <?php i::_e('Selecione o ente federado que deseja utilizar:') ?>
-        </p>
         <div class="federative-entity-selector__items">
             <div
                 v-for="entity in federativeEntities"
