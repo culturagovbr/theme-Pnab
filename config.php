@@ -167,6 +167,7 @@ return [
             // painel
             'meus-agentes'             => ['panel', 'agents'],
             'minhas-oportunidades'     => ['panel', 'opportunities'],
+            'oportunidades-do-ente-federado' => ['panel', 'federativeEntityOpportunities'],
             'minhas-inscricoes'        => ['panel', 'registrations'],
             'minhas-avaliacoes'        => ['panel', 'evaluations'],
             'minhas-prestacoes-de-contas'        => ['panel', 'prestacoes-de-conta'],
@@ -207,6 +208,7 @@ return [
             'edita'         => 'edit',
             'agentes'       => 'agents',
             'oportunidades' => 'oportunities',
+            'oportunidades-do-ente-federado' => 'federativeEntityOpportunities',
             'inscricoes'    => 'registrations',
             'agente'        => 'agent',
             'inscricao'     => 'registration',
