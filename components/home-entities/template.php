@@ -11,17 +11,11 @@ $this->import('mc-link');
 $entities = [
     'opportunities' => [
         'image' => 'img/cards/oportunidades_bg.png',
-        'title' => 'Oportunidades',
+        'title' => 'Portal Cult.br',
         'route' => 'search/opportunities',
-        'viewAll' => 'Ver todas',
+        'viewAll' => 'Acesse aqui',
+        'link' => 'https://cultbr.cultura.gov.br/transparencia',
         'description' => 'Aqui você encontra atividades e chamadas com inscrições abertas, como editais, intercâmbios, residências artísticas e outras oportunidades disponíveis. Você também pode criar e divulgar novas oportunidades para outros agentes da Rede.',
-    ],
-    'agents' => [
-        'image' => 'img/cards/agentes_bg.png',
-        'title' => 'Agentes',
-        'route' => 'search/agents',
-        'viewAll' => 'Ver todos',
-        'description' => 'Aqui você conhece participantes da Pnab e pode se inscrever para fazer parte. Conheça e se apresente!',
     ],
 ];
 ?>
@@ -38,9 +32,9 @@ $entities = [
           </div>
           <div class="card__body">
             <p><?= i::__($entity['description']) ?></p>
-            <mc-link route="<?= $entity['route'] ?>">
+            <a href="<?= $entity['link'] ?>" target="_blank">
               <?= i::__($entity['viewAll']) ?>
-            </mc-link>
+            </a>
           </div>
         </div>
       <?php endforeach; ?>

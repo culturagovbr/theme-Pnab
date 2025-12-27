@@ -44,8 +44,8 @@ $this->import('
                 <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'before') ?>
                 <li v-if="global.enabledEntities.opportunities">
                     <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'begin') ?>
-                    <a href="<?= $app->createUrl('search', 'opportunities') ?>" class="mc-header-menu--item opportunity">
-                        <p class="label"> <?php i::_e('Oportunidades') ?> </p>
+                    <a href="https://cultbr.cultura.gov.br/transparencia" class="mc-header-menu--item opportunity">
+                        <p class="label"> <?php i::_e('Portal CultBR') ?> </p>
                     </a>
                     <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'end') ?>
                 </li>
@@ -54,8 +54,8 @@ $this->import('
                 <?php $this->applyTemplateHook('mc-header-menu-agent', 'before') ?>
                 <li v-if="global.enabledEntities.agents">
                     <?php $this->applyTemplateHook('mc-header-menu-agent', 'begin') ?>
-                    <a href="<?= $app->createUrl('search', 'agents') ?>" class="mc-header-menu--item agent">
-                        <p class="label"> <?php i::_e('Agentes') ?> </p>
+                    <a href="https://cultbr.cultura.gov.br/entrar" class="mc-header-menu--item agent">
+                        <p class="label"> <?php i::_e('Rede CultBR') ?> </p>
                     </a>
                     <?php $this->applyTemplateHook('mc-header-menu-agent', 'end') ?>
                 </li>
