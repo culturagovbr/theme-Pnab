@@ -11,7 +11,7 @@ use MapasCulturais\App;
  */
 // Alteração necessária para rodar o theme-Pnab como submodule do culturagovbr/mapadacultura
 // class Theme extends \BaseTheme\Theme
-class Theme extends \MapasCulturais\Themes\BaseV2\Theme 
+class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 {
     static function getThemeFolder()
     {
@@ -22,7 +22,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     {
         parent::_init();
         $app = App::i();
-        
+
         $canAccess = \AldirBlanc\Entities\User::canAccess();
 
         /**
@@ -44,6 +44,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Define o metadado federativeEntityId ao salvar entidades
+         * Garante que o ID da entidade federativa seja salvo junto com a entidade
+         */
+        $app->hook('entity(<<*>>).save:before', function () {
+            if (User::isGestorCultBr() && isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $entityId = (int)$selectedEntity['id'];
+
+                    // Verifica se a entidade suporta metadados e se o metadado está registrado
+                    if (method_exists($this, 'getRegisteredMetadata')) {
+                        $metadata_def = $this->getRegisteredMetadata('federativeEntityId', true);
+                        if ($metadata_def) {
+                            $this->setMetadata('federativeEntityId', $entityId);
+                        }
+                    }
+                }
+            }
+        });
+
+        /**
          * Bloqueia a renderização e a criação de um novo aplicativo
          */
         $app->hook('GET(panel.apps):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
@@ -55,7 +76,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $app->hook('panel.nav', function (&$nav) use ($app, $canAccess) {
             if ($app->user->is('GestorCultBr')) {
-                $nav['admin']['condition'] = function () { return false; };
+                $nav['admin']['condition'] = function () {
+                    return false;
+                };
             }
 
             // Removendo o menu de "Meus aplicativos"
