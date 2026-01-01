@@ -53,6 +53,17 @@ $this->import('
                         </div>
                     </div>
                 </mc-tab>
+                <mc-tab icon="agent" label="<?php i::esc_attr_e('Gestores') ?>" slug="gestores">
+                    <div class="tabs-component__panels">
+                        <div class="search__tabs--list">
+                            <search-list 
+                                :pseudo-query="{federativeEntityId: <?= $federativeEntityId ?>}" 
+                                type="agent" 
+                                select="name,type,shortDescription,files.avatar,seals,terms">
+                            </search-list>
+                        </div>
+                    </div>
+                </mc-tab>
                 <?php $this->applyTemplateHook('search-tabs', 'after'); ?>
             </mc-tabs>
         </template>

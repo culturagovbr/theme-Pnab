@@ -101,6 +101,48 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
         });
 
+       /**
+         * Hook na API para listar agentes associados ao ente federado quando há federativeEntityId
+         */
+        $app->hook('API.find(agent).params', function (&$api_params) use ($app, $canAccess) {
+            if (!$canAccess) {
+                return;
+            }
+
+            $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
+            if (!$federativeEntityIdParam) {
+                return;
+            }
+
+            preg_match('/EQ\((\d+)\)/', $federativeEntityIdParam, $matches);
+            $federativeEntityId = $matches[1] ?? null;
+            if (!$federativeEntityId) {
+                return;
+            }
+
+            $federativeEntityRef = $app->em->getReference('AldirBlanc\Entities\FederativeEntity', $federativeEntityId);
+            $relations = $app->repo('AldirBlanc\Entities\FederativeEntityAgentRelation')->findBy([
+                'owner' => $federativeEntityRef,
+                'status' => 1
+            ]);
+
+            // Extrai os IDs dos agentes (status >= 1)
+            $agentIds = [];
+            foreach ($relations as $relation) {
+                if ($relation->agent && $relation->agent->status >= 1) {
+                    $agentIds[] = $relation->agent->id;
+                }
+            }
+
+            // Se não houver agentes, retorna filtro vazio
+            if (empty($agentIds)) {
+                $api_params['id'] = 'EQ(-1)';
+            } else {
+                $api_params['id'] = 'IN(' . implode(',', $agentIds) . ')';
+            }
+            
+            unset($api_params['federativeEntityId']);
+        });
 
         /**
          * Define o metadado federativeEntityId ao salvar entidades

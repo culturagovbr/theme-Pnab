@@ -1,0 +1,25 @@
+// Remove o filtro e expande cards para 100% em todas as abas
+.search__tabs--list {
+    .search-list {
+        // Remove o div do filtro (search-list__filter--filter)
+        .search-list__filter--filter {
+            display: none !important;
+        }
+        
+        // Remove também o container do filtro (col-4)
+        .search-list__filter {
+            display: none !important;
+        }
+        
+        // Faz os cards ocuparem 100% da largura (col-8 -> col-12)
+        .col-8 {
+            grid-column-end: span 12 !important;
+        }
+        
+        // Ajusta o load-more também para 100%
+        .load-more {
+            grid-column-end: span 12 !important;
+        }
+    }
+}
+
