@@ -172,9 +172,22 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Limpa a seleção de entidade federativa quando o usuário faz logout ou login
+         * Redireciona para /panel após login bem-sucedido
+         * Limpa a seleção de entidade federativa quando o usuário faz login
          */
-        $app->hook('auth.logout:before,auth.successful', function () {
+        $app->hook('auth.successful', function () use ($app) {
+            // Define o redirect path para /panel na sessão
+            $_SESSION['mapasculturais.auth.redirect_path'] = $app->createUrl('panel', 'index');
+            
+            // Limpa a seleção de entidade federativa
+            unset($_SESSION['selectedFederativeEntity']);
+            unset($_SESSION['federative_entity_redirect_uri']);
+        });
+
+        /**
+         * Limpa a seleção de entidade federativa quando o usuário faz logout
+         */
+        $app->hook('auth.logout:before', function () {
             unset($_SESSION['selectedFederativeEntity']);
             unset($_SESSION['federative_entity_redirect_uri']);
         });
