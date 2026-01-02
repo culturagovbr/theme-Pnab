@@ -57,9 +57,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Hook na API para remover filtros automáticos de user/owner quando há federativeEntityId
-         * Permite ver oportunidades publicadas de todos os usuários do mesmo ente federado
-         * Sempre aplica status e @permissions para garantir apenas oportunidades publicadas
+         * Hook na API para listar oportunidades do ente federado
          */
         $app->hook('API(opportunity.find):before', function () use ($app) {
             if (!User::isGestorCultBr()) {
@@ -77,28 +75,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Sempre força filtros de status publicado e permissões de visualização
             $_GET['status'] = 'GTE(1)';
             $_GET['@permissions'] = 'view';
-
-            // Corrige filtros duplicados (caso o componente search adicione operadores extras)
-            if (isset($_GET['federativeEntityId']) && preg_match('/^EQ\(EQ\((.+)\)\)$/', $_GET['federativeEntityId'], $matches)) {
-                $_GET['federativeEntityId'] = 'EQ(' . $matches[1] . ')';
-            }
-            if (isset($_GET['status']) && preg_match('/^EQ\(GTE\((.+)\)\)$/', $_GET['status'], $matches)) {
-                $_GET['status'] = 'GTE(' . $matches[1] . ')';
-            }
-
-            // Também aplica no urlData se existir
-            if (isset($this->urlData)) {
-                unset($this->urlData['user'], $this->urlData['owner']);
-                $this->urlData['status'] = 'GTE(1)';
-                $this->urlData['@permissions'] = 'view';
-
-                if (isset($this->urlData['federativeEntityId']) && preg_match('/^EQ\(EQ\((.+)\)\)$/', $this->urlData['federativeEntityId'], $matches)) {
-                    $this->urlData['federativeEntityId'] = 'EQ(' . $matches[1] . ')';
-                }
-                if (isset($this->urlData['status']) && preg_match('/^EQ\(GTE\((.+)\)\)$/', $this->urlData['status'], $matches)) {
-                    $this->urlData['status'] = 'GTE(' . $matches[1] . ')';
-                }
-            }
         });
 
        /**
