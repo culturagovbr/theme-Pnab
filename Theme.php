@@ -187,6 +187,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Adicionando o menu "Oportunidades do Ente Federado"
             $nav['federativeEntity'] = [
+                'condition' => fn() => User::isGestorCultBr(),
                 'label' => i::__('Ente Federado'),
                 'items' => [
                     [
