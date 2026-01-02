@@ -272,7 +272,31 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $this->part('federative-entity-banner');
             }
         });
+
+        /**
+         * Redireciona para o painel quando há incompatibilidade de Ente Federado
+         */
+        $app->hook('GET(agent.single):before,GET(opportunity.single):before', function () use ($app) {
+            /** @var \MapasCulturais\Controller $this */
+            if (!User::isGestorCultBr() || !isset($_SESSION['selectedFederativeEntity'])) {
+                return;
+            }
+
+            $entity = $this->requestedEntity;
+            if (!$entity) {
+                return;
+            }
+
+            $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+            $currentFederativeEntityId = $selectedEntity['id'] ?? null;
+            $entityFederativeEntityId = $entity->getMetadata('federativeEntityId');
+
+            if ($entityFederativeEntityId && (int)$entityFederativeEntityId !== (int)$currentFederativeEntityId) {
+                $app->redirect($app->createUrl('panel', 'index'));
+            }
+        });
     }
+
 
     function register()
     {
