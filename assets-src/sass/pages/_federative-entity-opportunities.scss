@@ -20,6 +20,16 @@
         .load-more {
             grid-column-end: span 12 !important;
         }
+        
+        // Garante que o tipo seja exibido igual ao card de "Minhas Oportunidades"
+        .entity-card {
+            .upper.opportunity__color {
+                color: #333 !important;
+                font-weight: bold !important;
+                font-size: .875rem !important;
+                text-transform: uppercase !important;
+            }
+        }
     }
 }
 

@@ -45,7 +45,7 @@ $this->import('
                 <mc-tab icon="list" label="<?php i::esc_attr_e('Lista') ?>" slug="list">
                     <div class="tabs-component__panels">
                         <div class="search__tabs--list">
-                            <search-list :pseudo-query="pseudoQuery" type="opportunity" select="name,type,shortDescription,files.avatar,seals,terms,registrationFrom,registrationTo,hasEndDate,isContinuousFlow">
+                            <search-list :pseudo-query="pseudoQuery" type="opportunity" select="name,type,files.avatar">
                                 <template #filter>
                                     <search-filter-opportunity :pseudo-query="pseudoQuery"></search-filter-opportunity>
                                 </template>
