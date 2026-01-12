@@ -48,6 +48,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Implementa a action para Minha Equipe do Ente Federado
+         * Renderiza view customizada que lista os gestores/agentes
+         */
+        $app->hook('GET(panel.federativeEntityAgents)', function () use ($app, $canAccess) {
+            $this->requireAuthentication();
+            if (!$canAccess) {
+                $app->pass();
+            }
+
+            $this->render('federative-entity-agents');
+        });
+
+        /**
          * Verifica se o usuário tem permissão para criar uma oportunidade
          */
         $app->hook('POST(opportunity.index):before', function () use ($canAccess) {
@@ -171,6 +184,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         'icon' => 'opportunity',
                         'label' => i::__('Oportunidades'),
                     ],
+                    [
+                        'route' => 'panel/federativeEntityAgents',
+                        'icon' => 'agent',
+                        'label' => i::__('Minha Equipe'),
+                    ]
                 ],
             ];
 
