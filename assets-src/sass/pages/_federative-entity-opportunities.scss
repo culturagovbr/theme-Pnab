@@ -21,6 +21,11 @@
             grid-column-end: span 12 !important;
         }
         
+        // Mensagem "Nenhuma entidade encontrada" ocupa todas as colunas do grid
+        .panel__row.noEntity {
+            grid-column-end: span 12 !important;
+        }
+        
         // Garante que o tipo seja exibido igual ao card de "Minhas Oportunidades"
         .entity-card {
             .upper.opportunity__color {
@@ -32,4 +37,3 @@
         }
     }
 }
-
