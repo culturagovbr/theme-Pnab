@@ -155,6 +155,69 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Modifica o comportamento de canUser para Opportunities
+         * Permite que agentes associados ao mesmo Ente Federado possam editar oportunidades
+         * Se agente X e Y tiverem associados ao Ente Federado Z, ambos conseguem editar oportunidades de Z
+         */
+        $checkFederativeEntityPermission = function($user, &$result) use ($app) {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            
+            // Se já tem permissão, não precisa modificar
+            if ($result) {
+                return;
+            }
+
+            // Verifica se é gestor CultBR
+            if (!User::isGestorCultBr()) {
+                return;
+            }
+
+            // Obtém o agente do usuário logado
+            $userAgent = $user->profile;
+            if (!$userAgent) {
+                return;
+            }
+
+            // Obtém o federativeEntityId da opportunity
+            $opportunityFederativeEntityId = null;
+            if (method_exists($this, 'getMetadata')) {
+                $opportunityFederativeEntityId = $this->getMetadata('federativeEntityId');
+            }
+
+            // Se a opportunity não tem federativeEntityId, não pode dar permissão
+            if (!$opportunityFederativeEntityId) {
+                return;
+            }
+
+            // Converte para inteiro
+            $opportunityFederativeEntityId = (int)$opportunityFederativeEntityId;
+
+            // Busca se o agente do usuário está associado ao mesmo Ente Federado da opportunity
+            try {
+                $federativeEntityRef = $app->em->getReference('AldirBlanc\Entities\FederativeEntity', $opportunityFederativeEntityId);
+                $relation = $app->repo('AldirBlanc\Entities\FederativeEntityAgentRelation')->findOneBy([
+                    'owner' => $federativeEntityRef,
+                    'agent' => $userAgent,
+                    'status' => 1
+                ]);
+
+                // Se encontrou a relação e o agente está ativo, concede permissão
+                if ($relation && $relation->agent && $relation->agent->status >= 1) {
+                    $result = true;
+                }
+            } catch (\Exception $e) {
+                // Se houver erro ao buscar a relação, não concede permissão
+                return;
+            }
+        };
+
+        // Hook para permissão de modificação
+        $app->hook('entity(Opportunity).canUser(modify)', $checkFederativeEntityPermission);
+
+        // Hook para permissão de controle
+        $app->hook('entity(Opportunity).canUser(@control)', $checkFederativeEntityPermission);
+
+        /**
          * Bloqueia a renderização e a criação de um novo aplicativo
          */
         $app->hook('GET(panel.apps):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
