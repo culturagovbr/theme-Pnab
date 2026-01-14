@@ -158,6 +158,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Modifica o comportamento de canUser para Opportunities
          * Permite que agentes associados ao mesmo Ente Federado possam editar oportunidades
          * Se agente X e Y tiverem associados ao Ente Federado Z, ambos conseguem editar oportunidades de Z
+         * IMPORTANTE: Também verifica se o Ente Federado selecionado na sessão corresponde ao da opportunity
          */
         $checkFederativeEntityPermission = function($user, &$result) use ($app) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
@@ -169,6 +170,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Verifica se é gestor CultBR
             if (!User::isGestorCultBr()) {
+                return;
+            }
+
+            // Limpa cache de permissões da entidade para forçar recálculo baseado na sessão atual
+            // Isso garante que mudanças no Ente Federado selecionado sejam refletidas imediatamente
+            if (method_exists($this, 'clearPermissionCache')) {
+                $this->clearPermissionCache();
+            }
+
+            // Verifica se há Ente Federado selecionado na sessão
+            if (!isset($_SESSION['selectedFederativeEntity'])) {
+                return;
+            }
+
+            $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+            $selectedFederativeEntityId = $selectedEntity['id'] ?? null;
+            
+            if (!$selectedFederativeEntityId) {
                 return;
             }
 
