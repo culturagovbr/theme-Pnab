@@ -71,23 +71,84 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         /**
          * Hook na API para listar oportunidades do ente federado
+         * Usa API.find(opportunity).params para processar os parâmetros antes do MapasCulturais
          */
-        $app->hook('API(opportunity.find):before', function () use ($app) {
+        $app->hook('API.find(opportunity).params', function (&$api_params) use ($app) {
+            // Se não for gestor CultBR, para aqui
             if (!User::isGestorCultBr()) {
                 return;
             }
 
-            $federativeEntityId = $_GET['federativeEntityId'] ?? null;
-            if (!$federativeEntityId) {
+            // Se não tiver selecionado o Ente Federado, para aqui
+            $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
+            if (!$federativeEntityIdParam) {
                 return;
             }
 
-            // Remove filtros de user/owner para permitir ver oportunidades de todos os usuários
-            unset($_GET['user'], $_GET['owner']);
+            // Remove filtros de user/owner para mostrar todas as oportunidades do ente federado
+            unset($api_params['user'], $api_params['owner']);
 
-            // Sempre força filtros de status publicado e permissões de visualização
-            $_GET['status'] = 'GTE(1)';
-            $_GET['@permissions'] = 'view';
+            // Extrai o ID do federativeEntityId (remove EQ() se presente)
+            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m) 
+                ? (int)$m[1] 
+                : (int)$federativeEntityIdParam;
+
+            // Processa o status: remove duplicação de EQ() e extrai operadores
+            if (isset($api_params['status'])) {
+                $status = trim($api_params['status']);
+                
+                // Remove múltiplas camadas de EQ() - ex: EQ(EQ(0)) -> EQ(0), EQ(EQ(EQ(0))) -> EQ(0)
+                while (preg_match('/^EQ\((EQ\([^)]+\))\)$/', $status, $m)) {
+                    $status = $m[1];
+                }
+                
+                // Remove EQ() de operadores - ex: EQ(GTE(1)) -> GTE(1)
+                if (preg_match('/^EQ\((GTE|LTE|GT|LT|IN|BETWEEN)\(([^)]+)\)\)$/', $status, $m)) {
+                    $status = $m[1] . '(' . $m[2] . ')';
+                }
+                // Se vier apenas como número sem formatação, adiciona EQ()
+                elseif (preg_match('/^-?\d+$/', $status)) {
+                    $status = 'EQ(' . $status . ')';
+                }
+                // Garante que sempre tenha formato válido (EQ, GTE, etc)
+                elseif (!preg_match('/^(EQ|GTE|LTE|GT|LT|IN|BETWEEN)\(/', $status)) {
+                    // Se não tiver formato válido, tenta extrair número e criar EQ()
+                    if (preg_match('/(-?\d+)/', $status, $numMatch)) {
+                        $status = 'EQ(' . $numMatch[1] . ')';
+                    }
+                }
+                
+                $api_params['status'] = $status;
+            } else {
+                $api_params['status'] = 'GTE(1)';
+            }
+            
+            if (!isset($api_params['@permissions'])) {
+                $api_params['@permissions'] = 'view';
+            }
+
+            // Busca IDs das oportunidades com metadado federativeEntityId (exclui fases)
+            $conn = $app->em->getConnection();
+            $params = [
+                'meta_key' => 'federativeEntityId',
+                'federativeEntityId' => (string)$federativeEntityId
+            ];
+            
+            $sql = "SELECT DISTINCT o.id FROM opportunity o 
+                    INNER JOIN opportunity_meta m ON m.object_id = o.id 
+                    WHERE m.key = :meta_key AND m.value = :federativeEntityId AND o.parent_id IS NULL";
+            
+            $opportunityIds = [];
+            try {
+                $results = $conn->executeQuery($sql, $params)->fetchAll();
+                $opportunityIds = array_map(fn($r) => (int)$r['id'], $results);
+            } catch (\Exception $e) {
+                // Se houver erro, retorna array vazio
+                $opportunityIds = [];
+            }
+            
+            $api_params['id'] = empty($opportunityIds) ? 'EQ(-1)' : 'IN(' . implode(',', $opportunityIds) . ')';
+            unset($api_params['federativeEntityId']);
         });
 
        /**
@@ -210,8 +271,14 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Converte para inteiro
             $opportunityFederativeEntityId = (int)$opportunityFederativeEntityId;
+            $selectedFederativeEntityId = (int)$selectedFederativeEntityId;
 
-            // Busca se o agente do usuário está associado ao mesmo Ente Federado da opportunity
+            // PRIMEIRA VERIFICAÇÃO: O Ente Federado selecionado na sessão deve ser o mesmo da opportunity
+            if ($selectedFederativeEntityId !== $opportunityFederativeEntityId) {
+                return;
+            }
+
+            // SEGUNDA VERIFICAÇÃO: O agente do usuário deve estar associado ao Ente Federado da opportunity
             try {
                 $federativeEntityRef = $app->em->getReference('AldirBlanc\Entities\FederativeEntity', $opportunityFederativeEntityId);
                 $relation = $app->repo('AldirBlanc\Entities\FederativeEntityAgentRelation')->findOneBy([
@@ -235,6 +302,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         // Hook para permissão de controle
         $app->hook('entity(Opportunity).canUser(@control)', $checkFederativeEntityPermission);
+
+        /**
+         * Limpa cache de permissões quando o Ente Federado selecionado muda
+         * Isso garante que as permissões sejam recalculadas imediatamente
+         */
+        $app->hook('aldirblanc.selectFederativeEntity:after', function() use ($app) {
+            $userAgent = $app->user->profile;
+            if ($userAgent && method_exists($userAgent, 'clearPermissionCache')) {
+                $userAgent->clearPermissionCache();
+            }
+        });
 
         /**
          * Bloqueia a renderização e a criação de um novo aplicativo

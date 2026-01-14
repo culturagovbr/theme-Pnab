@@ -36,18 +36,46 @@ $this->import('
 
         <template #default="{pseudoQuery, entity}">
             <mc-tabs class="search__tabs" sync-hash>
-                <template #before-tablist>
-                    <label class="search__tabs--before">
-                        <?= i::_e('Visualizar como:') ?>
-                    </label>
-                </template>
                 <?php $this->applyTemplateHook('search-tabs', 'before'); ?>
-                <mc-tab icon="list" label="<?php i::esc_attr_e('Lista') ?>" slug="list">
+                <mc-tab icon="check-circle" label="<?php i::esc_attr_e('Publicados') ?>" slug="published" class="tab-published" style="--mc-tab-active-color: var(--mc-success-500);">
                     <div class="tabs-component__panels">
                         <div class="search__tabs--list">
-                            <search-list :pseudo-query="pseudoQuery" type="opportunity" select="name,type,files.avatar">
+                            <search-list :pseudo-query="{...pseudoQuery, status: 'GTE(1)', federativeEntityId: <?= $federativeEntityId ?>}" type="opportunity" select="name,type,files.avatar">
                                 <template #filter>
-                                    <search-filter-opportunity :pseudo-query="pseudoQuery"></search-filter-opportunity>
+                                    <search-filter-opportunity :pseudo-query="{...pseudoQuery, status: 'GTE(1)', federativeEntityId: <?= $federativeEntityId ?>}"></search-filter-opportunity>
+                                </template>
+                            </search-list>
+                        </div>
+                    </div>
+                </mc-tab>
+                <mc-tab icon="edit" label="<?php i::esc_attr_e('Em rascunho') ?>" slug="draft" class="tab-draft" style="--mc-tab-active-color: var(--mc-warning-500);">
+                    <div class="tabs-component__panels">
+                        <div class="search__tabs--list">
+                            <search-list :pseudo-query="{...pseudoQuery, status: 'EQ(0)', federativeEntityId: <?= $federativeEntityId ?>}" type="opportunity" select="name,type,files.avatar">
+                                <template #filter>
+                                    <search-filter-opportunity :pseudo-query="{...pseudoQuery, status: 'EQ(0)', federativeEntityId: <?= $federativeEntityId ?>}"></search-filter-opportunity>
+                                </template>
+                            </search-list>
+                        </div>
+                    </div>
+                </mc-tab>
+                <mc-tab icon="folder" label="<?php i::esc_attr_e('Arquivados') ?>" slug="archived" class="archived" style="--mc-tab-active-color: var(--mc-warning);">
+                    <div class="tabs-component__panels">
+                        <div class="search__tabs--list">
+                            <search-list :pseudo-query="{...pseudoQuery, status: 'EQ(-2)', federativeEntityId: <?= $federativeEntityId ?>}" type="opportunity" select="name,type,files.avatar">
+                                <template #filter>
+                                    <search-filter-opportunity :pseudo-query="{...pseudoQuery, status: 'EQ(-2)', federativeEntityId: <?= $federativeEntityId ?>}"></search-filter-opportunity>
+                                </template>
+                            </search-list>
+                        </div>
+                    </div>
+                </mc-tab>
+                <mc-tab icon="trash" label="<?php i::esc_attr_e('Lixeira') ?>" slug="trash" class="trash" style="--mc-tab-active-color: var(--mc-error);">
+                    <div class="tabs-component__panels">
+                        <div class="search__tabs--list">
+                            <search-list :pseudo-query="{...pseudoQuery, status: 'EQ(-1)', federativeEntityId: <?= $federativeEntityId ?>}" type="opportunity" select="name,type,files.avatar">
+                                <template #filter>
+                                    <search-filter-opportunity :pseudo-query="{...pseudoQuery, status: 'EQ(-1)', federativeEntityId: <?= $federativeEntityId ?>}"></search-filter-opportunity>
                                 </template>
                             </search-list>
                         </div>
