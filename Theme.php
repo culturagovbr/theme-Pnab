@@ -26,6 +26,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $canAccess = \AldirBlanc\Entities\User::canAccess();
 
         /**
+         * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
+         */
+        $app->hook('template(<<*>>.mc-header-menu):begin', function () use ($canAccess) {
+            if ($canAccess) {
+                /** @var \MapasCulturais\Theme $this */
+                $this->part('header-menu-opportunity-link');
+            }
+        });
+
+        /**
          * Verifica se o usuário tem permissão para acessar a rota de minhas oportunidades
          */
         $app->hook('GET(panel.opportunities):before', function () use ($app, $canAccess) {
