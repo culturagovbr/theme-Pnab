@@ -414,8 +414,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $route = [$this->id, $this->action];
 
-            // Ignora as rotas de seleção e alteração
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['selectFederativeEntity', 'changeFederativeEntity'])) {
+            // Ignora as rotas de seleção, alteração e busca de entes federados
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['selectFederativeEntity', 'changeFederativeEntity', 'federativeEntities'])) {
                 return;
             }
 

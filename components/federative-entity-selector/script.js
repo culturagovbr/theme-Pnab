@@ -8,17 +8,32 @@ app.component('federative-entity-selector', {
 
     data() {
         return {
-            federativeEntities: $MAPAS.aldirBlancConfig?.federativeEntities || [],
+            federativeEntities: [],
             selectedEntity: null,
             loading: false,
         }
     },
 
-    created() {
+    async created() {
         this.api = new API('aldirblanc')
+        await this.loadFederativeEntities()
     },
 
     methods: {
+        async loadFederativeEntities() {
+            this.loading = true
+            try {
+                const response = await this.api.GET('federativeEntities')
+                const data = await response.json()
+                this.federativeEntities = data || []
+            } catch (error) {
+                console.error('Erro ao carregar entes federados:', error)
+                this.federativeEntities = []
+            } finally {
+                this.loading = false
+            }
+        },
+
         selectEntity(entity) {
             this.selectedEntity = entity
         },
