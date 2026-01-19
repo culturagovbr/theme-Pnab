@@ -453,7 +453,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'GestorCultBr',
             i::__('Gestor CultBR'),
             i::__('Gestor CultBR'),
-            false,
+            true,
             function (\MapasCulturais\UserInterface $user, $subsite_id) {
                 return false;
             },
