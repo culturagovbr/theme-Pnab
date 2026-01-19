@@ -1,3 +1,3 @@
 <?php
 
-$this->jsObject['config']['canAccess'] = \AldirBlanc\Entities\User::canAccess();
+$this->jsObject['config']['canAccess'] = \AldirBlanc\Services\UserAccessService::canAccess();

@@ -2,7 +2,7 @@
 
 namespace Pnab;
 
-use AldirBlanc\Entities\User;
+use AldirBlanc\Services\UserAccessService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 
@@ -23,7 +23,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         parent::_init();
         $app = App::i();
 
-        $canAccess = \AldirBlanc\Entities\User::canAccess();
+        $canAccess = UserAccessService::canAccess();
 
         /**
          * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
@@ -85,7 +85,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $app->hook('API.find(opportunity).params', function (&$api_params) use ($app) {
             // Se não for gestor CultBR, para aqui
-            if (!User::isGestorCultBr()) {
+            if (!UserAccessService::isGestorCultBr()) {
                 return;
             }
 
@@ -209,7 +209,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Garante que o ID da entidade federativa seja salvo junto com a entidade
          */
         $app->hook('entity(<<*>>).save:before', function () {
-            if (User::isGestorCultBr() && isset($_SESSION['selectedFederativeEntity'])) {
+            if (UserAccessService::isGestorCultBr() && isset($_SESSION['selectedFederativeEntity'])) {
                 $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
                 if ($selectedEntity && isset($selectedEntity['id'])) {
                     $entityId = (int)$selectedEntity['id'];
@@ -240,7 +240,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             // Verifica se é gestor CultBR
-            if (!User::isGestorCultBr()) {
+            if (!UserAccessService::isGestorCultBr()) {
                 return;
             }
 
@@ -346,7 +346,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Adicionando o menu "Oportunidades do Ente Federado"
             $nav['federativeEntity'] = [
-                'condition' => fn() => User::isGestorCultBr(),
+                'condition' => fn() => UserAccessService::isGestorCultBr(),
                 'label' => i::__('Ente Federado'),
                 'items' => [
                     [
@@ -408,7 +408,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            if (!User::isGestorCultBr()) {
+            if (!UserAccessService::isGestorCultBr()) {
                 return;
             }
 
@@ -432,7 +432,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         // Adiciona banner com informações do ente federado selecionado
         $app->hook('template(<<*>>.main-header):after', function () use ($app) {
             /** @var \MapasCulturais\Theme $this */
-            if (User::isGestorCultBr() && isset($_SESSION['selectedFederativeEntity'])) {
+            if (UserAccessService::isGestorCultBr() && isset($_SESSION['selectedFederativeEntity'])) {
                 $this->part('federative-entity-banner');
             }
         });
