@@ -145,9 +145,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'label' => $label,
             'type' => 'select',
             'options' => $options,
-            'validations' => [
-                'required' => i::__('O campo ') . $label . i::__(' é obrigatório.'),
-            ],
+            // Valida obrigatoriedade só na edição (entidade já criada)
+            'should_validate' => function($entity) use ($label) {
+                if (!empty($entity->id)) {
+                    return i::__('O campo ') . $label . i::__(' é obrigatório.');
+                }
+                return false;
+            },
         ]);
     }
 
