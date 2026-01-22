@@ -379,16 +379,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Redireciona para /panel após login bem-sucedido
+         * Redireciona para consolidação após login bem-sucedido
          * Limpa a seleção de entidade federativa quando o usuário faz login
+         * Não redireciona admins (não há o que consolidar)
          */
         $app->hook('auth.successful', function () use ($app) {
-            // Define o redirect path para /panel na sessão
-            $_SESSION['mapasculturais.auth.redirect_path'] = $app->createUrl('panel', 'index');
+            // Se for admin em qualquer nível, não precisa consolidar dados
+            if (UserAccessService::isAdmin()) {
+                return;
+            }
+
+            // Limpa flags de sincronização anteriores
+            unset($_SESSION['gestor_cult_sync_started']);
+            unset($_SESSION['gestor_cult_sync_completed']);
             
             // Limpa a seleção de entidade federativa
             unset($_SESSION['selectedFederativeEntity']);
             unset($_SESSION['federative_entity_redirect_uri']);
+            
+            // Redireciona para a tela de consolidação (que vai disparar o sync)
+            $_SESSION['mapasculturais.auth.redirect_path'] = $app->createUrl('aldirblanc', 'consolidatingData');
         });
 
         /**
@@ -400,32 +410,52 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Hook que força o usuário a selecionar uma entidade federativa antes de continuar
-         * Captura todas as requisições GET, exceto auth, selectFederativeEntity e changeFederativeEntity
+         * Hook que redireciona para consolidação após login até o sync terminar
+         * Captura todas as requisições GET, exceto auth, consolidatingData, startSync, checkSyncStatus, selectFederativeEntity, changeFederativeEntity e federativeEntities
+         * Não redireciona admins (não há o que consolidar)
          */
         $app->hook('GET(<<*>>):before,-GET(<<auth>>.<<*>>):before', function () use ($app) {
             if ($app->user->is('guest')) {
                 return;
             }
 
-            if (!UserAccessService::isGestorCultBr()) {
+            // Se for admin em qualquer nível, não precisa consolidar dados
+            if (UserAccessService::isAdmin()) {
                 return;
             }
 
             $route = [$this->id, $this->action];
 
-            // Ignora as rotas de seleção, alteração e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['selectFederativeEntity', 'changeFederativeEntity', 'federativeEntities'])) {
+            // Ignora as rotas de consolidação, sync, seleção, alteração, verificação de status e busca de entes federados
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities'])) {
                 return;
             }
 
-            // Verifica se existe entidade federativa selecionada na sessão
-            if (!isset($_SESSION['selectedFederativeEntity'])) {
+            // Verifica se o sync foi iniciado mas ainda não foi concluído
+            $syncStarted = isset($_SESSION['gestor_cult_sync_started']) && $_SESSION['gestor_cult_sync_started'] === true;
+            $syncCompleted = isset($_SESSION['gestor_cult_sync_completed']) && $_SESSION['gestor_cult_sync_completed'] === true;
+
+            // Se o sync foi iniciado mas não foi concluído, redireciona para consolidação
+            if ($syncStarted && !$syncCompleted) {
                 if (!$app->request->isAjax()) {
                     $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                 }
-                $url = $app->createUrl('aldirblanc', 'selectFederativeEntity');
+                $url = $app->createUrl('aldirblanc', 'consolidatingData');
                 $app->redirect($url);
+                return;
+            }
+
+            // Após o sync terminar, verifica se é gestor e precisa selecionar entidade
+            if ($syncCompleted && UserAccessService::isGestorCultBr()) {
+                // Verifica se existe entidade federativa selecionada na sessão
+                if (!isset($_SESSION['selectedFederativeEntity'])) {
+                    if (!$app->request->isAjax()) {
+                        $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                    }
+                    // Redireciona para a tela de seleção
+                    $url = $app->createUrl('aldirblanc', 'selectFederativeEntity');
+                    $app->redirect($url);
+                }
             }
         });
 
