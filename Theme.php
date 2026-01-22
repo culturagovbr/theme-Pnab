@@ -389,9 +389,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            // Limpa flags de sincronização anteriores
+            // Limpa flags de sincronização anteriores (incluindo erros)
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
+            unset($_SESSION['gestor_cult_sync_error']);
+            unset($_SESSION['gestor_cult_sync_error_message']);
             
             // Limpa a seleção de entidade federativa
             unset($_SESSION['selectedFederativeEntity']);
@@ -402,19 +404,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Limpa a seleção de entidade federativa quando o usuário faz logout
+         * Limpa a seleção de entidade federativa e flags de sync quando o usuário faz logout
          */
         $app->hook('auth.logout:before', function () {
             unset($_SESSION['selectedFederativeEntity']);
             unset($_SESSION['federative_entity_redirect_uri']);
+            unset($_SESSION['gestor_cult_sync_started']);
+            unset($_SESSION['gestor_cult_sync_completed']);
+            unset($_SESSION['gestor_cult_sync_error']);
+            unset($_SESSION['gestor_cult_sync_error_message']);
         });
 
         /**
-         * Hook que redireciona para consolidação após login até o sync terminar
-         * Captura todas as requisições GET, exceto auth, consolidatingData, startSync, checkSyncStatus, selectFederativeEntity, changeFederativeEntity e federativeEntities
-         * Não redireciona admins (não há o que consolidar)
+         * Hook que bloqueia acesso quando há erro de consolidação
+         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity e federativeEntities
+         * Não bloqueia admins (não há o que consolidar)
          */
-        $app->hook('GET(<<*>>):before,-GET(<<auth>>.<<*>>):before', function () use ($app) {
+        $blockAccessOnError = function () use ($app) {
             if ($app->user->is('guest')) {
                 return;
             }
@@ -427,13 +433,38 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'logoutOnError'])) {
                 return;
             }
 
             // Verifica se o sync foi iniciado mas ainda não foi concluído
             $syncStarted = isset($_SESSION['gestor_cult_sync_started']) && $_SESSION['gestor_cult_sync_started'] === true;
             $syncCompleted = isset($_SESSION['gestor_cult_sync_completed']) && $_SESSION['gestor_cult_sync_completed'] === true;
+            $hasError = isset($_SESSION['gestor_cult_sync_error']) && 
+                       $_SESSION['gestor_cult_sync_error'] !== null && 
+                       $_SESSION['gestor_cult_sync_error'] !== '';
+
+            // Se há erro de sync, bloqueia TODAS as requisições e redireciona para consolidação
+            if ($syncCompleted && $hasError) {
+                // Para requisições AJAX, retorna erro JSON
+                if ($app->request->isAjax()) {
+                    /** @var \MapasCulturais\Controller $this */
+                    header('Content-Type: application/json');
+                    http_response_code(403);
+                    echo json_encode([
+                        'error' => true,
+                        'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
+                        'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
+                    ]);
+                    exit;
+                }
+                
+                // Para requisições normais, redireciona
+                $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                $url = $app->createUrl('aldirblanc', 'consolidatingData');
+                $app->redirect($url);
+                return;
+            }
 
             // Se o sync foi iniciado mas não foi concluído, redireciona para consolidação
             if ($syncStarted && !$syncCompleted) {
@@ -445,8 +476,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            // Após o sync terminar, verifica se é gestor e precisa selecionar entidade
-            if ($syncCompleted && UserAccessService::isGestorCultBr()) {
+            // Após o sync terminar sem erro, verifica se é gestor e precisa selecionar entidade
+            if ($syncCompleted && !$hasError && UserAccessService::isGestorCultBr()) {
                 // Verifica se existe entidade federativa selecionada na sessão
                 if (!isset($_SESSION['selectedFederativeEntity'])) {
                     if (!$app->request->isAjax()) {
@@ -457,7 +488,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $app->redirect($url);
                 }
             }
-        });
+        };
+
+        // Hook para requisições GET
+        $app->hook('GET(<<*>>):before,-GET(<<auth>>.<<*>>):before', $blockAccessOnError);
+        
+        // Hook para requisições POST
+        $app->hook('POST(<<*>>):before,-POST(<<auth>>.<<*>>):before', $blockAccessOnError);
 
         // Adiciona banner com informações do ente federado selecionado
         $app->hook('template(<<*>>.main-header):after', function () use ($app) {
