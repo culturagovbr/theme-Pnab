@@ -243,26 +243,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $app->hook('POST(app.index):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
 
         /**
-         * Verifica se o usuário tem permissão para acessar o menu de oportunidades no painel
-         * removendo o link de minhas oportunidades
+         * Configura o menu do painel: renomeia "Minhas Oportunidades" e move para "Ente Federado"
          */
         $app->hook('panel.nav', function (&$nav) use ($app, $canAccess) {
-            if ($app->user->is('GestorCultBr')) {
-                $nav['admin']['condition'] = function () {
-                    return false;
-                };
-            }
-
-            // Removendo o menu de "Meus aplicativos"
+            // Removendo o menu de "Meus aplicativos" [para todos os usuários]
             $nav['more']['condition'] = fn() => false;
 
-            // Adicionando o menu "Oportunidades do Ente Federado"
+            // Só manipula os menus para GestorCultBr, se não for, parar aqui
+            if (!UserAccessService::isGestorCultBr()) {
+                return;
+            }
+
+            // Remove o menu "Admin" para GestorCultBr
+            $nav['admin']['condition'] = fn() => false;
+
+            // Remove o menu "Minhas Oportunidades" do grupo original
+            foreach ($nav['opportunities']['items'] as $key => $item) {
+                if (isset($item['route']) && $item['route'] === 'panel/opportunities') {
+                    $nav['opportunities']['items'][$key]['condition'] = fn() => false;
+                }
+            }
+        
+            // Criando menus específicos para GestorCultBr
             $nav['federativeEntity'] = [
-                'condition' => fn() => UserAccessService::isGestorCultBr(),
+                'condition' => fn() => true,
                 'label' => i::__('Ente Federado'),
                 'items' => [
                     [
-                        'route' => 'panel/federativeEntityOpportunities',
+                        'route' => 'panel/opportunities',
                         'icon' => 'opportunity',
                         'label' => i::__('Oportunidades'),
                     ],
@@ -273,14 +281,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     ]
                 ],
             ];
-
-            if (!$canAccess) {
-                $filteredNav = array_filter($nav['opportunities']['items'], function ($item) {
-                    return $item['route'] !== 'panel/opportunities';
-                });
-
-                $nav['opportunities']['items'] = $filteredNav;
-            }
         });
 
         $this->enqueueStyle('app-v2', 'main', 'css/theme-Pnab.css');
