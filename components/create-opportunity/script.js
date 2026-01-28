@@ -136,6 +136,7 @@ app.component('create-opportunity', {
         createEntity() {
             this.entity = new Entity('opportunity');
             this.entity.type = this.getOpportunityTypeIdByLabel('Edital');
+            this.entity.tipoDeEdital = null;
             this.entity.terms = { area: [] }
         },
 

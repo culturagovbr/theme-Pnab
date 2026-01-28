@@ -120,11 +120,14 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $theme = $this;
         $app->hook('app.init:after', function() use ($app, $theme) {
-            // Registra metadados select obrigatórios
-            $theme->registerSelectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions());
-            $theme->registerSelectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions());
-            $theme->registerSelectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions());
-            $theme->registerSelectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions());
+            // Registra metadados select obrigatórios em edit
+            $theme->registerSelectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
+            $theme->registerSelectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
+            $theme->registerSelectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
+            $theme->registerSelectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
+
+            // Registra metadados select obrigatórios em create
+            $theme->registerSelectMetadata('tipoDeEdital', i::__('Tipo de Edital'), $theme->getTipoDeEditalOptions(), 'create');
             
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
@@ -138,21 +141,44 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
      * @param string $key Chave do metadado
      * @param string $label Label do campo (já traduzido)
      * @param array $options Opções do select
+     * @param string $operationType Tipo de operação (edit ou create)
      */
-    private function registerSelectMetadata(string $key, string $label, array $options): void
+    private function registerSelectMetadata(string $key, string $label, array $options, string $operationType): void
     {
         $this->registerOpportunityMetadata($key, [
             'label' => $label,
             'type' => 'select',
             'options' => $options,
-            // Valida obrigatoriedade só na edição (entidade já criada)
-            'should_validate' => function($entity) use ($label) {
-                if (!empty($entity->id)) {
-                    return i::__('O campo ') . $label . i::__(' é obrigatório.');
-                }
-                return false;
+            'should_validate' => function($entity) use ($label, $operationType) {
+                return $this->redefineRuleValidate($operationType, $entity, $label);
             },
         ]);
+    }
+
+    /**
+     * Redefine a regra de validação do metadado select obrigatório
+     * 
+     * @param string $operationType Tipo de operação (edit ou create)
+     * @param \MapasCulturais\Entity $entity Entidade que contém os campos
+     * @param string $label Label do campo (já traduzido)
+     * @return string|false Retorna mensagem de erro se inválido, false se não precisa validar
+     */
+    private function redefineRuleValidate($operationType, $entity, $label) {
+        if ($operationType === 'edit') {
+            if (!empty($entity->id)) {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        if ($operationType === 'create') {
+            if (!isset($entity->id) || $entity->id === null || $entity->id === '') {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        return false;
     }
 
     /**
@@ -175,7 +201,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $value,
                     $campoPrincipal,
                     $campoOutros,
-                    i::__('O campo ') . $label . i::__(' é obrigatório quando "Outra (especificar)" é selecionada.')
+                    i::__('O campo ') . strtolower($label) . i::__(' é obrigatório quando "Outra (especificar)" é selecionada.')
                 );
             },
         ]);
@@ -272,6 +298,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         return $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Delivery',
             'priorityAudience'
+        );
+    }
+
+    /*
+     * Obtém as opções de Tipo de Edital
+     */
+    private function getTipoDeEditalOptions(): array
+    {
+        return array(
+            i::__('Execução cultural'),
+            i::__('Subsídio a espaços culturais'),
+            i::__('Bolsa cultural'),
+            i::__('Premiação cultural'),
+            i::__('TCC Pontos de Cultura'),
+            i::__('TCC Pontões de Cultura'),
+            i::__('Bolsa Cultura Viva'),
+            i::__('Premiação Cultura Viva'),
+            i::__('Programa Nacional de Ações Continuadas'),
+            i::__('Programa Nacional de Infraestrutura Cultural'),
+            i::__('Programa Nacional de Formação para Gestores'),
+            i::__('Outros')
         );
     }
 

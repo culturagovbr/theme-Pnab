@@ -20,6 +20,8 @@ $this->import('
         <form @submit.prevent="handleSubmit" class="create-modal__fields">
 
             <entity-field :entity="entity" hide-required label=<?php i::esc_attr_e("Título") ?> prop="name"></entity-field>
+
+            <entity-field :entity="entity" hide-required prop="tipoDeEdital"></entity-field>
             
             <div class="create-opportunity-modal__continuous-flow">
                 <div class="create-opportunity-modal__continuous-flow-options">
