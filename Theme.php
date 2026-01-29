@@ -20,6 +20,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         'superAdmin',
         'admin'
     ];
+    private const METADATA_RANGE_SUM_KEYS = [
+        'vacancies' => 'limit',
+        'totalResource' => 'value',
+    ];
 
     static function getThemeFolder()
     {
@@ -67,8 +71,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         $app->hook('PATCH(opportunity.single):before', function () use ($theme) {
-            $theme->trimOtherValue('etapa', 'etapaOutros', $this->postData);
-            $theme->trimOtherValue('pauta', 'pautaOutros', $this->postData);
+            $entity = $this->requestedEntity;
+            $postData = $this->postData;
+
+            foreach (self::METADATA_RANGE_SUM_KEYS as $metadataKey => $keyTarget) {
+                $totalByMetadata = $theme->validateTotalByMetadata($entity, $postData, $metadataKey, $keyTarget);
+                if ($totalByMetadata) {
+                    $this->errorJson($totalByMetadata, 400);
+                }
+            }
+
+            $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
+            $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
         });
 
         /**
@@ -340,5 +354,33 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         ) {
             $postData[$outroTipo] = trim($postData[$outroTipo]);
         }
+    }
+
+    private function validateTotalByMetadata($entity, array $postData, string $metadataKey, string $keyTarget)
+    {
+        if (!isset($postData[$metadataKey]) && !isset($postData['registrationRanges'])) {
+            return false;
+        }
+
+        $metadataValue = $postData[$metadataKey] ?? ($entity->{$metadataKey} ?? null);
+        if ($metadataValue === null || $metadataValue === '') {
+            return false;
+        }
+
+        $registrationRanges = $postData['registrationRanges'] ?? ($entity->registrationRanges ?? []);
+        if (!is_array($registrationRanges) || !$registrationRanges) {
+            return false;
+        }
+
+        $convertVal = $metadataKey === 'vacancies' ? 'intval' : 'floatval';
+        $totalMetadataInRanges = array_sum(array_map($convertVal, array_column($registrationRanges, $keyTarget)));
+
+        if ($convertVal($metadataValue) > $totalMetadataInRanges) {
+            return [
+                $metadataKey => [i::__('Valor superior ao total das faixas.')]
+            ];
+        }
+
+        return false;
     }
 }
