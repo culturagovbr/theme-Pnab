@@ -47,54 +47,7 @@ $this->import('
 
                 <entity-field v-if="lastPhase && entity.isContinuousFlow && entity.hasEndDate" :entity="lastPhase" prop="publishTimestamp" label="<?php i::esc_attr_e("Publicação final de resultados (data e hora)") ?>" :autosave="3000" classes="col-6 sm:col-12"></entity-field>
                 
-                <!-- Campos adicionais do tema Pnab -->
-                <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="segmento" :autosave="3000">
-                        <template #info>
-                            <span class="required">*<?php i::_e('obrigatório') ?></span>
-                        </template>
-                    </entity-field>
-                </div>
                 
-                <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="etapa" :autosave="3000">
-                        <template #info>
-                            <span class="required">*<?php i::_e('obrigatório') ?></span>
-                        </template>
-                    </entity-field>
-                </div>
-                
-                <div v-if="isEtapaOutra" class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="etapaOutros" :autosave="3000" @blur="cleanZeroWidthSpace('etapaOutros')">
-                        <template #info>
-                            <span class="required">*<?php i::_e('obrigatório') ?></span>
-                        </template>
-                    </entity-field>
-                </div>
-                
-                <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="pauta" :autosave="3000">
-                        <template #info>
-                            <span class="required">*<?php i::_e('obrigatório') ?></span>
-                        </template>
-                    </entity-field>
-                </div>
-                
-                <div v-if="isPautaOutra" class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="pautaOutros" :autosave="3000">
-                        <template #info>
-                            <span class="required">*<?php i::_e('obrigatório') ?></span>
-                        </template>
-                    </entity-field>
-                </div>
-                
-                <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="territorio" :autosave="3000">
-                        <template #info>
-                            <span class="required">*<?php i::_e('obrigatório') ?></span>
-                        </template>
-                    </entity-field>
-                </div>
                 
                 <?php $this->applyTemplateHook('opportunity-basic-info','afeter')?>
             </div>
@@ -118,6 +71,56 @@ $this->import('
                     </div>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription" :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="longDescription"></entity-field>
+
+                    <!-- Campos adicionais do tema Pnab -->
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="segmento" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="pauta" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div v-if="isPautaOutra" class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="pautaOutros" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="etapa" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div v-if="isEtapaOutra" class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="etapaOutros" :autosave="3000" @blur="cleanZeroWidthSpace('etapaOutros')">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="territorio" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+
                     <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
                     <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>
                     <entity-gallery-video :entity="entity" classes="col-12" editable></entity-gallery-video>
