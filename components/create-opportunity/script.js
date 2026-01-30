@@ -10,7 +10,6 @@ app.component('create-opportunity', {
 
     data() {
         return {
-            continuousFlowDate: $MAPAS.config.createOpportunity.date,
             canAccess: $MAPAS.config.canAccess,
             entity: null,
             fields: [],
@@ -22,55 +21,6 @@ app.component('create-opportunity', {
         editable: {
             type: Boolean,
             default: true
-        },
-    },
-
-    watch: {
-        'entity.isContinuousFlow'(newVal, oldValue) {
-            if(Boolean(newVal) != Boolean(oldValue)){
-                if (!newVal) {
-                    this.entity.hasEndDate = false;
-                    this.entity.continuousFlow = null;
-                    this.entity.publishedRegistrations = false;
-
-                    if (this.entity.registrationFrom && this.entity.registrationFrom._date instanceof Date) {
-                        this.incrementRegistrationTo();
-                    } 
-                       
-                } else {
-                    const myDate = new McDate(new Date(this.continuousFlowDate));
-                    
-                    this.entity.continuousFlow = myDate.sql('full');
-                    this.entity.registrationTo = myDate.sql('full');
-                    this.entity.publishedRegistrations = true;
-
-                    if(!this.entity.registrationFrom){
-                        let actualDate = new Date();
-                        this.entity.registrationFrom = Vue.reactive(new McDate(actualDate));
-                    }
-                }
-            }
-        },
-
-        'entity.hasEndDate'(newVal, oldValue) {
-            if(Boolean(newVal) != Boolean(oldValue)){
-                if (this.entity.isContinuousFlow) {
-                    if(newVal){
-                        this.entity.continuousFlow = null;
-                        this.entity.registrationTo = null;
-                        this.entity.publishedRegistrations = false;
-
-                        if (this.entity.registrationFrom && this.entity.registrationFrom._date instanceof Date) {
-                           this.incrementRegistrationTo();
-                        } 
-
-                    } else {
-                        const myDate = new McDate(new Date(this.continuousFlowDate));
-                        this.entity.continuousFlow = myDate;
-                        this.entity.registrationTo = myDate;
-                    }
-                } 
-            }
         },
     },
 
@@ -186,13 +136,6 @@ app.component('create-opportunity', {
         getObjectTypeErrors() {
             return this.hasObjectTypeErrors() ? this.entity.__validationErrors?.objectType : [];
         },
-        incrementRegistrationTo (){
-            let newDate = new Date(this.entity.registrationFrom._date);
-            newDate.setDate(newDate.getDate() + 2);
-    
-            this.entity.registrationTo = new McDate(newDate);
-        },
-
         getOpportunityTypeIdByLabel(label) {
             const options = $DESCRIPTIONS?.opportunity?.type?.options || {};
             const normalizedTarget = this.normalizeLabel(label);
