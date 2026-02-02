@@ -89,8 +89,30 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            // Se não tiver selecionado o Ente Federado, para aqui
+            // Verifica se é a aba "Com permissão"
+            $isGrantedTab = isset($api_params['@permissions']) && 
+                           $api_params['@permissions'] === '@control' &&
+                           isset($api_params['user']) && 
+                           $api_params['user'] === '!EQ(@me)';
+            
+            if ($isGrantedTab) {
+                // Remove federativeEntityId se presente, mas mantém outros filtros
+                unset($api_params['federativeEntityId']);
+                return;
+            }
+
+            // Verifica se há federativeEntityId nos parâmetros da requisição
             $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
+            
+            // Se não tiver nos parâmetros, tenta buscar da sessão
+            if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $federativeEntityIdParam = (string)$selectedEntity['id'];
+                }
+            }
+
+            // Se ainda não tiver federativeEntityId, para aqui
             if (!$federativeEntityIdParam) {
                 return;
             }
@@ -132,21 +154,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             } else {
                 $api_params['status'] = 'GTE(1)';
             }
-            
-            if (!isset($api_params['@permissions'])) {
-                $api_params['@permissions'] = 'view';
-            }
 
-            // Busca IDs das oportunidades com metadado federativeEntityId (exclui fases)
+            // Busca IDs das oportunidades com metadado federativeEntityId
             $conn = $app->em->getConnection();
             $params = [
                 'meta_key' => 'federativeEntityId',
                 'federativeEntityId' => (string)$federativeEntityId
             ];
             
-            $sql = "SELECT DISTINCT o.id FROM opportunity o 
-                    INNER JOIN opportunity_meta m ON m.object_id = o.id 
-                    WHERE m.key = :meta_key AND m.value = :federativeEntityId AND o.parent_id IS NULL";
+            // Consulta que busca IDs das oportunidades com metadado federativeEntityId
+            $sql = "SELECT DISTINCT o.id 
+                    FROM opportunity o
+                    INNER JOIN opportunity_meta m ON m.key = :meta_key 
+                        AND m.value = :federativeEntityId
+                        AND m.object_id = CASE 
+                            WHEN o.parent_id IS NOT NULL THEN o.parent_id 
+                            ELSE o.id 
+                        END";
             
             $opportunityIds = [];
             try {
@@ -157,8 +181,90 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $opportunityIds = [];
             }
             
-            $api_params['id'] = empty($opportunityIds) ? 'EQ(-1)' : 'IN(' . implode(',', $opportunityIds) . ')';
+            // Aplica filtro APENAS se houver oportunidades encontradas
+            // Se não houver nenhuma oportunidade com o metadado, retorna filtro vazio (EQ(-1))
+            if (empty($opportunityIds)) {
+                $api_params['id'] = 'EQ(-1)';
+            } else {
+                $api_params['id'] = 'IN(' . implode(',', $opportunityIds) . ')';
+            }
+            
             unset($api_params['federativeEntityId']);
+        });
+
+        /**
+         * Hook para filtrar modelos de oportunidades por federativeEntityId na action findOpportunitiesModels
+         * Intercepta o resultado após a execução e filtra apenas os modelos do ente federado selecionado
+         * A action findOpportunitiesModels retorna um array de objetos com estrutura: {id, descricao, numeroFases, ...}
+         */
+        $app->hook('GET(opportunity.findOpportunitiesModels):after', function (&$result) use ($app) {
+            // Se não for gestor CultBR, para aqui
+            if (!UserAccessService::isGestorCultBr()) {
+                return;
+            }
+
+            // Verifica se há federativeEntityId na sessão
+            $federativeEntityId = null;
+            if (isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $federativeEntityId = (int)$selectedEntity['id'];
+                }
+            }
+
+            // Se não tiver federativeEntityId, para aqui (mantém comportamento padrão)
+            if (!$federativeEntityId) {
+                return;
+            }
+
+            // Se o resultado não for um array, para aqui
+            if (!is_array($result)) {
+                return;
+            }
+
+            // Busca IDs dos modelos que devem ser exibidos (com metadado federativeEntityId)
+            // Inclui modelos cuja oportunidade principal tem o metadado
+            $conn = $app->em->getConnection();
+            $params = [
+                'meta_key' => 'federativeEntityId',
+                'federativeEntityId' => (string)$federativeEntityId
+            ];
+            
+            // Consulta otimizada que busca modelos relacionados às oportunidades do ente federado
+            // Busca modelos onde o metadado está na própria oportunidade OU na oportunidade principal (para modelos com parent)
+            $sql = "SELECT DISTINCT o.id 
+                    FROM opportunity o
+                    INNER JOIN opportunity_meta m_model ON m_model.object_id = o.id 
+                        AND m_model.key = 'isModel' 
+                        AND m_model.value = '1'
+                    INNER JOIN opportunity_meta m_fed ON m_fed.key = :meta_key 
+                        AND m_fed.value = :federativeEntityId
+                        AND m_fed.object_id = CASE 
+                            WHEN o.parent_id IS NOT NULL THEN o.parent_id 
+                            ELSE o.id 
+                        END";
+            
+            $allowedModelIds = [];
+            try {
+                $results = $conn->executeQuery($sql, $params)->fetchAll();
+                $allowedModelIds = array_map(fn($r) => (int)$r['id'], $results);
+            } catch (\Exception $e) {
+                // Se houver erro, retorna array vazio
+                $allowedModelIds = [];
+            }
+            
+            // Filtra o resultado para manter apenas os modelos permitidos
+            if (!empty($allowedModelIds)) {
+                $result = array_filter($result, function($model) use ($allowedModelIds) {
+                    // Verifica se o modelo tem ID e se está na lista de permitidos
+                    return isset($model['id']) && in_array((int)$model['id'], $allowedModelIds);
+                });
+                // Reindexa o array após filtrar para manter índices numéricos sequenciais
+                $result = array_values($result);
+            } else {
+                // Se não houver modelos permitidos, retorna array vazio
+                $result = [];
+            }
         });
 
        /**
