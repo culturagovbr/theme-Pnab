@@ -263,6 +263,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $nav['opportunities']['items'][$key]['condition'] = fn() => false;
                 }
             }
+
+            // Remove o menu "Minhas Validações" do grupo original
+            if (isset($nav['registrations']['items'])) {
+                foreach ($nav['registrations']['items'] as $key => $item) {
+                    if (isset($item['route']) && $item['route'] === 'panel/evaluations') {
+                        $nav['registrations']['items'][$key]['condition'] = fn() => false;
+                    }
+                }
+            }
         
             // Criando menus específicos para GestorCultBr
             $nav['federativeEntity'] = [
@@ -278,6 +287,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         'route' => 'panel/federativeEntityAgents',
                         'icon' => 'agent',
                         'label' => i::__('Minha Equipe'),
+                    ],
+                    [
+                        'route' => 'panel/evaluations',
+                        'icon' => 'opportunity',
+                        'label' => i::__('Minhas Validações'),
                     ]
                 ],
             ];
