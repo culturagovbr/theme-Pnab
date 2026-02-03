@@ -1,0 +1,118 @@
+.selected-federative-entity-banner {
+    position: sticky;
+    top: 0;
+    text-align: center;
+    z-index: 1000;
+    margin-bottom: size(16);
+
+    &__button {
+        position: absolute;
+        right: size(20);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1001;
+        white-space: nowrap;
+    }
+
+    &__alert {
+        margin: 0;
+        border-radius: 0;
+        padding: size(12) size(20) size(12) size(60);
+        font-size: size(14);
+        line-height: 1.5;
+        position: relative;
+        text-align: left;
+
+        strong {
+            font-weight: 600;
+        }
+
+        code {
+            background: rgba(0, 0, 0, 0.05);
+            padding: size(2) size(6);
+            border-radius: size(4);
+            font-family: 'Courier New', monospace;
+            font-size: size(13);
+        }
+    }
+
+    // Esconde o botão padrão do modal que é renderizado fora do componente
+    > button.button:not(.selected-federative-entity-banner__button):not(.mc-modal__actions button) {
+        display: none;
+    }
+
+    .change-federative-entity-confirm__content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: size(24);
+        padding: size(8) 0 size(16) 0;
+        text-align: center;
+    }
+
+    .change-federative-entity-confirm__icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: size(8);
+    }
+
+    .change-federative-entity-confirm__icon {
+        font-size: size(64);
+        color: var(--mc-danger-500);
+        line-height: 1;
+        font-weight: normal;
+    }
+
+    .change-federative-entity-confirm__message {
+        margin: 0;
+        font-size: size(16);
+        color: var(--mc-gray-color-txt);
+        line-height: 1.6;
+        max-width: 500px;
+    }
+
+    .change-federative-entity-confirm__attention {
+        color: var(--mc-danger-500);
+        font-weight: 600;
+    }
+
+    .change-federative-entity-confirm__question {
+        margin: size(8) 0 0 0;
+        font-size: size(18);
+        font-weight: 600;
+        color: var(--mc-gray-color-txt);
+    }
+
+    .mc-modal__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: size(12);
+        margin-top: size(24);
+        padding-top: size(24);
+        border-top: 1px solid var(--mc-gray-200);
+    }
+}
+
+.change-federative-entity-confirm-modal {
+    .mc-modal__content {
+        padding: size(20) size(40) size(32) size(40);
+    }
+
+    .mc-modal__header {
+        margin-bottom: size(16);
+    }
+
+    // Esconde o botão padrão do modal no header
+    .mc-modal__header-button {
+        display: none;
+    }
+
+    // Não esconde os botões de ação do modal
+    .mc-modal__actions {
+        button.button {
+            display: inline-flex !important;
+        }
+    }
+}
+

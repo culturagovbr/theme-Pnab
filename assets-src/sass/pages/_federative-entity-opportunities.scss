@@ -1,0 +1,39 @@
+// Remove o filtro e expande cards para 100% em todas as abas
+.search__tabs--list {
+    .search-list {
+        // Remove o div do filtro (search-list__filter--filter)
+        .search-list__filter--filter {
+            display: none !important;
+        }
+        
+        // Remove também o container do filtro (col-4)
+        .search-list__filter {
+            display: none !important;
+        }
+        
+        // Faz os cards ocuparem 100% da largura (col-8 -> col-12)
+        .col-8 {
+            grid-column-end: span 12 !important;
+        }
+        
+        // Ajusta o load-more também para 100%
+        .load-more {
+            grid-column-end: span 12 !important;
+        }
+        
+        // Mensagem "Nenhuma entidade encontrada" ocupa todas as colunas do grid
+        .panel__row.noEntity {
+            grid-column-end: span 12 !important;
+        }
+        
+        // Garante que o tipo seja exibido igual ao card de "Minhas Oportunidades"
+        .entity-card {
+            .upper.opportunity__color {
+                color: #333 !important;
+                font-weight: bold !important;
+                font-size: .875rem !important;
+                text-transform: uppercase !important;
+            }
+        }
+    }
+}

@@ -1,3 +1,3 @@
 <?php
 
-$this->jsObject['config']['canAccess'] = \Pnab\Theme::canAccess();
+$this->jsObject['config']['canAccess'] = \AldirBlanc\Services\UserAccessService::canAccess();
