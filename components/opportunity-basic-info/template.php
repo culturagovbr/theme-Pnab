@@ -49,11 +49,19 @@ $this->import('
                 
                 <!-- Campos adicionais do tema Pnab -->
                 <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="segmento" :autosave="3000"></entity-field>
+                    <entity-field :entity="entity" prop="segmento" :autosave="3000">
+                        <template #info>
+                            <span class="required">*<?php i::_e('obrigatório') ?></span>
+                        </template>
+                    </entity-field>
                 </div>
                 
                 <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="etapa" :autosave="3000"></entity-field>
+                    <entity-field :entity="entity" prop="etapa" :autosave="3000">
+                        <template #info>
+                            <span class="required">*<?php i::_e('obrigatório') ?></span>
+                        </template>
+                    </entity-field>
                 </div>
                 
                 <div v-if="isEtapaOutra" class="col-12 sm:col-12">
@@ -65,7 +73,11 @@ $this->import('
                 </div>
                 
                 <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="pauta" :autosave="3000"></entity-field>
+                    <entity-field :entity="entity" prop="pauta" :autosave="3000">
+                        <template #info>
+                            <span class="required">*<?php i::_e('obrigatório') ?></span>
+                        </template>
+                    </entity-field>
                 </div>
                 
                 <div v-if="isPautaOutra" class="col-12 sm:col-12">
@@ -77,7 +89,11 @@ $this->import('
                 </div>
                 
                 <div class="col-12 sm:col-12">
-                    <entity-field :entity="entity" prop="territorio" :autosave="3000"></entity-field>
+                    <entity-field :entity="entity" prop="territorio" :autosave="3000">
+                        <template #info>
+                            <span class="required">*<?php i::_e('obrigatório') ?></span>
+                        </template>
+                    </entity-field>
                 </div>
                 
                 <?php $this->applyTemplateHook('opportunity-basic-info','afeter')?>
