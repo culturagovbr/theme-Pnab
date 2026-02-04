@@ -12,16 +12,18 @@ $config = $app->config['social-media'];
 $image_url_footer = $app->view->asset('img/logo-footer.png', false);
 
 $entities = [
-    'opportunities' => [
-        'searchLabel' => 'Oportunidades',
-        'panelLabel'  => 'Minhas oportunidades',
-        'icon'        => 'opportunity'
+    'portal-cultbr' => [
+        'searchLabel' => 'Portal Cult.br',
+        'panelLabel'  => 'Portal Cult.br',
+        'link' => 'https://cultbr.cultura.gov.br/transparencia',
+        'target' => '_blank'
     ],
-    'agents' => [
-        'searchLabel' => 'Agentes',
-        'panelLabel'  => 'Meus agentes',
-        'icon'        => 'agent'
-    ],
+    'politica-nac' => [
+        'searchLabel' => 'Política Nacional Aldir Blanc',
+        'panelLabel'  => 'Política Nacional Aldir Blanc',
+        'link' => 'https://www.gov.br/cultura/pt-br/assuntos/politica-nacional-aldir-blanc',
+        'target' => '_blank'
+    ]
 ];
 ?>
 
@@ -46,8 +48,8 @@ $entities = [
                 <ul class="main-footer__content--links-group">
                     <li><a><?php i::_e("Descubra"); ?></a></li>
                     <?php foreach ($entities as $key => $entity): ?>
-                        <li v-if="global.enabledEntities.<?= $key ?>">
-                            <a href="<?= $app->createUrl('search', $key) ?>">
+                        <li>
+                            <a href="<?= $entity['link'] ?>" target="_blank">
                                 <?php i::_e($entity['searchLabel']) ?>
                             </a>
                         </li>
@@ -55,9 +57,6 @@ $entities = [
                 </ul>
 
                 <ul class="main-footer__content--links-group">
-                    <li>
-                        <a href="<?= $app->createUrl('panel', 'index') ?>"><?php i::_e('Painel de controle'); ?></a>
-                    </li>
                     <?php
                         // TODO: AJUSTAR A CHAVE PROJECTS PARA A DE CIRCUITO)
                         $order = ['events', 'opportunities', 'agents', 'spaces', 'projects'];
@@ -79,12 +78,6 @@ $entities = [
                 <ul class="main-footer__content--links-group">
                     <li><a><?php i::_e('Ajuda e privacidade'); ?></a></li>
                     <li><a href="<?= $app->createUrl('faq') ?>"><?php i::_e('Dúvidas frequentes'); ?></a></li>
-                    <li>
-                        <a href="" target="_blank"><?php i::_e('Conheça o repositório'); ?></a>
-                    </li>
-                    <li>
-                        <a href="" target="_blank"><?php i::_e('Acesse os manuais'); ?></a>
-                    </li>
 
                     <?php if (!empty($app->config['module.LGPD'])): ?>
                         <?php foreach ($app->config['module.LGPD'] as $slug => $cfg): ?>
