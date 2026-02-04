@@ -135,7 +135,8 @@ app.component('create-opportunity', {
 
         createEntity() {
             this.entity = new Entity('opportunity');
-            this.entity.type = 1;
+            this.entity.type = this.getOpportunityTypeIdByLabel('Edital');
+            this.entity.tipoDeEdital = null;
             this.entity.terms = { area: [] }
         },
 
@@ -190,6 +191,20 @@ app.component('create-opportunity', {
             newDate.setDate(newDate.getDate() + 2);
     
             this.entity.registrationTo = new McDate(newDate);
+        },
+
+        getOpportunityTypeIdByLabel(label) {
+            const options = $DESCRIPTIONS?.opportunity?.type?.options || {};
+            const normalizedTarget = this.normalizeLabel(label);
+            const match = Object.entries(options).find(([, optionLabel]) => {
+                return this.normalizeLabel(optionLabel) === normalizedTarget;
+            });
+
+            return match ? match[0] : null;
+        },
+
+        normalizeLabel(value) {
+            return String(value ?? '').trim().toLowerCase();
         },
     },
 });

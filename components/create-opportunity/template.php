@@ -19,8 +19,9 @@ $this->import('
         <label><?php i::_e('Crie uma oportunidade com informações básicas e de forma rápida') ?></label>
         <form @submit.prevent="handleSubmit" class="create-modal__fields">
 
-            <entity-field :entity="entity" hide-required :editable="true" label="<?php i::esc_attr_e("Selecione o tipo da oportunidade") ?>" prop="type"></entity-field>
             <entity-field :entity="entity" hide-required label=<?php i::esc_attr_e("Título") ?> prop="name"></entity-field>
+
+            <entity-field :entity="entity" hide-required prop="tipoDeEdital"></entity-field>
             
             <div class="create-opportunity-modal__continuous-flow">
                 <div class="create-opportunity-modal__continuous-flow-options">
