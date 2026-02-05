@@ -83,6 +83,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         $this->enqueueStyle('app-v2', 'main', 'css/theme-Pnab.css');
+        $this->enqueueScript('app-v2', 'hooks', 'js/hooks.js');
     }
 
     function register()
@@ -105,5 +106,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             [],
         );
         $app->registerRole($def);
+
+        /**
+         * Validação de oportunidade: Exige arquivo de regulamento para validar
+         */
+        $app->hook('opportunity.canValidate', function (&$errors) {
+            $opportunity = $this;
+
+            $regulations = $opportunity->getFiles('rules');
+            if (empty($regulations)) {
+                $errors[] = i::__('O campo "Adicionar regulamento" é obrigatório.');
+            }
+
+            // Validar Tipos de Proponente
+            $proponentTypes = $opportunity->registrationProponentTypes;
+            if (empty($proponentTypes)) {
+                $errors[] = i::__('O campo "Tipos do proponente" é obrigatório.');
+            }
+        });
     }
 }

@@ -25,7 +25,7 @@ $this->import('
 
             <!-- Logo -->
             <template #logo>
-                <theme-logo href="<?= $app->createUrl('site', 'index') ?>"></theme-logo>
+                <theme-logo href="<?= $app->createUrl('panel', 'index') ?>"></theme-logo>
             </template>
             <!-- Menu principal -->
             <template #default>
