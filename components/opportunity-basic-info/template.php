@@ -67,7 +67,7 @@ $this->import('
                     </div>
                     <div class="header-opp__field grid-12 col-9 sm:col-12">
                         <entity-field :entity="entity" prop="name" classes="header-opp__field--name col-12"></entity-field>
-                        <entity-field :entity="entity" label="<?php i::esc_attr_e("Selecione o tipo da oportunidade") ?>" prop="type" classes="header-opp__field--name col-12"></entity-field>
+                        <entity-field :entity="entity" prop="tipoDeEdital" classes="header-opp__field--name col-12" :autosave="3000"></entity-field>
                     </div>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription" :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="longDescription"></entity-field>
