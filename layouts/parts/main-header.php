@@ -42,24 +42,9 @@ $this->import('
                 <?php $this->applyTemplateHook('mc-header-menu-events', 'after') ?>
 
                 <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'before') ?>
-                <li v-if="global.enabledEntities.opportunities">
-                    <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'begin') ?>
-                    <a href="<?= $app->createUrl('search', 'opportunities') ?>" class="mc-header-menu--item opportunity">
-                        <p class="label"> <?php i::_e('Oportunidades') ?> </p>
-                    </a>
-                    <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'end') ?>
-                </li>
+                <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'begin') ?>
+                <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'end') ?>
                 <?php $this->applyTemplateHook('mc-header-menu-opportunity', 'after') ?>
-
-                <?php $this->applyTemplateHook('mc-header-menu-agent', 'before') ?>
-                <li v-if="global.enabledEntities.agents">
-                    <?php $this->applyTemplateHook('mc-header-menu-agent', 'begin') ?>
-                    <a href="<?= $app->createUrl('search', 'agents') ?>" class="mc-header-menu--item agent">
-                        <p class="label"> <?php i::_e('Agentes') ?> </p>
-                    </a>
-                    <?php $this->applyTemplateHook('mc-header-menu-agent', 'end') ?>
-                </li>
-                <?php $this->applyTemplateHook('mc-header-menu-agent', 'after') ?>
                 <?php $this->applyTemplateHook('mc-header-menu-spaces', 'before') ?>
                 <li v-if="global.enabledEntities.spaces">
                     <?php $this->applyTemplateHook('mc-header-menu-spaces', 'begin') ?>
