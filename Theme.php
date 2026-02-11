@@ -578,5 +578,25 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $errors[] = i::__('O campo "Tipos do proponente" é obrigatório.');
             }
         });
+
+        /**
+         * Torna a taxonomia "área de atuação" opcional para Opportunity
+         */
+        $app->hook('app.register:after', function () use ($app) {
+            $taxonomies = $app->getRegisteredTaxonomies('MapasCulturais\Entities\Opportunity');
+            
+            if (isset($taxonomies['area'])) {
+                $taxonomies['area']->required = false;
+            }
+        });
+
+        /**
+         * Modifica o objeto JavaScript para refletir que a taxonomia "área de atuação" é opcional para Opportunity
+         */
+        $app->hook('mapas.printJsObject:before', function () use ($app) {
+            if (isset($this->jsObject['Taxonomies']['area'])) {
+                $this->jsObject['Taxonomies']['area']['required'] = false;
+            }
+        });
     }
 }

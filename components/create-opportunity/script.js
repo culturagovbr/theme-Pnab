@@ -162,11 +162,6 @@ app.component('create-opportunity', {
         save(modal) {
             modal.loading(true);
 
-            // Fix: Envia uma área padrão para evitar erro de validação do backend
-            if (!this.entity.terms.area || this.entity.terms.area.length === 0) {
-                this.entity.terms.area = ['Outros'];
-            }
-
             this.entity.save().then((response) => {
                 this.$emit('create', response);
                 modal.loading(false);
