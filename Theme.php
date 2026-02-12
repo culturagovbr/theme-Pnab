@@ -392,11 +392,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
-            // Remove o menu "Minhas Validações" do grupo original
-            if (isset($nav['registrations']['items'])) {
-                foreach ($nav['registrations']['items'] as $key => $item) {
+            // Remove o menu "Minhas Validações" do grupo "Editais e Oportunidades" (opportunities)
+            if (isset($nav['opportunities']['items'])) {
+                foreach ($nav['opportunities']['items'] as $key => $item) {
                     if (isset($item['route']) && $item['route'] === 'panel/evaluations') {
-                        $nav['registrations']['items'][$key]['condition'] = fn() => false;
+                        $nav['opportunities']['items'][$key]['condition'] = fn() => false;
                     }
                 }
             }
