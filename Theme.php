@@ -583,7 +583,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $app->hook('entity(Opportunity).validations', function(&$validations) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
-            if (!$this->isNew() && $this->isFirstPhase) {
+            if (!$this->isNew() && !$this->isLastPhase) {
                 if (!is_array($this->registrationProponentTypes)) {
                     $this->registrationProponentTypes = [];
                 }
@@ -596,31 +596,56 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Validação adicional: Garante que arrays vazios sejam tratados como inválidos
          */
-        $app->hook('entity(Opportunity).validationErrors', function(&$errors) {
+        $app->hook('entity(Opportunity).validationErrors', function(&$errors) use ($app) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
-            if (!$this->isNew() && $this->isFirstPhase) {
+            if (!$this->isNew() && !$this->isLastPhase) {
+                // Validação de Tipos do proponente
                 $proponentTypes = $this->registrationProponentTypes;
                 if (!is_array($proponentTypes) || count($proponentTypes) === 0) {
                     $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
+                }
+                
+                // Validação de Regulamento
+                $regulations = $this->getFiles('rules');
+                if (empty($regulations)) {
+                    $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
+                }
+            }
+            
+            // Garante que TODOS os campos com erro sejam incluídos no postData
+            if (!$this->isNew() && !empty($errors)) {
+                $controller = $app->controller('opportunity');
+                if ($controller && isset($controller->postData)) {
+                    foreach ($errors as $field => $fieldErrors) {
+                        if (!isset($controller->postData[$field])) {
+                            // Adiciona o campo ao postData apenas se não estiver presente
+                            $controller->postData[$field] = property_exists($this, $field) ? $this->$field : null;
+                        }
+                    }
                 }
             }
         });
 
         /**
-         * Garante que o campo seja incluído no POST mesmo quando não está presente
+         * Garante que os campos customizados sejam incluídos no POST mesmo quando não estão presentes
          * Necessário para que a validação seja executada e o erro seja retornado
+         * Usa a mesma condição das validações existentes: !$entity->isNew() && !$entity->isLastPhase
+         * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
          */
         $app->hook('PATCH(opportunity.single):data', function(&$data) {
             /** @var \MapasCulturais\Controllers\Opportunity $this */
             $entity = $this->requestedEntity;
-            if ($entity && !$entity->isNew() && $entity->isFirstPhase) {
-                if (!isset($data['registrationProponentTypes'])) {
+            if ($entity && !$entity->isNew() && !$entity->isLastPhase) {
+                if (!isset($data['registrationProponentTypes']) && !isset($this->postData['registrationProponentTypes'])) {
                     $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes) 
                         ? $entity->registrationProponentTypes 
                         : [];
-                }
-                if (!isset($this->postData['registrationProponentTypes'])) {
                     $this->postData['registrationProponentTypes'] = $data['registrationProponentTypes'];
+                }
+                
+                // Garante que o erro de arquivo seja retornado mesmo quando não está no POST
+                if (!isset($this->postData['rules'])) {
+                    $this->postData['rules'] = null;
                 }
             }
         });
