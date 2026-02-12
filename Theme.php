@@ -261,15 +261,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Bloqueia a renderização e a criação de um novo aplicativo
          */
-        $app->hook('GET(panel.apps):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
-        $app->hook('POST(app.index):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
+        $app->hook('GET(panel.apps):before', function () {
+            // Libera para SuperSaasAdmin, se não for, bloqueia
+            if (!UserAccessService::isSuperSaasAdmin()) {
+                $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403);
+            }
+        });
+        $app->hook('POST(app.index):before', function () {
+            // Libera para SuperSaasAdmin, se não for, bloqueia
+            if (!UserAccessService::isSuperSaasAdmin()) {
+                $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403);
+            }
+        });
 
         /**
          * Configura o menu do painel: renomeia "Minhas Oportunidades" e move para "Ente Federado"
          */
         $app->hook('panel.nav', function (&$nav) use ($app, $canAccess) {
-            // Removendo o menu de "Meus aplicativos" [para todos os usuários]
-            $nav['more']['condition'] = fn() => false;
+            // Removendo o menu de "Meus aplicativos" [para todos os usuários, exceto SuperSaasAdmin]
+            if (!UserAccessService::isSuperSaasAdmin()) {
+                $nav['more']['condition'] = fn() => false;
+            }
 
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
