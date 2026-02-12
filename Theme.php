@@ -395,7 +395,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Remove o menu "Minhas Validações" do grupo "Editais e Oportunidades" (opportunities)
             if (isset($nav['opportunities']['items'])) {
                 foreach ($nav['opportunities']['items'] as $key => $item) {
-                    if (isset($item['route']) && $item['route'] === 'panel/evaluations') {
+                    if (isset($item['route']) && $item['route'] === 'panel/validations') {
                         $nav['opportunities']['items'][$key]['condition'] = fn() => false;
                     }
                 }
@@ -417,7 +417,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         'label' => i::__('Minha Equipe'),
                     ],
                     [
-                        'route' => 'panel/evaluations',
+                        'route' => 'panel/validations',
                         'icon' => 'opportunity',
                         'label' => i::__('Minhas Validações'),
                     ]
