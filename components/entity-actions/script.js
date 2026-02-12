@@ -60,32 +60,24 @@ app.component('entity-actions', {
 
     methods: {
         save() {
-            // Hook: entity.save:before
-            // Expects hooks to return a string error message or string[] or nothing if valid.
-            const errors = MapasCulturais.Hook.apply('entity.save:before', [this.entity]);
-
-            // Flatten results if some hooks return arrays
-            const flatErrors = errors.flat().filter(e => e);
-
-            if (flatErrors.length > 0) {
-                // Show first error or all? For now, first one to maintain user experience.
-                const firstError = flatErrors[0];
-                this.$emit('error', firstError);
-
-                // Force reactivity/re-render if error is the same
-                this.validationError = null;
-                this.$nextTick(() => {
-                    this.validationError = firstError;
-                });
-                return;
+            // Garante que o campo seja incluído no save quando necessário
+            if (this.entity.__objectType === 'opportunity' && 
+                this.entity.isFirstPhase && 
+                this.entity.id) {
+                if (!Array.isArray(this.entity.registrationProponentTypes)) {
+                    this.entity.registrationProponentTypes = [];
+                }
+                if (!this.entity.__originalValues) {
+                    this.entity.__originalValues = {};
+                }
+                if (this.entity.__originalValues['registrationProponentTypes'] === undefined) {
+                    this.entity.__originalValues['registrationProponentTypes'] = null;
+                }
             }
-
-            this.validationError = null; // Clear error on valid save attempt
-
+            
             const event = new Event("entitySave");
             this.entity.save().then(() => {
                 window.dispatchEvent(event);
-                //this.exit();
             });
         },
         exit() {

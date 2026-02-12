@@ -404,7 +404,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         $this->enqueueStyle('app-v2', 'main', 'css/theme-Pnab.css');
-        $this->enqueueScript('app-v2', 'hooks', 'js/hooks.js');
 
         // Mapeia o ícone do X (antigo Twitter) para o novo logo do X
         $app->hook('component(mc-icon).iconset', function (&$iconset) {
@@ -576,6 +575,53 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $proponentTypes = $opportunity->registrationProponentTypes;
             if (empty($proponentTypes)) {
                 $errors[] = i::__('O campo "Tipos do proponente" é obrigatório.');
+            }
+        });
+
+        /**
+         * Validação de oportunidade: Torna o campo "Tipos do proponente" obrigatório
+         */
+        $app->hook('entity(Opportunity).validations', function(&$validations) {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            if (!$this->isNew() && $this->isFirstPhase) {
+                if (!is_array($this->registrationProponentTypes)) {
+                    $this->registrationProponentTypes = [];
+                }
+                $validations['registrationProponentTypes'] = [
+                    'required' => i::__('O campo "Tipos do proponente" é obrigatório.')
+                ];
+            }
+        });
+
+        /**
+         * Validação adicional: Garante que arrays vazios sejam tratados como inválidos
+         */
+        $app->hook('entity(Opportunity).validationErrors', function(&$errors) {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            if (!$this->isNew() && $this->isFirstPhase) {
+                $proponentTypes = $this->registrationProponentTypes;
+                if (!is_array($proponentTypes) || count($proponentTypes) === 0) {
+                    $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
+                }
+            }
+        });
+
+        /**
+         * Garante que o campo seja incluído no POST mesmo quando não está presente
+         * Necessário para que a validação seja executada e o erro seja retornado
+         */
+        $app->hook('PATCH(opportunity.single):data', function(&$data) {
+            /** @var \MapasCulturais\Controllers\Opportunity $this */
+            $entity = $this->requestedEntity;
+            if ($entity && !$entity->isNew() && $entity->isFirstPhase) {
+                if (!isset($data['registrationProponentTypes'])) {
+                    $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes) 
+                        ? $entity->registrationProponentTypes 
+                        : [];
+                }
+                if (!isset($this->postData['registrationProponentTypes'])) {
+                    $this->postData['registrationProponentTypes'] = $data['registrationProponentTypes'];
+                }
             }
         });
 
