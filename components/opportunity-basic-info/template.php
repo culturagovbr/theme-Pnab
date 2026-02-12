@@ -30,6 +30,27 @@ $this->import('
 ?>
 <div class="opportunity-basic-info__container">
     <entity-status v-if="!entity.isModel" :entity="entity"></entity-status>
+
+    <mc-card>
+        <template #title>
+            <h3><?= i::__("Informações obrigatórias") ?></h3>
+        </template>
+        <template #content>
+            <?php $this->applyTemplateHook('opportunity-basic-info','before')?>
+            <div class="grid-12">
+                <?php $this->applyTemplateHook('opportunity-basic-info','begin')?>
+                <entity-field :entity="entity" prop="registrationFrom" :autosave="3000" classes="col-6 sm:col-12"></entity-field>
+                <entity-field v-if="!entity.isContinuousFlow || entity.hasEndDate" :entity="entity" prop="registrationTo"  :autosave="3000" classes="col-6 sm:col-12"></entity-field>
+
+                <entity-field v-if="lastPhase && entity.isContinuousFlow && entity.hasEndDate" :entity="lastPhase" prop="publishTimestamp" label="<?php i::esc_attr_e("Publicação final de resultados (data e hora)") ?>" :autosave="3000" classes="col-6 sm:col-12"></entity-field>
+                
+                
+                
+                <?php $this->applyTemplateHook('opportunity-basic-info','afeter')?>
+            </div>
+            <?php $this->applyTemplateHook('opportunity-basic-info','end')?>
+        </template>
+    </mc-card>
 </div>
 
 <mc-container>
@@ -43,10 +64,60 @@ $this->import('
                     </div>
                     <div class="header-opp__field grid-12 col-9 sm:col-12">
                         <entity-field :entity="entity" prop="name" classes="header-opp__field--name col-12"></entity-field>
-                        <entity-field :entity="entity" label="<?php i::esc_attr_e("Selecione o tipo da oportunidade") ?>" prop="type" classes="header-opp__field--name col-12"></entity-field>
+                        <entity-field :entity="entity" prop="tipoDeEdital" classes="header-opp__field--name col-12" :autosave="3000"></entity-field>
                     </div>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription" :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="longDescription"></entity-field>
+
+                    <!-- Campos adicionais do tema Pnab -->
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="segmento" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="pauta" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div v-if="isPautaOutra" class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="pautaOutros" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="etapa" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div v-if="isEtapaOutra" class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="etapaOutros" :autosave="3000" @blur="cleanZeroWidthSpace('etapaOutros')">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+                    
+                    <div class="col-12 sm:col-12">
+                        <entity-field :entity="entity" prop="territorio" :autosave="3000">
+                            <template #info>
+                                <span class="required">*<?php i::_e('obrigatório') ?></span>
+                            </template>
+                        </entity-field>
+                    </div>
+
                     <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
                     <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>
                     <entity-gallery-video :entity="entity" classes="col-12" editable></entity-gallery-video>

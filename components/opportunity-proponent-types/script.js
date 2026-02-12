@@ -84,22 +84,12 @@ app.component('opportunity-proponent-types', {
 
             if (index === -1) {
                 this.value.push(optionValue);
+                this.proponentAgentRelation[optionValue] = true;
             } else {
                 this.value.splice(index, 1);
-
-                if (optionValue === 'Coletivo' || optionValue === 'Pessoa Jurídica') {
-                    this.proponentAgentRelation[optionValue] = false;
-                }
+                this.proponentAgentRelation[optionValue] = false;
             }
 
-            this.entity.registrationProponentTypes = this.value;
-            
-            this.updateProponentAgentRelation();
-            this.entity.save();
-        },
-
-        toggleAgentRelation(event, type) {
-            this.proponentAgentRelation[type] = event.target.checked;
             this.updateProponentAgentRelation();
             this.entity.save();
         },

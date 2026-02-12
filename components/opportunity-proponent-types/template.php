@@ -23,27 +23,6 @@ use MapasCulturais\i;
                     > 
                     {{ description.options[optionValue] }}
                 </label>
-                <div class="opportunity-proponent-types__field field__collective" v-if="showColetivoBinding && optionValue === 'Coletivo'">
-                    <label>
-                        <input 
-                            type="checkbox" 
-                            :checked="proponentAgentRelation['Coletivo']" 
-                            @change="toggleAgentRelation($event, 'Coletivo')"
-                        > 
-                        <?= i::__("Habilitar a vinculação de agente coletivo")?>
-                    </label>
-                </div>
-
-                <div class="opportunity-proponent-types__field field__legal" v-if="showJuridicaBinding && optionValue === 'Pessoa Jurídica'">
-                    <label>
-                        <input 
-                            type="checkbox" 
-                            :checked="proponentAgentRelation['Pessoa Jurídica']" 
-                            @change="toggleAgentRelation($event, 'Pessoa Jurídica')"
-                        > 
-                        <?= i::__("Habilitar a vinculação de agente coletivo")?>
-                    </label>
-                </div>
             </div>
         </div>
         <small v-if="hasError && getErrors.length > 0" class="field__error">{{ getErrors.join('; ') }}</small>
