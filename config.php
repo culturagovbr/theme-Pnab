@@ -269,6 +269,7 @@ return [
                 'client_id' => env('PNAB_AUTH_GOV_BR_CLIENT_ID', null),
                 'client_secret' => env('PNAB_AUTH_GOV_BR_SECRET', null),
                 'redirect_uri' => env('PNAB_AUTH_GOV_BR_REDIRECT_URI', null),
+                'url_logout' => env('url_logout', 'https://sso.staging.acesso.gov.br/logout'),
             ]
         ]
     ],
