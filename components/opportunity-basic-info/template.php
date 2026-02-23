@@ -55,6 +55,7 @@ $this->import('
 
 <mc-container>
     <main>
+        <!-- Card 1: até o campo descrição longa -->
         <mc-card>
             <template #content>
                 <div class="header-opp grid-12 v-bottom">
@@ -68,8 +69,14 @@ $this->import('
                     </div>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription" :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="longDescription"></entity-field>
+                </div>
+            </template>
+        </mc-card>
 
-                    <!-- Campos adicionais do tema Pnab -->
+        <!-- Card 2: Segmento artístico-cultural até Território -->
+        <mc-card>
+            <template #content>
+                <div class="grid-12">
                     <div class="col-12 sm:col-12">
                         <entity-field :entity="entity" prop="segmento" :autosave="3000">
                             <template #info>
@@ -117,7 +124,14 @@ $this->import('
                             </template>
                         </entity-field>
                     </div>
+                </div>
+            </template>
+        </mc-card>
 
+        <!-- Card 3: a partir de Adicionar arquivos -->
+        <mc-card>
+            <template #content>
+                <div class="grid-12">
                     <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
                     <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>
                     <entity-gallery-video :entity="entity" classes="col-12" editable></entity-gallery-video>
