@@ -699,11 +699,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $theme = $this;
         $app->hook('app.init:after', function() use ($app, $theme) {
-            // Registra metadados select obrigatórios em edit
-            $theme->registerSelectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
-            $theme->registerSelectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
-            $theme->registerSelectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
-            $theme->registerSelectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
+            // Registra metadados multiselect obrigatórios em edit (segmento, pauta, etapa, território)
+            $theme->registerMultiselectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
+            $theme->registerMultiselectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
+            $theme->registerMultiselectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
+            $theme->registerMultiselectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
 
             // Registra metadados select obrigatórios em required
             $theme->registerSelectMetadata('tipoDeEdital', i::__('Tipo de Edital'), $theme->getTipoDeEditalOptions(), 'required');
@@ -712,6 +712,63 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
         });
+    }
+
+    /**
+     * Registra um metadado do tipo multiselect obrigatório
+     *
+     * @param string $key Chave do metadado
+     * @param string $label Label do campo (já traduzido)
+     * @param array $options Opções do select
+     * @param string $operationType Tipo de operação (edit ou create)
+     */
+    private function registerMultiselectMetadata(string $key, string $label, array $options, string $operationType): void
+    {
+        $metadataValues = [
+            'label' => $label,
+            'type' => 'multiselect',
+            'options' => $options,
+        ];
+
+        $metadataValues['should_validate'] = function ($entity, $value) use ($label, $operationType) {
+            return $this->redefineRuleValidateMultiselect($operationType, $entity, $label, $value);
+        };
+
+        $this->registerOpportunityMetadata($key, $metadataValues);
+    }
+
+    /**
+     * Regra de validação para metadado multiselect obrigatório (array não vazio)
+     *
+     * @param string $operationType Tipo de operação (edit ou create)
+     * @param \MapasCulturais\Entity $entity Entidade que contém os campos
+     * @param string $label Label do campo (já traduzido)
+     * @param mixed $value Valor atual (array para multiselect)
+     * @return string|false Mensagem de erro se inválido, false se válido
+     */
+    private function redefineRuleValidateMultiselect(string $operationType, $entity, string $label, $value)
+    {
+        $isEmpty = $value === null || $value === '' || (is_array($value) && count($value) === 0);
+
+        if (!$isEmpty) {
+            return false;
+        }
+
+        if ($operationType === 'edit') {
+            if (!empty($entity->id)) {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        if ($operationType === 'create') {
+            if (!isset($entity->id) || $entity->id === null || $entity->id === '') {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        return false;
     }
 
     /**
@@ -797,7 +854,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
     /**
      * Valida campo "Outros" quando o campo principal contém "outra"
-     * 
+     * Suporta campo principal como string (select) ou array (multiselect)
+     *
      * @param object $entity Entidade que contém os campos
      * @param mixed $value Valor atual do campo "Outros"
      * @param string $campoPrincipal Nome do campo principal (ex: 'etapa', 'pauta')
@@ -808,17 +866,29 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     private function validateOutrosField($entity, $value, string $campoPrincipal, string $campoOutros, string $mensagemErro)
     {
         $valorPrincipal = $entity->{$campoPrincipal} ?? '';
-        
-        if (!$valorPrincipal || stripos($valorPrincipal, 'outra') === false) {
+
+        $contemOutra = false;
+        if (is_array($valorPrincipal)) {
+            foreach ($valorPrincipal as $v) {
+                if ($v && stripos((string) $v, 'outra') !== false) {
+                    $contemOutra = true;
+                    break;
+                }
+            }
+        } else {
+            $contemOutra = $valorPrincipal && stripos((string) $valorPrincipal, 'outra') !== false;
+        }
+
+        if (!$contemOutra) {
             return false;
         }
-        
+
         $valorAtual = ($value !== null && $value !== '') ? $value : ($entity->{$campoOutros} ?? null);
-        
-        if ($valorAtual === null || $valorAtual === '' || trim((string)$valorAtual) === '') {
+
+        if ($valorAtual === null || $valorAtual === '' || trim((string) $valorAtual) === '') {
             return $mensagemErro;
         }
-        
+
         return false;
     }
 

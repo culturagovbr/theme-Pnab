@@ -73,11 +73,15 @@ app.component('opportunity-basic-info' , {
         },
         
         isEtapaOutra() {
-            return this.entity.etapa === $MAPAS.config.opportunityOtherOptions.etapa;
+            const val = this.entity.etapa;
+            const outra = $MAPAS.config.opportunityOtherOptions.etapa;
+            return Array.isArray(val) ? val.includes(outra) : val === outra;
         },
         
         isPautaOutra() {
-            return this.entity.pauta === $MAPAS.config.opportunityOtherOptions.pauta;
+            const val = this.entity.pauta;
+            const outra = $MAPAS.config.opportunityOtherOptions.pauta;
+            return Array.isArray(val) ? val.includes(outra) : val === outra;
         }
     },
 
@@ -169,14 +173,15 @@ app.component('opportunity-basic-info' , {
 
         /**
          * Verifica se um valor corresponde à opção "Outra (especificar)" para um campo específico
-         * @param {string} valor - O valor a ser verificado
+         * Suporta valor como string (select) ou array (multiselect).
+         * @param {string|string[]} valor - O valor a ser verificado
          * @param {string} tipoCampo - O tipo do campo ('etapa' ou 'pauta')
          * @returns {boolean} - true se o valor corresponde à opção "Outra"
          */
         isOutra(valor, tipoCampo) {
-            if (!valor || !tipoCampo) return false;
+            if (valor == null || !tipoCampo) return false;
             const valorOutra = $MAPAS.config.opportunityOtherOptions[tipoCampo];
-            return valor === valorOutra;
+            return Array.isArray(valor) ? valor.includes(valorOutra) : valor === valorOutra;
         },
 
         /**
@@ -231,7 +236,7 @@ app.component('opportunity-basic-info' , {
 
         /**
          * Inicializa os campos obrigatórios (segmento, etapa, pauta, territorio)
-         * Garante que campos null/undefined sejam inicializados como string vazia
+         * Multiselect: inicializa com []. Select/string: com ''.
          */
         initializeRequiredFields() {
             const camposObrigatorios = this.requiredFields;
@@ -239,25 +244,27 @@ app.component('opportunity-basic-info' , {
             camposObrigatorios.forEach(campo => {
                 const valor = this.entity[campo];
                 if (valor === null || valor === undefined) {
-                    this.entity[campo] = '';
+                    const isMultiselect = this.entity.$PROPERTIES?.[campo]?.type === 'multiselect';
+                    this.entity[campo] = isMultiselect ? [] : '';
                 }
             });
         },
 
         /**
          * Valida os campos obrigatórios antes do save
-         * Garante que os campos estejam presentes no payload mesmo se vazios
+         * Garante que multiselect tenha [] e string tenha '' no payload quando vazios
          */
         validateRequiredFields() {
             const camposObrigatorios = this.requiredFields;
             
             camposObrigatorios.forEach(campo => {
                 const valor = this.entity[campo];
+                const isMultiselect = this.entity.$PROPERTIES?.[campo]?.type === 'multiselect';
                 
                 if (valor === null || valor === undefined) {
                     this.entity[campo] = valor === null ? undefined : null;
                     Vue.nextTick(() => {
-                        this.entity[campo] = '';
+                        this.entity[campo] = isMultiselect ? [] : '';
                     });
                 }
             });
