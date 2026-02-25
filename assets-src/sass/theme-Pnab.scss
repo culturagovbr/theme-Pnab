@@ -1,22 +1,79 @@
 @use 'sass:color';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=League+Gothic&display=swap');
 
 // COLORS
 $black: #1E1E1E !default;
 $error: #D2381B !default;
-$gray-100: #f5f5f5 !default;
-$gray-300: #767676!default;
-$gray-700: #666666 !default;
 $gray-color-txt: #1E1E1E !default;
 $warning: #FFCA3A !default;
 $white: #FFFFFF !default;
-$banner:#181b4e !default;
-$banner-register:#2F4795!default;
-$banner-figure:#E20635!default;
-$button:#2b74d9 !default;
+$banner: #181b4e !default;
+$banner-register: #2F4795 !default;
+$banner-figure: #E20635 !default;
+$button: #2b74d9 !default;
 $pink: #FFCFCF !default;
-$white:#FFFFFF;
-$home-map-title: #575757!default;
+$home-map-title: #575757 !default;
+
+$neutral-100: #F1E8FD !default;
+$neutral-200: #E3D1FA !default;
+$neutral-300: #CCCCCC !default;
+$neutral-400: #68686E !default;
+$neutral-500: #4B4B53 !default;
+$neutral-600: #313135 !default;
+$neutral-700: #19191C !default;
+$neutral-800: #0D0D0E !default;
+$neutral-900: #040404 !default;
+
+$blue-100: #CBECFE !default;
+$blue-200: #97D5FD !default;
+$blue-300: #63B7F9 !default;
+$blue-400: #3D9BF4 !default;
+$blue-500: #006FEE !default;
+$blue-600: #0055CC !default;
+$blue-700: #003FAB !default;
+$blue-800: #002D8A !default;
+$blue-900: #001F72 !default;
+
+$red-100: #FFE4D8 !default;
+$red-200: #FFC3B0 !default;
+$red-300: #FF9B89 !default;
+$red-400: #FF756B !default;
+$red-500: #FE3A3C !default;
+$red-600: #DB2A3C !default;
+$red-700: #B71C3B !default;
+$red-800: #941236 !default;
+$red-900: #7A0C33 !default;
+
+$green-100: #D7FED2 !default;
+$green-200: #A9FBA6 !default;
+$green-300: #79F480 !default;
+$green-400: #55E96F !default;
+$green-500: #23DB54 !default;
+$green-600: #19BB54 !default;
+$green-700: #119E52 !default;
+$green-800: #0A7F4B !default;
+$green-900: #066A48 !default;
+
+$yellow-100: #FFF6CD !default;
+$yellow-200: #FFEB9C !default;
+$yellow-300: #FEDD69 !default;
+$yellow-400: #FECF43 !default;
+$yellow-500: #FFB806 !default;
+$yellow-600: #DA9603 !default;
+$yellow-700: #B77902 !default;
+$yellow-800: #935E02 !default;
+$yellow-900: #794900 !default;
+
+$cyan-100: #CCFFFA !default;
+$cyan-200: #98FFFC !default;
+$cyan-300: #66F6FF !default;
+$cyan-400: #3EE6FF !default;
+$cyan-500: #00CBFE !default;
+$cyan-600: #009EDB !default;
+$cyan-700: #0076B6 !default;
+$cyan-800: #005494 !default;
+$cyan-900: #013D7B !default;
 
 // Default lightness deltas
 $lightness-300: 25%;
@@ -25,6 +82,12 @@ $lightness-700: 25%;
 // Brand colors
 $primary-500: #117C83 !default;
 $secondary-500: #9eca80 !default;
+
+// Primary colors
+$primary-light: #D7E9FF !default;
+$primary-medium: #5BA7FF !default;
+$primary-main: #006FEE !default;
+$primary-dark: #0050AA !default;
 
 // Entities colors
 $opportunities-500: #c40c0c;
@@ -37,8 +100,20 @@ $seals-500: #1E1E1E;
 
 // Feedback colors
 $danger-500: #B7292E;
+$error-main: #FF385C;
+$error-light: #FFD7DE;
+$error-dark: #E02244;
+
 $success-500: #498200;
+$success-main: #39DDA2;
+$success-light: #CEF7E8;
+$success-dark: #0CB97B;
+
 $warning-500: #FF9F1C;
+$warning-main: #FFD361;
+$warning-light: #FFF4D7;
+$warning-dark: #F3AD43;
+
 $helper-500: #0074C1;
 
 // home
@@ -46,20 +121,59 @@ $home-opportunities: #f5bb50;
 $home-feature: #45B648;
 $home-register: #036293;
 
-
-
 // // Neutral colors
 $low-500: #2a327f;
 // $high-500: #FFFFFF;
 
-//FONTS
-
-$font-title: 'League Gothic', sans-serif !default;
-// // FONTS
-
+$font-family-base: 'Poppins', sans-serif !default;
 $font-title: 'League Gothic', sans-serif !default;
 
-// // Borders radius
+$weight-regular: 400;
+$weight-medium: 500;
+$weight-semibold: 600;
+$weight-bold: 700;
+
+$lh-tight: 1.2;
+$lh-snug: 1.4;
+$lh-base: 1.5;
+
+$ls-normal: 0;
+$ls-wide: 0.01em;
+
+$display-1: 80px;
+$display-2: 72px;
+$display-3: 64px;
+
+$h1-size: 56px;
+$h2-size: 48px;
+$h3-size: 40px;
+$h4-size: 32px;
+$h5-size: 24px;
+$h6-size: 20px;
+
+$body-xl-size: 18px;
+$body-xl-lh: $lh-snug;
+
+$body-lg-size: 16px;
+$body-lg-lh: $lh-base;
+
+$body-md-size: 14px;
+$body-md-lh: $lh-base;
+
+$body-sm-size: 12px;
+$body-sm-lh: $lh-base;
+
+$overline-xs-size: 10px;
+$overline-ls: $ls-wide;
+
+$lh-heading: 1.2;
+$lh-body-lg: 1.5;
+
+// Variáveis antigas para compatibilidade (Mapping)
+$body-medium: $body-md-size;
+$body-small: $body-sm-size;
+
+// Borders radius
 $border-radius-xxs: 2px;
 
 @import '../../../BaseV2/assets-src/sass/theme-BaseV2';
@@ -81,12 +195,21 @@ $border-radius-xxs: 2px;
     max-width: 9rem;
 }
 
-:root{
-    --mc-font-title: #{$font-title};
+:root {
+    --mc-font-title: #{$font-family-base};
+    --mc-font-weight-bold: #{$weight-bold};
+}
+
+body {
+    font-family: $font-family-base;
+    font-weight: $weight-regular;
+    font-size: $body-lg-size;
+    line-height: $body-lg-lh;
+    color: $neutral-900;
 }
 
 .controller-search.action-events form .verified,
-.controller-search.action-agents .form > div:nth-child(1) {
+.controller-search.action-agents .form>div:nth-child(1) {
     display: none;
 }
 
@@ -111,17 +234,17 @@ $border-radius-xxs: 2px;
     }
 
     h4 {
-        font-size: size(16);
-        font-weight: 700;
+        font-size: $h5-size;
+        font-weight: $weight-bold;
         margin: size(8) 0 size(4) 0;
         color: var(--mc-primary-500);
     }
 
     p {
-        font-size: size(14);
+        font-size: $body-medium;
         color: var(--mc-gray-700);
         margin: 0;
-        line-height: 1.4;
+        line-height: $lh-heading;
     }
 }
 
@@ -199,8 +322,9 @@ $border-radius-xxs: 2px;
     margin: 0 8px 8px 0;
     display: inline-block;
 }
+
 .entity-seals__title {
-    margin:0;
+    margin: 0;
 }
 
 .seals__list {
@@ -237,6 +361,10 @@ $border-radius-xxs: 2px;
 
     .user-info .mc-title {
         font-size: 24px;
+        font-size: $h3-size;
+        font-family: $font-family-base;
+        font-weight: $weight-bold;
+        // line-height: $lh-heading;
     }
 
 
@@ -258,8 +386,8 @@ $border-radius-xxs: 2px;
 
         // Labels padrão (ID, TIPO, PERÍODO, SELOS, TAGS)
         .field__label {
-            font-size: 14px !important;
-            font-weight: normal !important;
+            font-size: $body-medium;
+            font-weight: $weight-regular;
             text-transform: capitalize !important;
             color: #333;
             display: inline;
@@ -278,8 +406,8 @@ $border-radius-xxs: 2px;
 
         // Conteúdo padrão dos campos
         .field__content {
-            font-size: 14px !important;
-            font-weight: bold !important;
+            font-size: $body-medium;
+            font-weight: $weight-bold;
             color: #333;
             display: inline;
 
@@ -289,10 +417,11 @@ $border-radius-xxs: 2px;
 
             .entity-seals {
                 display: inline-block;
-                
+
                 .entity-seals__seals--seal {
                     display: inline-block;
                 }
+
                 .seal-icon,
                 .seal-label {
                     display: inline-block;
@@ -332,6 +461,7 @@ $border-radius-xxs: 2px;
         }
 
     }
+
     .entity-card__footer {
         margin-top: 20px;
     }
@@ -639,11 +769,9 @@ $border-radius-xxs: 2px;
 }
 
 .controller-circuitos .mc-header-menu--item.project .label {
-  color: var(--mc-projects-500);
+    color: var(--mc-projects-500);
 }
 
 .entity-card__footer--action .button {
     max-width: 272px;
 }
-
-

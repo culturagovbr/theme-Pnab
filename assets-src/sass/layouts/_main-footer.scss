@@ -13,6 +13,7 @@
 
     &__support {
         padding-bottom: size(39);
+
         @include mobile {
             padding-bottom: size(24);
         }
@@ -120,63 +121,63 @@
     }
 
     &__links-wrapper {
-    width: 100%;
-    padding: size(40) 0;
-
-    .main-footer__content--links {
         width: 100%;
-        max-width: size(1440);
-        margin: 0;
-        align-items: flex-start;
-        justify-content: space-around;
-        gap: size(40);
-        flex-wrap: wrap;
-        padding: 0 size(16);
+        padding: size(40) 0;
 
-        @include mobile {
-            flex-direction: column;
-            gap: size(24);
-            align-items: center;
+        .main-footer__content--links {
+            width: 100%;
+            max-width: size(1440);
+            margin: 0;
+            align-items: flex-start;
+            justify-content: space-around;
+            gap: size(40);
+            flex-wrap: wrap;
+            padding: 0 size(16);
 
-            .main-footer__content--links-group {
-                max-width: 280px;
-                width: 100%;
-                margin: 0 auto;
-            }
-        }
+            @include mobile {
+                flex-direction: column;
+                gap: size(24);
+                align-items: center;
 
-        &-group {
-            list-style: none;
-            padding: 0;
-
-            li {
-                font-weight: 400;
-                font-size: size(16);
-                line-height: size(22);
-                padding-bottom: size(16);
-
-                a {
-                    align-items: center;
-                    color: $gray-color-txt;
-                    display: flex;
-                    gap: size(13);
-                    text-decoration: none;
+                .main-footer__content--links-group {
+                    max-width: 280px;
+                    width: 100%;
+                    margin: 0 auto;
                 }
             }
 
-            li:first-child {
-                font-weight: 700;
-                font-size: size(24);
-                line-height: size(28);
-                padding-bottom: size(24);
+            &-group {
+                list-style: none;
+                padding: 0;
 
-                a {
-                    color: $button;
+                li {
+                    font-weight: 400;
+                    font-size: size(16);
+                    line-height: size(22);
+                    padding-bottom: size(16);
+
+                    a {
+                        align-items: center;
+                        color: $gray-color-txt;
+                        display: flex;
+                        gap: size(13);
+                        text-decoration: none;
+                    }
+                }
+
+                li:first-child {
+                    font-weight: 700;
+                    font-size: size(24);
+                    line-height: size(28);
+                    padding-bottom: size(24);
+
+                    a {
+                        color: $button;
+                    }
                 }
             }
         }
     }
-}
 
     &__content {
         margin: 0 auto;
@@ -188,7 +189,8 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 62px;
+                flex-wrap: wrap;
+                gap: size(24);
                 padding: 0;
 
                 @include mobile {
@@ -198,19 +200,22 @@
                     gap: size(24);
                     padding-left: size(16);
                 }
-            }
 
-            .main-footer__logo-item {
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                .main-footer__logo-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
-                img,
-                theme-logo {
-                    max-height: size(48);
-                    width: auto;
-                    height: auto;
-                    display: block;
+                    img,
+                    theme-logo,
+                    theme-logo img {
+                        max-height: size(100);
+                        max-width: 100%;
+                        width: auto;
+                        height: auto;
+                        display: block;
+                        object-fit: contain;
+                    }
                 }
             }
 

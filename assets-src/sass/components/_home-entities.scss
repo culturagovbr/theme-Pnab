@@ -1,9 +1,9 @@
 .home-entities {
   &__content {
     &--title {
-      font-size: size(70);
+      font-size: size(24);
       font-weight: 400;
-      line-height: size(69);
+      line-height: size(28);
       font-family: $font-title;
       text-transform: uppercase;
     }
@@ -15,10 +15,10 @@
         display: flex;
         overflow: hidden;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-        min-height: 200px;
+        min-height: size(160);
 
         &:not(:last-child) {
-          margin-bottom: 43px;
+          margin-bottom: size(32);
         }
 
         &__image {
@@ -29,11 +29,11 @@
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          padding: 0 1rem;
+          padding: 0 1.5rem;
 
           h3 {
             font-family: 'League Gothic', sans-serif;
-            font-size: 70px;
+            font-size: size(24);
             font-weight: regular;
             color: white;
             text-transform: uppercase;
@@ -42,31 +42,31 @@
 
           @media (max-width: 768px) {
             width: 100%;
-            height: 120px;
+            height: size(100);
             border-radius: 16px 16px 0 0;
 
             h3 {
-              font-size: 36px;
+              font-size: size(18);
             }
           }
         }
 
         &__body {
           width: 50%;
-          padding: 1.5rem;
+          padding: 1.25rem;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          gap: 1.2rem;
+          gap: 0.75rem;
 
           p {
-            font-size: 18px;
+            font-size: size(14);
             color: #000000;
-            line-height: 1.6;
+            line-height: 1.4;
             margin: 0;
 
             @media (max-width: 768px) {
-              font-size: 14px;
+              font-size: size(13);
             }
           }
 
@@ -74,12 +74,12 @@
             font-family: 'League Gothic', sans-serif;
             text-transform: uppercase;
             font-weight: 700;
-            font-size: 32px;
+            font-size: size(20);
             text-decoration: underline;
             color: black;
 
             @media (max-width: 768px) {
-              font-size: 25px;
+              font-size: size(18);
             }
           }
 
