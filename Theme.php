@@ -633,6 +633,40 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (empty($regulations)) {
                     $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
                 }
+
+                // Validação: Utilização de recursos de outras fontes
+                $recursos = $this->recursosOutrasFontes;
+                if (is_object($recursos)) {
+                    $recursos = json_decode(json_encode($recursos), true);
+                }
+                $recursos = is_array($recursos) ? $recursos : [];
+                $houve = $recursos['houveUtilizacao'] ?? '';
+                if ($houve !== 'sim' && $houve !== 'nao') {
+                    $errors['recursosOutrasFontes'] = [i::__('O campo "Houve utilização de recursos de outras fontes?" é obrigatório.')];
+                } elseif ($houve === 'sim') {
+                    $recursosProprios = $recursos['recursosProprios'] ?? null;
+                    $conveniosParcerias = $recursos['conveniosParcerias'] ?? null;
+                    $emendasParlamentares = $recursos['emendasParlamentares'] ?? null;
+                    $remanescentesCiclo1 = $recursos['remanescentesCiclo1'] ?? null;
+                    $outrasFontes = $recursos['outrasFontes'] ?? null;
+                    $algumaMarcada = $recursosProprios !== null || $conveniosParcerias !== null
+                        || $emendasParlamentares !== null || $remanescentesCiclo1 !== null
+                        || (is_array($outrasFontes) && count($outrasFontes) > 0);
+                    if (!$algumaMarcada) {
+                        $errors['recursosOutrasFontes'] = [i::__('Selecione pelo menos uma fonte de recurso para continuar.')];
+                    } elseif (is_array($outrasFontes) && count($outrasFontes) > 0) {
+                        $algumaComNome = false;
+                        foreach ($outrasFontes as $entrada) {
+                            if (!empty(trim((string) ($entrada['nomeFonte'] ?? '')))) {
+                                $algumaComNome = true;
+                                break;
+                            }
+                        }
+                        if (!$algumaComNome) {
+                            $errors['recursosOutrasFontes'] = [i::__('Preencha o nome de pelo menos uma fonte em "Recursos de outras fontes".')];
+                        }
+                    }
+                }
             }
             
             // Garante que TODOS os campos com erro sejam incluídos no postData
@@ -669,6 +703,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 // Garante que o erro de arquivo seja retornado mesmo quando não está no POST
                 if (!isset($this->postData['rules'])) {
                     $this->postData['rules'] = null;
+                }
+
+                // Recursos de outras fontes: incluir no payload para validação
+                if (!array_key_exists('recursosOutrasFontes', $data)) {
+                    $data['recursosOutrasFontes'] = $entity->recursosOutrasFontes ?? null;
+                    $this->postData['recursosOutrasFontes'] = $data['recursosOutrasFontes'];
                 }
             }
         });
@@ -758,6 +798,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
+
+            // Metadado: utilização de recursos de outras fontes (objeto; validação via hooks)
+            $theme->registerOpportunityMetadata('recursosOutrasFontes', [
+                'label' => i::__('Houve utilização de recursos de outras fontes?'),
+                'type' => 'json',
+            ]);
 
             // Registra metadados de agente
             $theme->registerAgentMetadataByType(

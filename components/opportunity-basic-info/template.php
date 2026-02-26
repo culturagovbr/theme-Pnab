@@ -16,6 +16,7 @@ $this->import('
     entity-gallery
     entity-gallery-video
     entity-links
+    mc-currency-input
     entity-owner
     entity-profile
     entity-related-agents
@@ -26,6 +27,7 @@ $this->import('
     entity-terms
     link-opportunity
     mc-container
+    opportunity-recursos-outras-fontes
 ');
 ?>
 <div class="opportunity-basic-info__container">
@@ -117,6 +119,8 @@ $this->import('
                             </template>
                         </entity-field>
                     </div>
+
+                    <opportunity-recursos-outras-fontes :entity="entity" class="col-12"></opportunity-recursos-outras-fontes>
 
                     <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
                     <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>
