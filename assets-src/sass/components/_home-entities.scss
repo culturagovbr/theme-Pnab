@@ -23,9 +23,12 @@
 
         &__image {
           width: 50%;
-          background-size: cover;
-          background-position: center;
+          aspect-ratio: 585 / 221;
           flex-shrink: 0;
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-color: #fff;
           display: flex;
           align-items: center;
           justify-content: flex-start;
@@ -42,7 +45,7 @@
 
           @media (max-width: 768px) {
             width: 100%;
-            height: size(100);
+            aspect-ratio: 585 / 221;
             border-radius: 16px 16px 0 0;
 
             h3 {
