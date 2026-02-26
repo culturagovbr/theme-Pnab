@@ -101,6 +101,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
+
+            $reservaVagasErrors = $theme->validateReservaVagasCotas($entity, $postData);
+            if ($reservaVagasErrors) {
+                $this->errorJson($reservaVagasErrors, 400);
+            }
         });
 
         /**
@@ -805,6 +810,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 'type' => 'json',
             ]);
 
+            // Metadado: reserva de vagas (cotas)
+            $theme->registerOpportunityMetadata('reservaVagasCotas', [
+                'label' => i::__('Reserva de vagas (cotas)'),
+                'type' => 'json',
+            ]);
+
             // Registra metadados de agente
             $theme->registerAgentMetadataByType(
                 'acessouFomentoCultural', 
@@ -1132,6 +1143,41 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         ) {
             $postData[$outroTipo] = trim($postData[$outroTipo]);
         }
+    }
+
+    /**
+     * Valida o metadado reservaVagasCotas da primeira fase: as 3 cotas devem estar
+     * configuradas (vagas e valorDestinado preenchidos) ou marcadas como "Não aplicável".
+     *
+     * @param \MapasCulturais\Entities\Opportunity $entity Oportunidade/fase sendo salva
+     * @param array $postData Dados do PATCH
+     * @return array|false Array de erros no formato [ 'reservaVagasCotas' => [msg] ] ou false
+     */
+    private function validateReservaVagasCotas($entity, array $postData)
+    {
+        if (empty($entity->id) || !$entity->isFirstPhase) {
+            return false;
+        }
+
+        $cotas = $postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null);
+        if (!is_array($cotas) || count($cotas) !== 3) {
+            return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
+        }
+
+        foreach ($cotas as $cota) {
+            $naoAplicavel = !empty($cota['naoAplicavel']);
+            if ($naoAplicavel) {
+                continue;
+            }
+            $vagas = isset($cota['vagas']) && $cota['vagas'] !== '' && is_numeric($cota['vagas']) ? (int) $cota['vagas'] : null;
+            $valor = isset($cota['valorDestinado']) && $cota['valorDestinado'] !== '' && is_numeric($cota['valorDestinado']) ? (float) $cota['valorDestinado'] : null;
+            // Quando a cota se aplica, exige vagas > 0 e valor > 0 (zero não é considerado configurado)
+            if ($vagas === null || $valor === null || $vagas < 1 || $valor < 0.01) {
+                return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
+            }
+        }
+
+        return false;
     }
 
     private function validateTotalByMetadata($entity, array $postData, string $metadataKey, string $keyTarget)
