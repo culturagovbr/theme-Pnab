@@ -6,7 +6,7 @@
 
 use MapasCulturais\i;
 
-$mapa_img = $app->view->asset('img/home/home-description/mapa.svg', false);
+$mapa_img = $app->view->asset('img/home/home-description/cult.png', false);
 ?>
 
 <section class="home-network">
