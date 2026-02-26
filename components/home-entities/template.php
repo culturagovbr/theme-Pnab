@@ -10,8 +10,8 @@ $this->import('mc-link');
 
 $entities = [
     'opportunities' => [
-        'image' => 'img/cards/oportunidades_bg.png',
-        'title' => 'Portal Cult.br',
+        'image' => 'img/cards/oportunidades_bg.jpg',
+        'title' => '',
         'route' => 'search/opportunities',
         'viewAll' => 'Acesse aqui',
         'link' => 'https://cultbr.cultura.gov.br/transparencia',
