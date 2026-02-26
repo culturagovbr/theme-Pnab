@@ -1,9 +1,10 @@
 .home-entities {
   &__content {
     &--title {
-      font-size: size(24);
+      // Mantém o título grande como no layout original do PNAB
+      font-size: size(70);
       font-weight: 400;
-      line-height: size(28);
+      line-height: size(69);
       font-family: $font-title;
       text-transform: uppercase;
     }
