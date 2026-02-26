@@ -119,7 +119,9 @@ $helper-500: #0074C1;
 // home
 $home-opportunities: #f5bb50;
 $home-feature: #45B648;
-$home-register: #036293;
+// Usa a mesma estratégia do tema MapaMinC: cor totalmente transparente,
+// deixando o fundo da imagem aparecer sem o "fundo azul" chapado.
+$home-register: rgba($primary-500, 0);
 
 // // Neutral colors
 $low-500: #2a327f;
@@ -200,6 +202,8 @@ $border-radius-xxs: 2px;
     --mc-font-weight-bold: #{$weight-bold};
 
     --mc-home-header-gradient: rgba($primary-500, 0);
+    --mc-home-feature: #{$home-feature};
+    --mc-home-register: #{$home-register};
 }
 
 body {
