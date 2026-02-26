@@ -19,6 +19,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         'totalResource' => 'value',
     ];
 
+    protected const AGENT_COLETIVO_TYPE_ID = 2;
+
     static function getThemeFolder()
     {
         return __DIR__;
@@ -557,7 +559,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $this->part('federative-entity-banner');
             }
         });
-
     }
 
 
@@ -673,6 +674,52 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Garante que os campos obrigatórios do agente coletivo estejam no payload.
+         * Assim a validação roda e retorna erro nos campos que faltaram.
+         */
+        $agentColetivoTypeId = self::AGENT_COLETIVO_TYPE_ID;
+        $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId) {
+            /** @var \MapasCulturais\Controllers\Agent $this */
+            $theme = $app->view;
+            if (!method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
+                return;
+            }
+            $entity = $this->requestedEntity;
+            if (!$entity || $entity->isNew()) {
+                return;
+            }
+            $typeId = is_object($entity->type) ? ($entity->type->id ?? null) : $entity->type;
+
+            if ($typeId === null || (int) $typeId !== $agentColetivoTypeId) {
+                return;
+            }
+            
+            foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
+                if (!array_key_exists($key, $data)) {
+                    $data[$key] = $entity->$key ?? null;
+                    $this->postData[$key] = $data[$key];
+                }
+            }
+        });
+
+        /**
+         * Garante que campos com erro no postData estejam no payload para exibição na edição.
+         */
+        $app->hook('entity(Agent).validationErrors', function (array &$errors) use ($app) {
+            /** @var \MapasCulturais\Entities\Agent $this */
+            if (!empty($errors)) {
+                $controller = $app->controller('agent');
+                if ($controller && isset($controller->postData)) {
+                    foreach ($errors as $field => $fieldErrors) {
+                        if (!array_key_exists($field, $controller->postData)) {
+                            $controller->postData[$field] = $this->$field ?? null;
+                        }
+                    }
+                }
+            }
+        });
+
+        /**
          * Torna a taxonomia "área de atuação" opcional para Opportunity
          */
         $app->hook('app.register:after', function () use ($app) {
@@ -711,6 +758,59 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
+
+            // Registra metadados de agente
+            $theme->registerAgentMetadataByType(
+                'acessouFomentoCultural', 
+                i::__('Acessou recursos públicos de fomento à cultura nos últimos 5 (cinco) anos?'), 
+                'select', 
+                null, 
+                $theme->getAcessoFomentoCulturalOptions(), 
+                []
+            );
+
+            $theme->registerAgentMetadataByType(
+                'anosExperienciaAreaCultural',
+                i::__('Possui quantos anos de experiência na área cultural?'),
+                'number',
+                null,
+                [],
+                []
+            );
+
+            $theme->registerAgentMetadataByType(
+                'eMestreCulturasTradicionais',
+                i::__('É mestre ou mestra das culturas tradicionais ou populares?'),
+                'boolean',
+                1,
+                [],
+                []
+            );
+
+            $agentClass = 'MapasCulturais\Entities\Agent';
+            $tipoColetivoId = self::AGENT_COLETIVO_TYPE_ID;
+
+            $definitions = $app->getRegisteredMetadata($agentClass, $tipoColetivoId);
+            if (empty($definitions)) {
+                return;
+            }
+
+            foreach ($definitions as $metaKey => $def) {
+                if (!in_array($metaKey, $theme->getRequeredsAgentColetivoMetadata())) {
+                    continue;
+                }
+
+                $def->config['should_validate'] = function ($entity, $value) use ($def) {
+                    if ($entity->isNew()) {
+                        return false;
+                    }
+                    $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
+                    if ($vazio) {
+                        return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para agente coletivo.');
+                    }
+                    return false;
+                };
+            }
         });
     }
 
@@ -793,6 +893,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 );
             },
         ]);
+    }
+
+    private function registerAgentMetadataByType(string $key, string $label, string $typeMetadata, ?int $agentTypeId, array $options = [], array $validations = []): void
+    {
+        $app = App::i();
+
+        $config = [
+            'label' => $label,
+            'type' => $typeMetadata,
+        ];
+
+        if ($typeMetadata === 'select') {
+            $config['options'] = $options;
+        }
+
+        if ($validations !== []) {
+            $config['validations'] = $validations;
+        }
+
+        $def = new \MapasCulturais\Definitions\Metadata($key, $config);
+        $app->registerMetadata($def, 'MapasCulturais\Entities\Agent', $agentTypeId);
     }
 
     /**
@@ -908,6 +1029,43 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             i::__('Programa Nacional de Formação para Gestores'),
             i::__('Outros')
         );
+    }
+
+    /**
+     * Obtém as opções de acesso ao fomento cultural nos últimos 5 anos
+     */
+    private function getAcessoFomentoCulturalOptions(): array
+    {
+        return array(
+            i::__('Sim'),
+            i::__('Não'),
+            i::__('Não sei informar'),
+        );
+    }
+
+    /**
+     * Obtém os metadados obrigatórios para agente coletivo
+     * @return array Array de metadados obrigatórios
+     */
+    public function getRequeredsAgentColetivoMetadata(): array
+    {
+        return [
+            'nomeSocial',
+            'nomeCompleto',
+            'cnpj',
+            'dataDeNascimento',
+            'emailPrivado',
+            'telefonePublico',
+            'emailPublico',
+            'acessouFomentoCultural',
+            'anosExperienciaAreaCultural',
+            'En_CEP',
+            'En_Nome_Logradouro',
+            'En_Num',
+            'En_Bairro',
+            'En_Municipio',
+            'En_Estado',
+        ];
     }
 
     /**
