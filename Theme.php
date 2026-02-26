@@ -1160,11 +1160,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         $cotas = $postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null);
+        if (is_object($cotas)) {
+            $cotas = json_decode(json_encode($cotas), true);
+        }
         if (!is_array($cotas) || count($cotas) !== 3) {
             return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
         }
 
         foreach ($cotas as $cota) {
+            if (is_object($cota)) {
+                $cota = json_decode(json_encode($cota), true);
+            }
             $naoAplicavel = !empty($cota['naoAplicavel']);
             if ($naoAplicavel) {
                 continue;
