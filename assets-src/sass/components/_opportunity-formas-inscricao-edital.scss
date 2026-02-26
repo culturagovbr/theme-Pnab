@@ -1,0 +1,22 @@
+.opportunity-formas-inscricao-edital {
+    width: 100%;
+}
+
+.opportunity-formas-inscricao-edital__detalhamento {
+    width: 100%;
+    margin-top: size(24);
+}
+
+.opportunity-formas-inscricao-edital__detalhamento-titulo {
+    font-family: var(--mc-font-headings);
+    font-size: size(14);
+    font-weight: 600;
+    line-height: size(19);
+    margin: 0 0 size(12) 0;
+    display: block;
+}
+
+.opportunity-formas-inscricao-edital .required {
+    color: var(--mc-error);
+    font-weight: 700;
+}

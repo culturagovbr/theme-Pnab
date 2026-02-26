@@ -28,6 +28,7 @@ $this->import('
     link-opportunity
     mc-container
     opportunity-recursos-outras-fontes
+    opportunity-formas-inscricao-edital
 ');
 ?>
 <div class="opportunity-basic-info__container">
@@ -121,6 +122,10 @@ $this->import('
                     </div>
 
                     <opportunity-recursos-outras-fontes :entity="entity" class="col-12"></opportunity-recursos-outras-fontes>
+
+                    <div class="opportunity-basic-info__formas-inscricao col-12">
+                        <opportunity-formas-inscricao-edital :entity="entity" class="col-12"></opportunity-formas-inscricao-edital>
+                    </div>
 
                     <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
                     <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>

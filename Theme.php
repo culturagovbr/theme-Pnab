@@ -672,6 +672,30 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         }
                     }
                 }
+
+                // Validação: Formas de inscrição previstas no edital
+                $formasInscricao = $this->formasInscricaoEdital;
+                if (is_object($formasInscricao)) {
+                    $formasInscricao = json_decode(json_encode($formasInscricao), true);
+                }
+                $formasInscricao = is_array($formasInscricao) ? $formasInscricao : [];
+                $previstas = $formasInscricao['previstasNoEdital'] ?? '';
+                if ($previstas !== 'sim' && $previstas !== 'nao') {
+                    $errors['formasInscricaoEdital'] = [i::__('O campo "Formas de inscrição previstas no edital" é obrigatório.')];
+                } elseif ($previstas === 'sim') {
+                    $formas = $formasInscricao['formas'] ?? null;
+                    if (!is_array($formas) || count($formas) === 0) {
+                        $errors['formasInscricaoEdital'] = [i::__('Selecione pelo menos uma forma de inscrição para continuar.')];
+                    } else {
+                        foreach ($formas as $item) {
+                            $descricao = trim((string) ($item['descricao'] ?? ''));
+                            if ($descricao === '') {
+                                $errors['formasInscricaoEdital'] = [i::__('Preencha a descrição de cada forma de inscrição marcada.')];
+                                break;
+                            }
+                        }
+                    }
+                }
             }
             
             // Garante que TODOS os campos com erro sejam incluídos no postData
@@ -714,6 +738,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (!array_key_exists('recursosOutrasFontes', $data)) {
                     $data['recursosOutrasFontes'] = $entity->recursosOutrasFontes ?? null;
                     $this->postData['recursosOutrasFontes'] = $data['recursosOutrasFontes'];
+                }
+
+                // Formas de inscrição previstas no edital: incluir no payload para validação
+                if (!array_key_exists('formasInscricaoEdital', $data)) {
+                    $data['formasInscricaoEdital'] = $entity->formasInscricaoEdital ?? null;
+                    $this->postData['formasInscricaoEdital'] = $data['formasInscricaoEdital'];
                 }
             }
         });
@@ -813,6 +843,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Metadado: reserva de vagas (cotas)
             $theme->registerOpportunityMetadata('reservaVagasCotas', [
                 'label' => i::__('Reserva de vagas (cotas)'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: formas de inscrição previstas no edital
+            $theme->registerOpportunityMetadata('formasInscricaoEdital', [
+                'label' => i::__('Formas de inscrição previstas no edital'),
                 'type' => 'json',
             ]);
 
