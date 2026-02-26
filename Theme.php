@@ -696,6 +696,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         }
                     }
                 }
+
+                // Validação: Outras modalidades de ações afirmativas
+                $outrasModalidades = $this->outrasModalidadesAcoesAfirmativas;
+                if (is_object($outrasModalidades)) {
+                    $outrasModalidades = json_decode(json_encode($outrasModalidades), true);
+                }
+                $outrasModalidades = is_array($outrasModalidades) ? $outrasModalidades : [];
+                $opcoes = $outrasModalidades['opcoes'] ?? [];
+                if (!is_array($opcoes) || count($opcoes) === 0) {
+                    $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Selecione pelo menos uma opção.')];
+                } else {
+                    $opcoesComSublista = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
+                    foreach ($opcoesComSublista as $op) {
+                        if (in_array($op, $opcoes)) {
+                            $sublist = $outrasModalidades[$op] ?? null;
+                            if (!is_array($sublist) || count($sublist) === 0) {
+                                $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Por favor, selecione pelo menos uma subcategoria.')];
+                                break;
+                            }
+                        }
+                    }
+                    if (empty($errors['outrasModalidadesAcoesAfirmativas']) && in_array('outra_legislacao', $opcoes)) {
+                        $descricao = trim((string) ($outrasModalidades['outra_legislacao_descricao'] ?? ''));
+                        if ($descricao === '') {
+                            $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Por favor, preencha a descrição.')];
+                        }
+                    }
+                }
             }
             
             // Garante que TODOS os campos com erro sejam incluídos no postData
@@ -744,6 +772,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (!array_key_exists('formasInscricaoEdital', $data)) {
                     $data['formasInscricaoEdital'] = $entity->formasInscricaoEdital ?? null;
                     $this->postData['formasInscricaoEdital'] = $data['formasInscricaoEdital'];
+                }
+
+                // Outras modalidades de ações afirmativas: incluir no payload para validação
+                if (!array_key_exists('outrasModalidadesAcoesAfirmativas', $data)) {
+                    $data['outrasModalidadesAcoesAfirmativas'] = $entity->outrasModalidadesAcoesAfirmativas ?? null;
+                    $this->postData['outrasModalidadesAcoesAfirmativas'] = $data['outrasModalidadesAcoesAfirmativas'];
                 }
             }
         });
@@ -849,6 +883,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Metadado: formas de inscrição previstas no edital
             $theme->registerOpportunityMetadata('formasInscricaoEdital', [
                 'label' => i::__('Formas de inscrição previstas no edital'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: outras modalidades de ações afirmativas
+            $theme->registerOpportunityMetadata('outrasModalidadesAcoesAfirmativas', [
+                'label' => i::__('Outras modalidades de ações afirmativas'),
                 'type' => 'json',
             ]);
 
