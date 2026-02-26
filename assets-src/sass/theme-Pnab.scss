@@ -198,6 +198,8 @@ $border-radius-xxs: 2px;
 :root {
     --mc-font-title: #{$font-family-base};
     --mc-font-weight-bold: #{$weight-bold};
+
+    --mc-home-header-gradient: rgba($primary-500, 0);
 }
 
 body {
