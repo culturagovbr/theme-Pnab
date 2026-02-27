@@ -30,83 +30,26 @@ $this->import('mc-multiselect
                 </div>
             </div>
 
-            <!-- 2. Bônus de pontuação para agentes culturais -->
-            <div class="field col-12">
+            <!-- Opções com sublista (fonte: opcoesComSublista do backend) -->
+            <div v-for="item in opcoesComSublista" :key="item.key" class="field col-12">
                 <div class="field__group">
                     <label class="field__checkbox">
-                        <input type="checkbox" :checked="isOpcaoMarcada('bonus_agentes')" :disabled="isNaoPrevistasMarcado" @change="setOpcao('bonus_agentes', $event.target.checked)" />
-                        <span>{{ text('bonusAgentes') }}</span>
+                        <input type="checkbox" :checked="isOpcaoMarcada(item.key)" :disabled="isNaoPrevistasMarcado" @change="setOpcao(item.key, $event.target.checked)" />
+                        <span>{{ text(item.labelKey) }}</span>
                     </label>
                 </div>
-                <template v-if="isOpcaoMarcada('bonus_agentes') && !isNaoPrevistasMarcado">
-                    <div class="opportunity-outras-modalidades-acoes-afirmativas__sublista field__input" :class="{ error: hasErrorForSublista('bonus_agentes') }">
+                <template v-if="isOpcaoMarcada(item.key) && !isNaoPrevistasMarcado">
+                    <div class="opportunity-outras-modalidades-acoes-afirmativas__sublista field__input" :class="{ error: hasErrorForSublista(item.key) }">
                         <div class="opportunity-outras-modalidades-acoes-afirmativas__multiselect-wrap">
-                            <mc-multiselect :model="getSublistModel('bonus_agentes')" :items="sublistItems" :placeholder="text('subcategoriasPlaceholder')" hide-button :preserve-order="true"></mc-multiselect>
+                            <mc-multiselect :model="getSublistModel(item.key)" :items="sublistItems" :placeholder="text('subcategoriasPlaceholder')" hide-button :preserve-order="true"></mc-multiselect>
                         </div>
-                        <mc-tag-list editable classes="opportunity__background opportunity__color" :tags="getSublistModel('bonus_agentes')" :labels="sublistLabels"></mc-tag-list>
-                        <p v-if="hasErrorForSublista('bonus_agentes')" class="field__error" role="alert">{{ text('erroSubcategoria') }}</p>
+                        <mc-tag-list editable classes="opportunity__background opportunity__color" :tags="getSublistModel(item.key)" :labels="sublistLabels"></mc-tag-list>
+                        <p v-if="hasErrorForSublista(item.key)" class="field__error" role="alert">{{ text('erroSubcategoria') }}</p>
                     </div>
                 </template>
             </div>
 
-            <!-- 3. Bônus de pontuação para projetos com temáticas específicas -->
-            <div class="field col-12">
-                <div class="field__group">
-                    <label class="field__checkbox">
-                        <input type="checkbox" :checked="isOpcaoMarcada('bonus_tematicas')" :disabled="isNaoPrevistasMarcado" @change="setOpcao('bonus_tematicas', $event.target.checked)" />
-                        <span>{{ text('bonusTematicas') }}</span>
-                    </label>
-                </div>
-                <template v-if="isOpcaoMarcada('bonus_tematicas') && !isNaoPrevistasMarcado">
-                    <div class="opportunity-outras-modalidades-acoes-afirmativas__sublista field__input" :class="{ error: hasErrorForSublista('bonus_tematicas') }">
-                        <div class="opportunity-outras-modalidades-acoes-afirmativas__multiselect-wrap">
-                            <mc-multiselect :model="getSublistModel('bonus_tematicas')" :items="sublistItems" :placeholder="text('subcategoriasPlaceholder')" hide-button :preserve-order="true"></mc-multiselect>
-                        </div>
-                        <mc-tag-list editable classes="opportunity__background opportunity__color" :tags="getSublistModel('bonus_tematicas')" :labels="sublistLabels"></mc-tag-list>
-                        <p v-if="hasErrorForSublista('bonus_tematicas')" class="field__error" role="alert">{{ text('erroSubcategoria') }}</p>
-                    </div>
-                </template>
-            </div>
-
-            <!-- 4. Categoria específica -->
-            <div class="field col-12">
-                <div class="field__group">
-                    <label class="field__checkbox">
-                        <input type="checkbox" :checked="isOpcaoMarcada('categoria_especifica')" :disabled="isNaoPrevistasMarcado" @change="setOpcao('categoria_especifica', $event.target.checked)" />
-                        <span>{{ text('categoriaEspecifica') }}</span>
-                    </label>
-                </div>
-                <template v-if="isOpcaoMarcada('categoria_especifica') && !isNaoPrevistasMarcado">
-                    <div class="opportunity-outras-modalidades-acoes-afirmativas__sublista field__input" :class="{ error: hasErrorForSublista('categoria_especifica') }">
-                        <div class="opportunity-outras-modalidades-acoes-afirmativas__multiselect-wrap">
-                            <mc-multiselect :model="getSublistModel('categoria_especifica')" :items="sublistItems" :placeholder="text('subcategoriasPlaceholder')" hide-button :preserve-order="true"></mc-multiselect>
-                        </div>
-                        <mc-tag-list editable classes="opportunity__background opportunity__color" :tags="getSublistModel('categoria_especifica')" :labels="sublistLabels"></mc-tag-list>
-                        <p v-if="hasErrorForSublista('categoria_especifica')" class="field__error" role="alert">{{ text('erroSubcategoria') }}</p>
-                    </div>
-                </template>
-            </div>
-
-            <!-- 5. Edital específico -->
-            <div class="field col-12">
-                <div class="field__group">
-                    <label class="field__checkbox">
-                        <input type="checkbox" :checked="isOpcaoMarcada('edital_especifico')" :disabled="isNaoPrevistasMarcado" @change="setOpcao('edital_especifico', $event.target.checked)" />
-                        <span>{{ text('editalEspecifico') }}</span>
-                    </label>
-                </div>
-                <template v-if="isOpcaoMarcada('edital_especifico') && !isNaoPrevistasMarcado">
-                    <div class="opportunity-outras-modalidades-acoes-afirmativas__sublista field__input" :class="{ error: hasErrorForSublista('edital_especifico') }">
-                        <div class="opportunity-outras-modalidades-acoes-afirmativas__multiselect-wrap">
-                            <mc-multiselect :model="getSublistModel('edital_especifico')" :items="sublistItems" :placeholder="text('subcategoriasPlaceholder')" hide-button :preserve-order="true"></mc-multiselect>
-                        </div>
-                        <mc-tag-list editable classes="opportunity__background opportunity__color" :tags="getSublistModel('edital_especifico')" :labels="sublistLabels"></mc-tag-list>
-                        <p v-if="hasErrorForSublista('edital_especifico')" class="field__error" role="alert">{{ text('erroSubcategoria') }}</p>
-                    </div>
-                </template>
-            </div>
-
-            <!-- 6. Outra ação afirmativa prevista em legislação local -->
+            <!-- Outra ação afirmativa prevista em legislação local -->
             <div class="field col-12">
                 <div class="field__group">
                     <label class="field__checkbox">

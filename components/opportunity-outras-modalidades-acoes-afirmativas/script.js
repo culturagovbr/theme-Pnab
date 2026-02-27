@@ -1,12 +1,15 @@
 /**
  * Componente: Outras modalidades de ações afirmativas (edição de oportunidade).
  * Gerencia o metadado outrasModalidadesAcoesAfirmativas (opcoes, sublistas, descrição).
+ * Lista de opções com sublista vem do backend (Theme::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA via jsObject).
  */
 
-const OPCOES_COM_SUBLISTA = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 const OPCAO_EXCLUSIVA = 'nao_previstas';
 const OPCAO_OUTRA = 'outra_legislacao';
 const MAX_DESCRICAO = 140;
+
+/** Chaves das opções com sublista (fallback se config não estiver disponível; espelha Theme::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA) */
+const OPCOES_COM_SUBLISTA_FALLBACK = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
 app.component('opportunity-outras-modalidades-acoes-afirmativas', {
     template: $TEMPLATES['opportunity-outras-modalidades-acoes-afirmativas'],
@@ -24,6 +27,19 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
     },
 
     computed: {
+        /** Lista { key, labelKey } vinda do backend (fonte única com Theme.php) */
+        opcoesComSublista() {
+            const config = $MAPAS.config?.opportunityOutrasModalidades?.opcoesComSublista;
+            if (Array.isArray(config) && config.length > 0) return config;
+            return OPCOES_COM_SUBLISTA_FALLBACK.map(key => ({
+                key,
+                labelKey: key.split('_').map((s, i) => (i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1))).join('')
+            }));
+        },
+        /** Apenas as chaves (para ensureData, validação, etc.) */
+        opcoesComSublistaKeys() {
+            return this.opcoesComSublista.map(item => item.key);
+        },
         data() {
             const raw = this.entity.outrasModalidadesAcoesAfirmativas;
             return this.normalizeData(raw);
@@ -94,7 +110,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
                 opcoes: [],
                 outra_legislacao_descricao: ''
             };
-            OPCOES_COM_SUBLISTA.forEach(op => { def[op] = []; });
+            this.opcoesComSublistaKeys.forEach(op => { def[op] = []; });
             return def;
         },
         normalizeData(raw) {
@@ -102,7 +118,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             if (typeof raw === 'object' && !Array.isArray(raw)) {
                 const d = { ...this.getDefaultData(), ...raw };
                 if (!Array.isArray(d.opcoes)) d.opcoes = [];
-                OPCOES_COM_SUBLISTA.forEach(op => {
+                this.opcoesComSublistaKeys.forEach(op => {
                     d[op] = Array.isArray(d[op]) ? d[op] : [];
                 });
                 d.outra_legislacao_descricao = typeof d.outra_legislacao_descricao === 'string' ? d.outra_legislacao_descricao : '';
@@ -116,7 +132,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             }
             const d = this.entity.outrasModalidadesAcoesAfirmativas;
             if (!Array.isArray(d.opcoes)) d.opcoes = [];
-            OPCOES_COM_SUBLISTA.forEach(op => {
+            this.opcoesComSublistaKeys.forEach(op => {
                 if (!Array.isArray(d[op])) d[op] = [];
             });
             if (typeof d.outra_legislacao_descricao !== 'string') d.outra_legislacao_descricao = '';
@@ -126,7 +142,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             const d = this.entity.outrasModalidadesAcoesAfirmativas;
             if (checked) {
                 d.opcoes = [OPCAO_EXCLUSIVA];
-                OPCOES_COM_SUBLISTA.forEach(op => { d[op] = []; });
+                this.opcoesComSublistaKeys.forEach(op => { d[op] = []; });
                 d.outra_legislacao_descricao = '';
             } else {
                 d.opcoes = d.opcoes.filter(k => k !== OPCAO_EXCLUSIVA);
@@ -140,10 +156,10 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
                     d.opcoes = [];
                 }
                 if (!d.opcoes.includes(key)) d.opcoes.push(key);
-                if (OPCOES_COM_SUBLISTA.includes(key) && !Array.isArray(d[key])) d[key] = [];
+                if (this.opcoesComSublistaKeys.includes(key) && !Array.isArray(d[key])) d[key] = [];
             } else {
                 d.opcoes = d.opcoes.filter(k => k !== key);
-                if (OPCOES_COM_SUBLISTA.includes(key)) d[key] = [];
+                if (this.opcoesComSublistaKeys.includes(key)) d[key] = [];
                 if (key === OPCAO_OUTRA) d.outra_legislacao_descricao = '';
             }
         },

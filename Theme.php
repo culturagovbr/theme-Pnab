@@ -21,6 +21,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
     protected const AGENT_COLETIVO_TYPE_ID = 2;
 
+    /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
+    public const OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
+
     static function getThemeFolder()
     {
         return __DIR__;
@@ -640,11 +643,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
 
                 // Validação: Utilização de recursos de outras fontes
-                $recursos = $this->recursosOutrasFontes;
-                if (is_object($recursos)) {
-                    $recursos = json_decode(json_encode($recursos), true);
-                }
-                $recursos = is_array($recursos) ? $recursos : [];
+                $recursos = self::ensureArray($this->recursosOutrasFontes);
                 $houve = $recursos['houveUtilizacao'] ?? '';
                 if ($houve !== 'sim' && $houve !== 'nao') {
                     $errors['recursosOutrasFontes'] = [i::__('O campo "Houve utilização de recursos de outras fontes?" é obrigatório.')];
@@ -674,11 +673,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
 
                 // Validação: Formas de inscrição previstas no edital
-                $formasInscricao = $this->formasInscricaoEdital;
-                if (is_object($formasInscricao)) {
-                    $formasInscricao = json_decode(json_encode($formasInscricao), true);
-                }
-                $formasInscricao = is_array($formasInscricao) ? $formasInscricao : [];
+                $formasInscricao = self::ensureArray($this->formasInscricaoEdital);
                 $previstas = $formasInscricao['previstasNoEdital'] ?? '';
                 if ($previstas !== 'sim' && $previstas !== 'nao') {
                     $errors['formasInscricaoEdital'] = [i::__('O campo "Formas de inscrição previstas no edital" é obrigatório.')];
@@ -698,17 +693,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
 
                 // Validação: Outras modalidades de ações afirmativas
-                $outrasModalidades = $this->outrasModalidadesAcoesAfirmativas;
-                if (is_object($outrasModalidades)) {
-                    $outrasModalidades = json_decode(json_encode($outrasModalidades), true);
-                }
-                $outrasModalidades = is_array($outrasModalidades) ? $outrasModalidades : [];
+                $outrasModalidades = self::ensureArray($this->outrasModalidadesAcoesAfirmativas);
                 $opcoes = $outrasModalidades['opcoes'] ?? [];
                 if (!is_array($opcoes) || count($opcoes) === 0) {
                     $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Selecione pelo menos uma opção.')];
                 } else {
-                    $opcoesComSublista = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
-                    foreach ($opcoesComSublista as $op) {
+                    foreach (self::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA as $op) {
                         if (in_array($op, $opcoes)) {
                             $sublist = $outrasModalidades[$op] ?? null;
                             if (!is_array($sublist) || count($sublist) === 0) {
@@ -1235,18 +1225,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return false;
         }
 
-        $cotas = $postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null);
-        if (is_object($cotas)) {
-            $cotas = json_decode(json_encode($cotas), true);
-        }
-        if (!is_array($cotas) || count($cotas) !== 3) {
+        $cotas = self::ensureArray($postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null));
+        if (count($cotas) !== 3) {
             return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
         }
 
         foreach ($cotas as $cota) {
-            if (is_object($cota)) {
-                $cota = json_decode(json_encode($cota), true);
-            }
+            $cota = self::ensureArray($cota);
             $naoAplicavel = !empty($cota['naoAplicavel']);
             if ($naoAplicavel) {
                 continue;
@@ -1288,5 +1273,22 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         return false;
+    }
+
+    /**
+     * Garante valor como array (objeto JSON vindo do banco vira array associativo).
+     * Reutilizado em todas as validações de metadado JSON.
+     * Público pois é chamado de dentro de hooks onde $this é a entidade (ex.: opportunity).
+     */
+    public static function ensureArray($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        if (is_object($value)) {
+            $decoded = json_decode(json_encode($value), true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
     }
 }
