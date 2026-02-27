@@ -2,6 +2,9 @@
 use MapasCulturais\i;
 
 return [
+    'labelCota1' => i::__('Pessoas negras (pretas e pardas)'),
+    'labelCota2' => i::__('Pessoas indígenas'),
+    'labelCota3' => i::__('Pessoas com deficiência'),
     'sectionTitle' => i::__('Reserva de vagas (cotas)'),
     'sectionDescription' => i::__('Configure as cotas abaixo conforme a IN-MinC-10/2023. Marque "Não aplicável" quando a cota não se aplicar ao edital.'),
     'obrigatorio' => i::__('obrigatório'),

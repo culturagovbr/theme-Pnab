@@ -1,5 +1,7 @@
 <?php
 /**
+ * Override do template base (Opportunities): mesma estrutura e hooks do base,
+ * adicionando o bloco "Reserva de vagas (cotas)" na primeira fase.
  * @var MapasCulturais\App $app
  * @var MapasCulturais\Themes\BaseV2\Theme $this
  */

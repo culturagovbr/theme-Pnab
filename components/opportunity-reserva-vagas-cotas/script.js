@@ -1,15 +1,10 @@
 /**
  * Componente: Reserva de vagas (cotas)
  * Metadado reservaVagasCotas (array de 3 itens fixos) na phase (primeira fase).
+ * Labels vêm de texts.php (i18n).
  */
-const COTA_LABELS = [
-    'Pessoas negras (pretas e pardas)',
-    'Pessoas indígenas',
-    'Pessoas com deficiência',
-];
-
-function defaultCotas() {
-    return COTA_LABELS.map((label) => ({
+function defaultCotas(labels) {
+    return labels.map((label) => ({
         label,
         vagas: 0,
         valorDestinado: 0,
@@ -17,15 +12,15 @@ function defaultCotas() {
     }));
 }
 
-function ensureCotas(entity) {
+function ensureCotas(entity, labels) {
     let cotas = entity.reservaVagasCotas;
     if (!Array.isArray(cotas) || cotas.length !== 3) {
-        entity.reservaVagasCotas = defaultCotas();
+        entity.reservaVagasCotas = defaultCotas(labels);
         return;
     }
     // Garante labels fixos e estrutura em cada item
     entity.reservaVagasCotas = cotas.map((c, i) => ({
-        label: COTA_LABELS[i] ?? (c.label || ''),
+        label: labels[i] ?? (c.label || ''),
         vagas: typeof c.vagas === 'number' ? c.vagas : (parseInt(c.vagas, 10) || 0),
         valorDestinado: typeof c.valorDestinado === 'number' ? c.valorDestinado : (parseFloat(c.valorDestinado) || 0),
         naoAplicavel: Boolean(c.naoAplicavel),
@@ -49,8 +44,8 @@ app.component('opportunity-reserva-vagas-cotas', {
 
     computed: {
         cotas() {
-            ensureCotas(this.entity);
-            return this.entity.reservaVagasCotas;
+            const arr = this.entity.reservaVagasCotas;
+            return Array.isArray(arr) && arr.length === 3 ? arr : [];
         },
         hasError() {
             const err = this.entity.__validationErrors?.reservaVagasCotas;
@@ -67,10 +62,14 @@ app.component('opportunity-reserva-vagas-cotas', {
     },
 
     created() {
-        ensureCotas(this.entity);
+        ensureCotas(this.entity, this.getCotaLabels());
     },
 
     methods: {
+        getCotaLabels() {
+            const t = this.text;
+            return [t('labelCota1'), t('labelCota2'), t('labelCota3')];
+        },
         autoSave() {
             this.entity.save(3000);
         },
