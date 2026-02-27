@@ -16,7 +16,7 @@ app.component('opportunity-formas-inscricao-edital', {
 
     setup() {
         const text = Utils.getTexts('opportunity-formas-inscricao-edital');
-        return { text };
+        return { text, TIPOS_FORMAS };
     },
 
     computed: {

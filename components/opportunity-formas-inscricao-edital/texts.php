@@ -2,7 +2,7 @@
 use MapasCulturais\i;
 
 return [
-    'perguntaPrincipal' => i::__('Este edital receberá incrições por outros meios?'),
+    'perguntaPrincipal' => i::__('Este edital receberá inscrições por outros meios?'),
     'sim' => i::__('Sim'),
     'nao' => i::__('Não'),
     'obrigatorio' => i::__('obrigatório'),
