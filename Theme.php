@@ -90,11 +90,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $entity = $this->requestedEntity;
             $postData = $this->postData;
 
+            // Acumula erros de vagas e de valores para poder retornar ambos ao mesmo tempo
+            $rangeErrors = [];
             foreach (self::METADATA_RANGE_SUM_KEYS as $metadataKey => $keyTarget) {
                 $totalByMetadata = $theme->validateTotalByMetadata($entity, $postData, $metadataKey, $keyTarget);
-                if ($totalByMetadata) {
-                    $this->errorJson($totalByMetadata, 400);
+                if (is_array($totalByMetadata) && !empty($totalByMetadata)) {
+                    $rangeErrors = array_merge_recursive($rangeErrors, $totalByMetadata);
                 }
+            }
+
+            if (!empty($rangeErrors)) {
+                $this->errorJson($rangeErrors, 400);
             }
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
@@ -949,11 +955,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $convertVal = $metadataKey === 'vacancies' ? 'intval' : 'floatval';
         $totalMetadataInRanges = array_sum(array_map($convertVal, array_column($registrationRanges, $keyTarget)));
 
-        // Garante que a soma das faixas não ultrapasse o valor total definido no campo principal
+        // Garante que a soma das faixas não ultrapasse o valor total definido
         if ($totalMetadataInRanges > $convertVal($metadataValue)) {
-            return [
-                $metadataKey => [i::__('O total das faixas é superior ao valor definido.')]
-            ];
+            // Campos específicos para destacar apenas os inputs relacionados
+            if ($metadataKey === 'vacancies') {
+                return [
+                    'registrationRangesVacancies' => [
+                        i::__('O total de vagas das faixas/linhas é superior ao Total de vagas definido.')
+                    ]
+                ];
+            }
+
+            if ($metadataKey === 'totalResource') {
+                return [
+                    'registrationRangesTotalResource' => [
+                        i::__('O total em valores das faixas/linhas é superior ao Valor total definido.')
+                    ]
+                ];
+            }
         }
 
         return false;
