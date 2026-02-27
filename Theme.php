@@ -24,6 +24,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
     public const OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
+    /** Tamanho máximo do campo nome da fonte em "Recursos de outras fontes". */
+    private const RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH = 255;
+
     static function getThemeFolder()
     {
         return __DIR__;
@@ -752,10 +755,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $this->postData['rules'] = null;
                 }
 
-                // Recursos de outras fontes: incluir no payload para validação
+                // Recursos de outras fontes: incluir no payload para validação e sanitizar quando enviado
                 if (!array_key_exists('recursosOutrasFontes', $data)) {
                     $data['recursosOutrasFontes'] = $entity->recursosOutrasFontes ?? null;
                     $this->postData['recursosOutrasFontes'] = $data['recursosOutrasFontes'];
+                } else {
+                    $app = \MapasCulturais\App::i();
+                    $theme = $app->view;
+                    if (method_exists($theme, 'sanitizeRecursosOutrasFontes')) {
+                        $theme->sanitizeRecursosOutrasFontes($data);
+                    }
                 }
 
                 // Formas de inscrição previstas no edital: incluir no payload para validação
@@ -1209,6 +1218,39 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         ) {
             $postData[$outroTipo] = trim($postData[$outroTipo]);
         }
+    }
+
+    /**
+     * Sanitiza o metadado recursosOutrasFontes antes de persistir: trim, strip_tags e
+     * limite de tamanho para nomeFonte em cada item de "outras fontes".
+     *
+     * @param array &$data Dados do PATCH (alterados in-place)
+     */
+    public function sanitizeRecursosOutrasFontes(array &$data): void
+    {
+        if (!isset($data['recursosOutrasFontes']) || !is_array($data['recursosOutrasFontes'])) {
+            return;
+        }
+        $raw = $data['recursosOutrasFontes'];
+        $recursos = self::ensureArray($raw);
+        if (isset($recursos['outrasFontes']) && is_array($recursos['outrasFontes'])) {
+            foreach ($recursos['outrasFontes'] as $i => $entrada) {
+                $entrada = is_array($entrada) ? $entrada : [];
+                $nome = isset($entrada['nomeFonte']) ? (string) $entrada['nomeFonte'] : '';
+                $nome = trim(strip_tags($nome));
+                if (mb_strlen($nome) > self::RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH) {
+                    $nome = mb_substr($nome, 0, self::RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH);
+                }
+                $recursos['outrasFontes'][$i]['nomeFonte'] = $nome;
+                if (array_key_exists('_id', $entrada)) {
+                    $recursos['outrasFontes'][$i]['_id'] = $entrada['_id'];
+                }
+                if (array_key_exists('valor', $entrada)) {
+                    $recursos['outrasFontes'][$i]['valor'] = $entrada['valor'];
+                }
+            }
+        }
+        $data['recursosOutrasFontes'] = $recursos;
     }
 
     /**

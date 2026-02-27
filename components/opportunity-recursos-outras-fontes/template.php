@@ -22,7 +22,6 @@ use MapasCulturais\i;
                 <option value="nao">{{ text('nao') }}</option>
             </select>
         </div>
-        <small v-if="hasError" class="field__error" role="alert">{{ errorMessage }}</small>
     </div>
 
     <template v-if="isSim">
@@ -107,25 +106,25 @@ use MapasCulturais\i;
                         </label>
                     </div>
                     <template v-if="outrasFontesChecked">
-                        <div v-for="(entrada, index) in outrasFontesList" :key="entrada._id || index" class="field col-12 grid-12">
+                        <div v-for="(entrada, index) in outrasFontesList" :key="entrada._id || index" class="field col-12 grid-12" role="group" :aria-labelledby="'outras-fontes-titulo-' + (entrada._id || index)">
                             <div class="col-12">
                                 <div class="field__group" style="flex-direction: row; justify-content: space-between; align-items: center;">
-                                    <span class="field__title">{{ text('fonteRecurso') }} {{ index + 1 }}</span>
-                                    <button type="button" class="button button--danger button--sm" @click="removerOutraFonte(index)" :aria-label="<?php i::esc_attr_e('Remover'); ?>">
+                                    <span :id="'outras-fontes-titulo-' + (entrada._id || index)" class="field__title">{{ text('fonteRecurso') }} {{ index + 1 }}</span>
+                                    <button type="button" class="button button--danger button--sm" @click="removerOutraFonte(index)" :aria-label="text('removerFonte') + ' ' + (index + 1)">
                                         <?= i::__('Excluir') ?>
                                     </button>
                                 </div>
                                 <div class="grid-12">
                                     <div class="field col-8 sm:col-12">
-                                        <label class="field__title">{{ text('nomeFonte') }}</label>
+                                        <label class="field__title" :for="'outras-fontes-nome-' + (entrada._id || index)">{{ text('nomeFonte') }}</label>
                                         <div class="field__input">
-                                            <input type="text" v-model="entrada.nomeFonte" :placeholder="text('nomeFontePlaceholder')" />
+                                            <input type="text" :id="'outras-fontes-nome-' + (entrada._id || index)" v-model="entrada.nomeFonte" :placeholder="text('nomeFontePlaceholder')" />
                                         </div>
                                     </div>
                                     <div class="field col-4 sm:col-12">
-                                        <label class="field__title">{{ text('valorRecurso') }} (R$)</label>
+                                        <label class="field__title" :for="'outras-fontes-valor-' + (entrada._id || index)">{{ text('valorRecurso') }} (R$)</label>
                                         <div class="field__input">
-                                            <mc-currency-input :model-value="entrada.valor ?? 0" @update:model-value="onOutraFonteCurrencyChange(index, $event)" />
+                                            <mc-currency-input :id="'outras-fontes-valor-' + (entrada._id || index)" :model-value="entrada.valor ?? 0" @update:model-value="onOutraFonteCurrencyChange(index, $event)" />
                                         </div>
                                     </div>
                                 </div>

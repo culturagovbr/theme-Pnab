@@ -20,4 +20,5 @@ return [
     'incluir' => i::__('+ Incluir'),
     'preenchaNomesParaIncluir' => i::__('Preencha o nome de todas as fontes para adicionar uma nova.'),
     'fonteRecurso' => i::__('Fonte do recurso'),
+    'removerFonte' => i::__('Excluir fonte do recurso'),
 ];
