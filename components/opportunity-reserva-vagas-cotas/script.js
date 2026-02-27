@@ -8,7 +8,7 @@ function defaultCotas(labels) {
         label,
         vagas: 0,
         valorDestinado: 0,
-        naoAplicavel: false,
+        naoAplicavel: true,
     }));
 }
 
