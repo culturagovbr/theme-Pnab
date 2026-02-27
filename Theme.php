@@ -949,9 +949,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $convertVal = $metadataKey === 'vacancies' ? 'intval' : 'floatval';
         $totalMetadataInRanges = array_sum(array_map($convertVal, array_column($registrationRanges, $keyTarget)));
 
-        if ($convertVal($metadataValue) > $totalMetadataInRanges) {
+        // Garante que a soma das faixas não ultrapasse o valor total definido no campo principal
+        if ($totalMetadataInRanges > $convertVal($metadataValue)) {
             return [
-                $metadataKey => [i::__('Valor superior ao total das faixas.')]
+                $metadataKey => [i::__('O total das faixas é superior ao valor definido.')]
             ];
         }
 
