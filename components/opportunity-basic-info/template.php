@@ -23,7 +23,6 @@ $this->import('
     entity-social-media
     entity-status
     entity-terms
-    entity-terms
     link-opportunity
     mc-container
     custom-mc-multiselect

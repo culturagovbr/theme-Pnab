@@ -2,6 +2,9 @@
  * Multiselect customizado (tema Pnab): checkboxes "Não se aplica" e "Todas as opções",
  * e campo "Outros (especificar)" quando a opção correspondente está selecionada.
  * Genérico: não enxerga detalhes dos campos (segmento, pauta, etapa, territorio).
+ *
+ * Valores das constantes (NOT_APPLICABLE_KEY, ALL_OPTIONS_KEY) são mantidos em português
+ * para compatibilidade com o backend/API.
  */
 const NOT_APPLICABLE_KEY = '__edital_nao_se_direciona__';
 const ALL_OPTIONS_KEY = '__todas_opcoes__';

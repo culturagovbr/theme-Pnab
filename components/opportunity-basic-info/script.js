@@ -172,16 +172,32 @@ app.component('opportunity-basic-info' , {
         },
 
         /**
-         * Verifica se um valor corresponde à opção "Outra (especificar)" para um campo específico
-         * Suporta valor como string (select) ou array (multiselect).
-         * @param {string|string[]} valor - O valor a ser verificado
-         * @param {string} tipoCampo - O tipo do campo ('etapa' ou 'pauta')
-         * @returns {boolean} - true se o valor corresponde à opção "Outra"
+         * Retorna a chave da opção "Outra (especificar)" para o campo (etapa/pauta).
+         * No multiselect entity armazena chaves; a label vem de opportunityOtherOptions.
+         */
+        getOutraOptionKey(campo) {
+            const opts = this.entity?.$PROPERTIES?.[campo]?.options;
+            if (!opts || typeof opts !== 'object') return null;
+            const labelOutra = $MAPAS.config.opportunityOtherOptions[campo];
+            if (!labelOutra) return null;
+            for (const k of Object.keys(opts)) {
+                if (opts[k] === labelOutra) return k;
+            }
+            return null;
+        },
+
+        /**
+         * Verifica se um valor corresponde à opção "Outra (especificar)" para um campo específico.
+         * Suporta valor como string (select antigo) ou array de chaves (multiselect).
          */
         isOutra(valor, tipoCampo) {
             if (valor == null || !tipoCampo) return false;
-            const valorOutra = $MAPAS.config.opportunityOtherOptions[tipoCampo];
-            return Array.isArray(valor) ? valor.includes(valorOutra) : valor === valorOutra;
+            const keyOutra = this.getOutraOptionKey(tipoCampo);
+            if (keyOutra == null) {
+                const labelOutra = $MAPAS.config.opportunityOtherOptions[tipoCampo];
+                return Array.isArray(valor) ? valor.includes(labelOutra) : valor === labelOutra;
+            }
+            return Array.isArray(valor) ? valor.includes(keyOutra) : valor === keyOutra;
         },
 
         /**
@@ -271,10 +287,9 @@ app.component('opportunity-basic-info' , {
         },
 
         cleanZeroWidthSpace(campo) {
-            console.log('🔵 [cleanZeroWidthSpace] INÍCIO', {
-                campo,
-                valor: this.entity[campo]
-            });
+            if (this.entity[campo] && typeof this.entity[campo] === 'string') {
+                this.entity[campo] = this.entity[campo].replace(/\u200B/g, '');
+            }
         },
     }
 });

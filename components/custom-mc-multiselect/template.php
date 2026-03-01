@@ -1,6 +1,6 @@
 <?php
 /**
- * Multiselect customizado (tema Pnab) com checkboxes "Não se aplica" e "Todas as opções"
+ * Multiselect customizado (tema Pnab): checkboxes "Não se aplica" e "Todas as opções",
  * e campo "Outros (especificar)" quando aplicável.
  * Genérico: recebe prop (ex: segmento, pauta, etapa, territorio) e outrosProp (ex: segmentoOutros).
  *
