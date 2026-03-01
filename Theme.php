@@ -99,6 +99,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
+            $theme->trimSegmentoOutros($postData);
         });
 
         /**
@@ -711,6 +712,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
+            $theme->registerSegmentoOutrosMetadata();
         });
     }
 
@@ -827,6 +829,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Registra o metadado "segmentoOutros" para especificar quando "Outros" for selecionado no segmento
+     */
+    private function registerSegmentoOutrosMetadata(): void
+    {
+        $theme = $this;
+        $this->registerOpportunityMetadata('segmentoOutros', [
+            'label' => i::__('Especificar segmento artístico-cultural'),
+            'type' => 'string',
+            'should_validate' => function ($entity, $value) use ($theme) {
+                $segmento = $entity->segmento ?? [];
+                if (!is_array($segmento)) {
+                    return false;
+                }
+                $opcoes = $theme->getSegmentoOptions();
+                $outrosKey = array_search(i::__('Outros (especificar)'), $opcoes, true);
+                if ($outrosKey === false || !in_array($outrosKey, $segmento, true)) {
+                    return false;
+                }
+                $valorAtual = ($value !== null && $value !== '') ? $value : ($entity->segmentoOutros ?? null);
+                if ($valorAtual === null || $valorAtual === '' || trim((string) $valorAtual) === '') {
+                    return i::__('O campo ') . strtolower(i::__('Especificar segmento artístico-cultural')) . i::__(' é obrigatório quando "Outros (especificar)" é selecionado.');
+                }
+                return false;
+            },
+        ]);
+    }
+
+    /**
      * Registra um metadado "Outros" para especificar quando "Outra" for selecionada
      * 
      * @param string $key Chave do metadado "Outros"
@@ -917,13 +947,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
     /**
      * Obtém as opções de Segmento do OpportunityWorkplan
+     * Ordem: 1) "Edital não se direciona a segmentos específicos", 2) "Todas as opções",
+     * 3) demais opções do Workplan com "Outros" por último.
      */
     private function getSegmentoOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoesWorkplan = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Workplan',
             'culturalArtisticSegment'
         );
+
+        $outrosLabel = i::__('Outros');
+        $outrosEntry = null;
+        $rest = [];
+        foreach ($opcoesWorkplan as $k => $v) {
+            if ((string) $v === $outrosLabel) {
+                $outrosEntry = [$k => i::__('Outros (especificar)')];
+            } else {
+                $rest[$k] = $v;
+            }
+        }
+        $opcoesOrdenadas = $outrosEntry ? $rest + $outrosEntry : $opcoesWorkplan;
+
+        $especiais = [
+            '__edital_nao_se_direciona__' => i::__('Edital não se direciona a segmentos específicos'),
+            '__todas_opcoes__' => i::__('Todas as opções'),
+        ];
+
+        return $especiais + $opcoesOrdenadas;
     }
 
     /**
@@ -997,6 +1048,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $postData[$outroTipo] !== null && $postData[$outroTipo] !== ''
         ) {
             $postData[$outroTipo] = trim($postData[$outroTipo]);
+        }
+    }
+
+    /**
+     * Aplica trim no campo segmentoOutros quando "Outros" está em segmento
+     *
+     * @param array &$postData Referência ao array de dados POST
+     */
+    private function trimSegmentoOutros(array &$postData): void
+    {
+        if (!isset($postData['segmento']) || !isset($postData['segmentoOutros']) || $postData['segmentoOutros'] === null || $postData['segmentoOutros'] === '') {
+            return;
+        }
+        $segmento = $postData['segmento'];
+        if (!is_array($segmento)) {
+            return;
+        }
+        $opcoes = $this->getSegmentoOptions();
+        $outrosKey = array_search(i::__('Outros (especificar)'), $opcoes, true);
+        if ($outrosKey !== false && in_array($outrosKey, $segmento, true)) {
+            $postData['segmentoOutros'] = trim((string) $postData['segmentoOutros']);
         }
     }
 

@@ -26,6 +26,7 @@ $this->import('
     entity-terms
     link-opportunity
     mc-container
+    opportunity-segmento-field
 ');
 ?>
 <div class="opportunity-basic-info__container">
@@ -78,11 +79,11 @@ $this->import('
             <template #content>
                 <div class="grid-12">
                     <div class="col-12 sm:col-12">
-                        <entity-field :entity="entity" prop="segmento" :autosave="3000">
+                        <opportunity-segmento-field :entity="entity" :autosave="3000">
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
-                        </entity-field>
+                        </opportunity-segmento-field>
                     </div>
 
                     <div class="col-12 sm:col-12">

@@ -77,9 +77,9 @@ $this->breadcrumb = [
             <mc-container class="opportunity">
                 <main class="grid-12">
                     <!-- Campos adicionais do tema Pnab (segmento, etapa, pauta, territorio podem ser array/multiselect) -->
-                    <div class="col-12" v-if="(entity.segmento && (!Array.isArray(entity.segmento) || entity.segmento.length)) || (entity.etapa && (!Array.isArray(entity.etapa) || entity.etapa.length)) || (entity.pauta && (!Array.isArray(entity.pauta) || entity.pauta.length)) || (entity.territorio && (!Array.isArray(entity.territorio) || entity.territorio.length)) || entity.etapaOutros || entity.pautaOutros">
+                    <div class="col-12" v-if="(entity.segmento && (!Array.isArray(entity.segmento) || entity.segmento.length)) || (entity.etapa && (!Array.isArray(entity.etapa) || entity.etapa.length)) || (entity.pauta && (!Array.isArray(entity.pauta) || entity.pauta.length)) || (entity.territorio && (!Array.isArray(entity.territorio) || entity.territorio.length)) || entity.etapaOutros || entity.pautaOutros || entity.segmentoOutros">
                         <h3><?= i::__("Informações Adicionais") ?></h3>
-                        <p v-if="entity.segmento && (!Array.isArray(entity.segmento) || entity.segmento.length)"><strong><?php i::_e('Segmento') ?>:</strong> {{ Array.isArray(entity.segmento) ? entity.segmento.join(', ') : entity.segmento }}</p>
+                        <p v-if="entity.segmento && (!Array.isArray(entity.segmento) || entity.segmento.length)"><strong><?php i::_e('Segmento') ?>:</strong> {{ (entity.$PROPERTIES?.segmento?.options && Array.isArray(entity.segmento)) ? entity.segmento.map(function(v) { return entity.$PROPERTIES.segmento.options[v] || v; }).join(', ') : (Array.isArray(entity.segmento) ? entity.segmento.join(', ') : entity.segmento) }}<span v-if="entity.segmentoOutros"> — <?php i::_e('Outros') ?> ({{ entity.segmentoOutros }})</span></p>
                         
                         <p v-if="(entity.etapa && (!Array.isArray(entity.etapa) || entity.etapa.length)) || entity.etapaOutros">
                             <strong><?php i::_e('Etapa') ?>: </strong> 
