@@ -26,7 +26,7 @@ $this->import('
     entity-terms
     link-opportunity
     mc-container
-    opportunity-segmento-field
+    custom-mc-multiselect
 ');
 ?>
 <div class="opportunity-basic-info__container">
@@ -79,51 +79,35 @@ $this->import('
             <template #content>
                 <div class="grid-12">
                     <div class="col-12 sm:col-12">
-                        <opportunity-segmento-field :entity="entity" :autosave="3000">
+                        <custom-mc-multiselect :entity="entity" prop="segmento" outros-prop="segmentoOutros" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a segmentos específicos')) ?>' :autosave="3000">
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
-                        </opportunity-segmento-field>
+                        </custom-mc-multiselect>
                     </div>
 
                     <div class="col-12 sm:col-12">
-                        <entity-field :entity="entity" prop="pauta" :autosave="3000">
+                        <custom-mc-multiselect :entity="entity" prop="pauta" outros-prop="pautaOutros" :show-all-options="false" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a pautas específicas')) ?>' :autosave="3000">
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
-                        </entity-field>
+                        </custom-mc-multiselect>
                     </div>
-                    
-                    <div v-if="isPautaOutra" class="col-12 sm:col-12">
-                        <entity-field :entity="entity" prop="pautaOutros" :autosave="3000">
-                            <template #info>
-                                <span class="required">*<?php i::_e('obrigatório') ?></span>
-                            </template>
-                        </entity-field>
-                    </div>
-                    
+
                     <div class="col-12 sm:col-12">
-                        <entity-field :entity="entity" prop="etapa" :autosave="3000">
+                        <custom-mc-multiselect :entity="entity" prop="etapa" outros-prop="etapaOutros" :show-all-options="false" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a etapa específica')) ?>' :autosave="3000">
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
-                        </entity-field>
+                        </custom-mc-multiselect>
                     </div>
-                    
-                    <div v-if="isEtapaOutra" class="col-12 sm:col-12">
-                        <entity-field :entity="entity" prop="etapaOutros" :autosave="3000" @blur="cleanZeroWidthSpace('etapaOutros')">
-                            <template #info>
-                                <span class="required">*<?php i::_e('obrigatório') ?></span>
-                            </template>
-                        </entity-field>
-                    </div>
-                    
+
                     <div class="col-12 sm:col-12">
-                        <entity-field :entity="entity" prop="territorio" :autosave="3000">
+                        <custom-mc-multiselect :entity="entity" prop="territorio" :show-all-options="false" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a territórios específicos')) ?>' :autosave="3000">
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
-                        </entity-field>
+                        </custom-mc-multiselect>
                     </div>
                 </div>
             </template>

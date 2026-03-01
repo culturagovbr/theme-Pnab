@@ -946,6 +946,37 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Prepara opções de multiselect: coloca uma opção "Outros/Outra" por último (opcional)
+     * e adiciona no início as opções especiais "Edital não se direciona" e, opcionalmente, "Todas as opções".
+     *
+     * @param array<string, string> $baseOptions Opções base (key => label)
+     * @param string|null $moveToEndLabel Label da opção a colocar por último (ex: 'Outros', 'Outra (especificar)')
+     * @param string|null $endLabelOverride Label final para essa opção (ex: 'Outros (especificar)'); se null, mantém o label original
+     * @param bool $includeTodasOpcoes Incluir a opção "Todas as opções" (apenas Segmento; Pauta, Etapa e Território usam false)
+     * @return array<string, string>
+     */
+    private function enrichMultiselectOptions(array $baseOptions, ?string $moveToEndLabel = null, ?string $endLabelOverride = null, bool $includeTodasOpcoes = true): array
+    {
+        $rest = [];
+        $endEntry = null;
+        foreach ($baseOptions as $k => $v) {
+            if ($moveToEndLabel !== null && (string) $v === $moveToEndLabel) {
+                $endEntry = [$k => $endLabelOverride ?? $v];
+            } else {
+                $rest[$k] = $v;
+            }
+        }
+        $ordered = $endEntry !== null ? $rest + $endEntry : $baseOptions;
+        $especiais = [
+            '__edital_nao_se_direciona__' => i::__('Edital não se direciona a segmentos específicos'),
+        ];
+        if ($includeTodasOpcoes) {
+            $especiais['__todas_opcoes__'] = i::__('Todas as opções');
+        }
+        return $especiais + $ordered;
+    }
+
+    /**
      * Obtém as opções de Segmento do OpportunityWorkplan
      * Ordem: 1) "Edital não se direciona a segmentos específicos", 2) "Todas as opções",
      * 3) demais opções do Workplan com "Outros" por último.
@@ -956,58 +987,58 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'OpportunityWorkplan\Entities\Workplan',
             'culturalArtisticSegment'
         );
-
-        $outrosLabel = i::__('Outros');
-        $outrosEntry = null;
-        $rest = [];
-        foreach ($opcoesWorkplan as $k => $v) {
-            if ((string) $v === $outrosLabel) {
-                $outrosEntry = [$k => i::__('Outros (especificar)')];
-            } else {
-                $rest[$k] = $v;
-            }
-        }
-        $opcoesOrdenadas = $outrosEntry ? $rest + $outrosEntry : $opcoesWorkplan;
-
-        $especiais = [
-            '__edital_nao_se_direciona__' => i::__('Edital não se direciona a segmentos específicos'),
-            '__todas_opcoes__' => i::__('Todas as opções'),
-        ];
-
-        return $especiais + $opcoesOrdenadas;
+        return $this->enrichMultiselectOptions(
+            $opcoesWorkplan,
+            i::__('Outros'),
+            i::__('Outros (especificar)')
+        );
     }
 
     /**
      * Obtém as opções de Etapa do OpportunityWorkplan
+     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
      */
     public function getEtapaOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Goal',
             'culturalMakingStage'
         );
+        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
      * Obtém as opções de Pauta do OpportunityWorkplan
+     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
      */
     public function getPautaOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Workplan',
             'thematicAgenda'
         );
+        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
-     * Obtém as opções de Território do ProjectMonitoring
+     * Obtém as opções de Território. Apenas "Edital não se direciona" no início; sem "Todas as opções" e sem "Outros (especificar)".
      */
     private function getTerritorioOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Delivery',
             'priorityAudience'
         );
+        $outra = i::__('Outra (especificar)');
+        $outros = i::__('Outros (especificar)');
+        $filtered = [];
+        foreach ($opcoes as $k => $v) {
+            if ((string) $v === $outra || (string) $v === $outros) {
+                continue;
+            }
+            $filtered[$k] = $v;
+        }
+        return $this->enrichMultiselectOptions($filtered, null, null, false);
     }
 
     /*
@@ -1033,7 +1064,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
     /**
      * Aplica trim no campo "Outros" quando o campo principal possui valor "Outra (especificar)"
-     * 
+     * Suporta campo principal como string (select antigo) ou array (multiselect).
+     *
      * @param string $tipo Nome do campo principal (ex: 'etapa', 'pauta')
      * @param string $outroTipo Nome do campo "Outros" (ex: 'etapaOutros', 'pautaOutros')
      * @param array &$postData Referência ao array de dados POST
@@ -1041,13 +1073,20 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     private function trimOtherValue(string $tipo, string $outroTipo, array &$postData): void
     {
         $valorEsperado = $tipo === 'etapa' ? OtherValues::OUTRA_ETAPA : OtherValues::OUTRA_PAUTA;
-        
-        if (
-            isset($postData[$tipo]) && isset($postData[$outroTipo]) &&
-            $postData[$tipo] === $valorEsperado && 
-            $postData[$outroTipo] !== null && $postData[$outroTipo] !== ''
-        ) {
-            $postData[$outroTipo] = trim($postData[$outroTipo]);
+        if (!isset($postData[$tipo]) || !isset($postData[$outroTipo]) || $postData[$outroTipo] === null || $postData[$outroTipo] === '') {
+            return;
+        }
+        $contemOutra = false;
+        $valorPrincipal = $postData[$tipo];
+        if (is_array($valorPrincipal)) {
+            $opcoes = $tipo === 'etapa' ? $this->getEtapaOptions() : $this->getPautaOptions();
+            $outraKey = array_search($valorEsperado, $opcoes, true);
+            $contemOutra = $outraKey !== false && in_array($outraKey, $valorPrincipal, true);
+        } else {
+            $contemOutra = $valorPrincipal === $valorEsperado;
+        }
+        if ($contemOutra) {
+            $postData[$outroTipo] = trim((string) $postData[$outroTipo]);
         }
     }
 

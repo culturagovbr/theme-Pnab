@@ -1,9 +1,9 @@
-.opportunity-segmento-field__row {
+.custom-mc-multiselect__row {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 
-    .opportunity-segmento-field__checkboxes {
+    .custom-mc-multiselect__checkboxes {
         display: flex;
         flex-wrap: wrap;
         gap: 1rem;
@@ -13,7 +13,7 @@
         flex: 0 0 auto;
     }
 
-    .opportunity-segmento-field__checkbox {
+    .custom-mc-multiselect__checkbox {
         margin-left: 0;
         padding-left: 0;
         justify-content: flex-start;
@@ -31,24 +31,30 @@
         }
     }
 
-    .opportunity-segmento-field__select {
+    .custom-mc-multiselect__select {
         width: 100%;
     }
 
-    .opportunity-segmento-field__outros {
+    .custom-mc-multiselect__outros {
         width: 100%;
         margin-top: 0.25rem;
     }
 }
 
 @media (max-width: 600px) {
-    .opportunity-segmento-field__row {
-        .opportunity-segmento-field__checkboxes {
+    .custom-mc-multiselect__row {
+        .custom-mc-multiselect__checkboxes {
             flex-direction: column;
         }
 
-        .opportunity-segmento-field__checkbox {
+        .custom-mc-multiselect__checkbox {
             width: auto;
         }
     }
+}
+
+.custom-mc-multiselect__separator {
+    margin: 1.5rem 0 0;
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
 }

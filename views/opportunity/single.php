@@ -84,16 +84,16 @@ $this->breadcrumb = [
                         <p v-if="(entity.etapa && (!Array.isArray(entity.etapa) || entity.etapa.length)) || entity.etapaOutros">
                             <strong><?php i::_e('Etapa') ?>: </strong> 
                             <span v-if="entity.etapaOutros"><?php i::_e('Outros') ?> ({{entity.etapaOutros}})</span>
-                            <span v-else>{{ Array.isArray(entity.etapa) ? entity.etapa.join(', ') : entity.etapa }}</span>
+                            <span v-else>{{ (entity.$PROPERTIES?.etapa?.options && Array.isArray(entity.etapa)) ? entity.etapa.map(function(v) { return entity.$PROPERTIES.etapa.options[v] || v; }).join(', ') : (Array.isArray(entity.etapa) ? entity.etapa.join(', ') : entity.etapa) }}</span>
                         </p>
                         
                         <p v-if="(entity.pauta && (!Array.isArray(entity.pauta) || entity.pauta.length)) || entity.pautaOutros">
                             <strong><?php i::_e('Pauta') ?>: </strong> 
                             <span v-if="entity.pautaOutros"><?php i::_e('Outros') ?> ({{entity.pautaOutros}})</span>
-                            <span v-else>{{ Array.isArray(entity.pauta) ? entity.pauta.join(', ') : entity.pauta }}</span>
+                            <span v-else>{{ (entity.$PROPERTIES?.pauta?.options && Array.isArray(entity.pauta)) ? entity.pauta.map(function(v) { return entity.$PROPERTIES.pauta.options[v] || v; }).join(', ') : (Array.isArray(entity.pauta) ? entity.pauta.join(', ') : entity.pauta) }}</span>
                         </p>
                         
-                        <p v-if="entity.territorio && (!Array.isArray(entity.territorio) || entity.territorio.length)"><strong><?php i::_e('Território') ?>:</strong> {{ Array.isArray(entity.territorio) ? entity.territorio.join(', ') : entity.territorio }}</p>
+                        <p v-if="entity.territorio && (!Array.isArray(entity.territorio) || entity.territorio.length)"><strong><?php i::_e('Território') ?>:</strong> {{ (entity.$PROPERTIES?.territorio?.options && Array.isArray(entity.territorio)) ? entity.territorio.map(function(v) { return entity.$PROPERTIES.territorio.options[v] || v; }).join(', ') : (Array.isArray(entity.territorio) ? entity.territorio.join(', ') : entity.territorio) }}</p>
                     </div>
                     
                     <opportunity-subscription class="col-12" :entity="entity"></opportunity-subscription>
