@@ -99,6 +99,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
+            $theme->trimSegmentoOutros($postData);
         });
 
         /**
@@ -699,11 +700,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $theme = $this;
         $app->hook('app.init:after', function() use ($app, $theme) {
-            // Registra metadados select obrigatórios em edit
-            $theme->registerSelectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
-            $theme->registerSelectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
-            $theme->registerSelectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
-            $theme->registerSelectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
+            // Registra metadados multiselect obrigatórios em edit (segmento, pauta, etapa, território)
+            $theme->registerMultiselectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
+            $theme->registerMultiselectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
+            $theme->registerMultiselectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
+            $theme->registerMultiselectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
 
             // Registra metadados select obrigatórios em required
             $theme->registerSelectMetadata('tipoDeEdital', i::__('Tipo de Edital'), $theme->getTipoDeEditalOptions(), 'required');
@@ -711,7 +712,65 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
+            $theme->registerSegmentoOutrosMetadata();
         });
+    }
+
+    /**
+     * Registra um metadado do tipo multiselect obrigatório
+     *
+     * @param string $key Chave do metadado
+     * @param string $label Label do campo (já traduzido)
+     * @param array $options Opções do select
+     * @param string $operationType Tipo de operação (edit ou create)
+     */
+    private function registerMultiselectMetadata(string $key, string $label, array $options, string $operationType): void
+    {
+        $metadataValues = [
+            'label' => $label,
+            'type' => 'multiselect',
+            'options' => $options,
+        ];
+
+        $metadataValues['should_validate'] = function ($entity, $value) use ($label, $operationType) {
+            return $this->redefineRuleValidateMultiselect($operationType, $entity, $label, $value);
+        };
+
+        $this->registerOpportunityMetadata($key, $metadataValues);
+    }
+
+    /**
+     * Regra de validação para metadado multiselect obrigatório (array não vazio)
+     *
+     * @param string $operationType Tipo de operação (edit ou create)
+     * @param \MapasCulturais\Entity $entity Entidade que contém os campos
+     * @param string $label Label do campo (já traduzido)
+     * @param mixed $value Valor atual (array para multiselect)
+     * @return string|false Mensagem de erro se inválido, false se válido
+     */
+    private function redefineRuleValidateMultiselect(string $operationType, $entity, string $label, $value)
+    {
+        $isEmpty = $value === null || $value === '' || (is_array($value) && count($value) === 0);
+
+        if (!$isEmpty) {
+            return false;
+        }
+
+        if ($operationType === 'edit') {
+            if (!empty($entity->id)) {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        if ($operationType === 'create') {
+            if (!isset($entity->id) || $entity->id === null || $entity->id === '') {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        return false;
     }
 
     /**
@@ -770,6 +829,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Registra o metadado "segmentoOutros" para especificar quando "Outros" for selecionado no segmento
+     */
+    private function registerSegmentoOutrosMetadata(): void
+    {
+        $theme = $this;
+        $this->registerOpportunityMetadata('segmentoOutros', [
+            'label' => i::__('Especificar segmento artístico-cultural'),
+            'type' => 'string',
+            'should_validate' => function ($entity, $value) use ($theme) {
+                $segmento = $entity->segmento ?? [];
+                if (!is_array($segmento)) {
+                    return false;
+                }
+                $opcoes = $theme->getSegmentoOptions();
+                $outrosKey = array_search(i::__('Outros (especificar)'), $opcoes, true);
+                if ($outrosKey === false || !in_array($outrosKey, $segmento, true)) {
+                    return false;
+                }
+                $valorAtual = ($value !== null && $value !== '') ? $value : ($entity->segmentoOutros ?? null);
+                if ($valorAtual === null || $valorAtual === '' || trim((string) $valorAtual) === '') {
+                    return i::__('O campo ') . strtolower(i::__('Especificar segmento artístico-cultural')) . i::__(' é obrigatório quando "Outros (especificar)" é selecionado.');
+                }
+                return false;
+            },
+        ]);
+    }
+
+    /**
      * Registra um metadado "Outros" para especificar quando "Outra" for selecionada
      * 
      * @param string $key Chave do metadado "Outros"
@@ -797,7 +884,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
     /**
      * Valida campo "Outros" quando o campo principal contém "outra"
-     * 
+     * Suporta campo principal como string (select) ou array (multiselect)
+     *
      * @param object $entity Entidade que contém os campos
      * @param mixed $value Valor atual do campo "Outros"
      * @param string $campoPrincipal Nome do campo principal (ex: 'etapa', 'pauta')
@@ -808,17 +896,29 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     private function validateOutrosField($entity, $value, string $campoPrincipal, string $campoOutros, string $mensagemErro)
     {
         $valorPrincipal = $entity->{$campoPrincipal} ?? '';
-        
-        if (!$valorPrincipal || stripos($valorPrincipal, 'outra') === false) {
+
+        $contemOutra = false;
+        if (is_array($valorPrincipal)) {
+            foreach ($valorPrincipal as $v) {
+                if ($v && stripos((string) $v, 'outra') !== false) {
+                    $contemOutra = true;
+                    break;
+                }
+            }
+        } else {
+            $contemOutra = $valorPrincipal && stripos((string) $valorPrincipal, 'outra') !== false;
+        }
+
+        if (!$contemOutra) {
             return false;
         }
-        
+
         $valorAtual = ($value !== null && $value !== '') ? $value : ($entity->{$campoOutros} ?? null);
-        
-        if ($valorAtual === null || $valorAtual === '' || trim((string)$valorAtual) === '') {
+
+        if ($valorAtual === null || $valorAtual === '' || trim((string) $valorAtual) === '') {
             return $mensagemErro;
         }
-        
+
         return false;
     }
 
@@ -846,47 +946,99 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Prepara opções de multiselect: coloca uma opção "Outros/Outra" por último (opcional)
+     * e adiciona no início as opções especiais "Edital não se direciona" e, opcionalmente, "Todas as opções".
+     *
+     * @param array<string, string> $baseOptions Opções base (key => label)
+     * @param string|null $moveToEndLabel Label da opção a colocar por último (ex: 'Outros', 'Outra (especificar)')
+     * @param string|null $endLabelOverride Label final para essa opção (ex: 'Outros (especificar)'); se null, mantém o label original
+     * @param bool $includeTodasOpcoes Incluir a opção "Todas as opções" (apenas Segmento; Pauta, Etapa e Território usam false)
+     * @return array<string, string>
+     */
+    private function enrichMultiselectOptions(array $baseOptions, ?string $moveToEndLabel = null, ?string $endLabelOverride = null, bool $includeTodasOpcoes = true): array
+    {
+        $rest = [];
+        $endEntry = null;
+        foreach ($baseOptions as $k => $v) {
+            if ($moveToEndLabel !== null && (string) $v === $moveToEndLabel) {
+                $endEntry = [$k => $endLabelOverride ?? $v];
+            } else {
+                $rest[$k] = $v;
+            }
+        }
+        $ordered = $endEntry !== null ? $rest + $endEntry : $baseOptions;
+        $especiais = [
+            '__edital_nao_se_direciona__' => i::__('Edital não se direciona a segmentos específicos'),
+        ];
+        if ($includeTodasOpcoes) {
+            $especiais['__todas_opcoes__'] = i::__('Todas as opções');
+        }
+        return $especiais + $ordered;
+    }
+
+    /**
      * Obtém as opções de Segmento do OpportunityWorkplan
+     * Ordem: 1) "Edital não se direciona a segmentos específicos", 2) "Todas as opções",
+     * 3) demais opções do Workplan com "Outros" por último.
      */
     private function getSegmentoOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoesWorkplan = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Workplan',
             'culturalArtisticSegment'
+        );
+        return $this->enrichMultiselectOptions(
+            $opcoesWorkplan,
+            i::__('Outros'),
+            i::__('Outros (especificar)')
         );
     }
 
     /**
      * Obtém as opções de Etapa do OpportunityWorkplan
+     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
      */
     public function getEtapaOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Goal',
             'culturalMakingStage'
         );
+        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
      * Obtém as opções de Pauta do OpportunityWorkplan
+     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
      */
     public function getPautaOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Workplan',
             'thematicAgenda'
         );
+        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
-     * Obtém as opções de Território do ProjectMonitoring
+     * Obtém as opções de Território. Apenas "Edital não se direciona" no início; sem "Todas as opções" e sem "Outros (especificar)".
      */
     private function getTerritorioOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Delivery',
             'priorityAudience'
         );
+        $outra = i::__('Outra (especificar)');
+        $outros = i::__('Outros (especificar)');
+        $filtered = [];
+        foreach ($opcoes as $k => $v) {
+            if ((string) $v === $outra || (string) $v === $outros) {
+                continue;
+            }
+            $filtered[$k] = $v;
+        }
+        return $this->enrichMultiselectOptions($filtered, null, null, false);
     }
 
     /*
@@ -912,7 +1064,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
     /**
      * Aplica trim no campo "Outros" quando o campo principal possui valor "Outra (especificar)"
-     * 
+     * Suporta campo principal como string (select antigo) ou array (multiselect).
+     *
      * @param string $tipo Nome do campo principal (ex: 'etapa', 'pauta')
      * @param string $outroTipo Nome do campo "Outros" (ex: 'etapaOutros', 'pautaOutros')
      * @param array &$postData Referência ao array de dados POST
@@ -920,13 +1073,41 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     private function trimOtherValue(string $tipo, string $outroTipo, array &$postData): void
     {
         $valorEsperado = $tipo === 'etapa' ? OtherValues::OUTRA_ETAPA : OtherValues::OUTRA_PAUTA;
-        
-        if (
-            isset($postData[$tipo]) && isset($postData[$outroTipo]) &&
-            $postData[$tipo] === $valorEsperado && 
-            $postData[$outroTipo] !== null && $postData[$outroTipo] !== ''
-        ) {
-            $postData[$outroTipo] = trim($postData[$outroTipo]);
+        if (!isset($postData[$tipo]) || !isset($postData[$outroTipo]) || $postData[$outroTipo] === null || $postData[$outroTipo] === '') {
+            return;
+        }
+        $contemOutra = false;
+        $valorPrincipal = $postData[$tipo];
+        if (is_array($valorPrincipal)) {
+            $opcoes = $tipo === 'etapa' ? $this->getEtapaOptions() : $this->getPautaOptions();
+            $outraKey = array_search($valorEsperado, $opcoes, true);
+            $contemOutra = $outraKey !== false && in_array($outraKey, $valorPrincipal, true);
+        } else {
+            $contemOutra = $valorPrincipal === $valorEsperado;
+        }
+        if ($contemOutra) {
+            $postData[$outroTipo] = trim((string) $postData[$outroTipo]);
+        }
+    }
+
+    /**
+     * Aplica trim no campo segmentoOutros quando "Outros" está em segmento
+     *
+     * @param array &$postData Referência ao array de dados POST
+     */
+    private function trimSegmentoOutros(array &$postData): void
+    {
+        if (!isset($postData['segmento']) || !isset($postData['segmentoOutros']) || $postData['segmentoOutros'] === null || $postData['segmentoOutros'] === '') {
+            return;
+        }
+        $segmento = $postData['segmento'];
+        if (!is_array($segmento)) {
+            return;
+        }
+        $opcoes = $this->getSegmentoOptions();
+        $outrosKey = array_search(i::__('Outros (especificar)'), $opcoes, true);
+        if ($outrosKey !== false && in_array($outrosKey, $segmento, true)) {
+            $postData['segmentoOutros'] = trim((string) $postData['segmentoOutros']);
         }
     }
 
