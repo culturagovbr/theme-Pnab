@@ -16,6 +16,7 @@ $this->import('
     entity-gallery
     entity-gallery-video
     entity-links
+    mc-currency-input
     entity-owner
     entity-profile
     entity-related-agents
@@ -26,6 +27,9 @@ $this->import('
     link-opportunity
     mc-container
     custom-mc-multiselect
+    opportunity-recursos-outras-fontes
+    opportunity-formas-inscricao-edital
+    opportunity-outras-modalidades-acoes-afirmativas
 ');
 ?>
 <div class="opportunity-basic-info__container">
@@ -116,6 +120,24 @@ $this->import('
         <mc-card>
             <template #content>
                 <div class="grid-12">
+                    <div class="col-12 divider"></div>
+
+                    <opportunity-recursos-outras-fontes :entity="entity" class="col-12"></opportunity-recursos-outras-fontes>
+
+                    <div class="col-12 divider"></div>
+
+                    <div class="opportunity-basic-info__formas-inscricao col-12">
+                        <opportunity-formas-inscricao-edital :entity="entity" class="col-12"></opportunity-formas-inscricao-edital>
+                    </div>
+
+                    <div class="col-12 divider"></div>
+
+                    <div class="opportunity-basic-info__outras-modalidades col-12">
+                        <opportunity-outras-modalidades-acoes-afirmativas :entity="entity" class="col-12"></opportunity-outras-modalidades-acoes-afirmativas>
+                    </div>
+
+                    <div class="col-12 divider"></div>
+
                     <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
                     <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>
                     <entity-gallery-video :entity="entity" classes="col-12" editable></entity-gallery-video>
