@@ -1,0 +1,114 @@
+// Espelhado em opportunity-ranges-config (faixas/linhas) — mesma estrutura e grid
+.opportunity-reserva-vagas-cotas {
+    display: flex;
+    flex-direction: column;
+    gap: size(16);
+    margin-top: size(24);
+    padding-top: size(24);
+    border-top: 1px solid var(--mc-gray-300);
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    &__header {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: size(8);
+        gap: size(8);
+
+        & > h4 {
+            align-items: center;
+            display: flex;
+            gap: size(8);
+        }
+    }
+
+    &__info-icon {
+        display: inline-flex;
+        cursor: help;
+    }
+
+    // Bloco de percentuais (hint), acima das linhas, como na imagem de referência
+    &__hint {
+        background: rgba(0, 116, 193, 0.08);
+        border: 1px solid var(--mc-primary-300, #b3d9f2);
+        border-radius: var(--mc-border-radius-xs);
+        padding: size(12) size(16);
+
+        strong {
+            display: block;
+            margin-bottom: size(8);
+            font-size: var(--mc-font-size-xxs);
+        }
+
+        ul {
+            margin: 0;
+            padding-left: size(20);
+            font-size: var(--mc-font-size-xxs);
+            line-height: 1.5;
+        }
+    }
+
+    // Grid: descrição | vagas | valor | automático (% sobre total) | checkbox
+    &__content {
+        display: grid;
+        grid-template-columns:
+            calc(42% - size(24))
+            calc(18% - size(12))
+            calc(18% - size(12))
+            minmax(size(72), 10%)
+            size(100);
+        gap: size(20) size(20);
+        border-top: 1px solid var(--mc-gray-300);
+        align-items: center;
+        justify-items: center;
+        padding-top: size(8);
+        width: 100%;
+        min-width: 0;
+
+        .field {
+            &__input {
+                border: 0.0625rem solid var(--mc-gray-500);
+                border-radius: var(--mc-border-radius-xs);
+                padding: size(8);
+                font-family: var(--mc-font-family);
+                font-size: var(--mc-font-size-xxs);
+                line-height: normal;
+
+                &:disabled {
+                    background: var(--mc-gray-200);
+                    cursor: not-allowed;
+                }
+            }
+        }
+
+        @media (max-width: 932px) {
+            grid-template-columns:
+                calc(35% - 1rem)
+                calc(22% - 1rem)
+                calc(22% - 1rem)
+                size(72)
+                size(85);
+        }
+
+        @media (max-width: 675px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    &__cell-automatico {
+        .opportunity-reserva-vagas-cotas__percentual {
+            font-size: var(--mc-font-size-xxs);
+            font-family: var(--mc-font-family);
+        }
+    }
+
+    &__cell-checkbox {
+        justify-self: start;
+    }
+
+    .required {
+        color: var(--mc-error);
+        font-weight: 700;
+    }
+}
