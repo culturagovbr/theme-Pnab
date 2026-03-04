@@ -216,12 +216,40 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $results = $conn->executeQuery($sql, $params)->fetchAll();
                 $opportunityIds = array_map(fn($r) => (int)$r['id'], $results);
             } catch (\Exception $e) {
-                // Se houver erro, retorna array vazio
                 $opportunityIds = [];
             }
+
+            // Aba "Meus modelos": incluir também modelos oficiais (isModel=1 com selo verificado),
+            // que não possuem federativeEntityId e por isso não entram na lista do ente
+            $isModelsTab = isset($api_params['isModel']) &&
+                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string)$api_params['isModel'])) &&
+                isset($api_params['status']) &&
+                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string)$api_params['status']));
+            if ($isModelsTab) {
+                $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
+                if (is_numeric($verifiedSealsIds)) {
+                    $verifiedSealsIds = [(int)$verifiedSealsIds];
+                } elseif (!is_array($verifiedSealsIds)) {
+                    $verifiedSealsIds = [];
+                }
+                if (!empty($verifiedSealsIds)) {
+                    $placeholders = implode(',', array_fill(0, count($verifiedSealsIds), '?'));
+                    $sqlOfficial = "SELECT DISTINCT o.id 
+                        FROM opportunity o
+                        INNER JOIN opportunity_meta m ON m.object_id = o.id AND m.key = 'isModel' AND m.value = '1'
+                        INNER JOIN seal_relation sr ON sr.object_id = o.id AND sr.object_type = 'MapasCulturais\\Entities\\Opportunity'
+                        WHERE sr.seal_id IN ($placeholders)";
+                    try {
+                        $officialResults = $conn->executeQuery($sqlOfficial, array_values($verifiedSealsIds))->fetchAll();
+                        $officialIds = array_map(fn($r) => (int)$r['id'], $officialResults);
+                        $opportunityIds = array_values(array_unique(array_merge($opportunityIds, $officialIds)));
+                    } catch (\Exception $e) {
+                        // mantém apenas os do ente em caso de erro
+                    }
+                }
+            }
             
-            // Aplica filtro APENAS se houver oportunidades encontradas
-            // Se não houver nenhuma oportunidade com o metadado, retorna filtro vazio (EQ(-1))
+            // Aplica filtro: se não houver nenhum ID permitido, retorna filtro que não encontra nada
             if (empty($opportunityIds)) {
                 $api_params['id'] = 'EQ(-1)';
             } else {
@@ -234,7 +262,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Hook para filtrar modelos de oportunidades por federativeEntityId na action findOpportunitiesModels
          * Intercepta o resultado após a execução e filtra apenas os modelos do ente federado selecionado
-         * A action findOpportunitiesModels retorna um array de objetos com estrutura: {id, descricao, numeroFases, ...}
+         * A action findOpportunitiesModels retorna um array de objetos com estrutura: {id, descricao, numeroFases, modelIsOfficial, ...}
+         * Modelos oficiais (modelIsOfficial === true) são sempre exibidos para o GestorCultBr, pois não possuem federativeEntityId.
          */
         $app->hook('GET(opportunity.findOpportunitiesModels):after', function (&$result) use ($app) {
             // Se não for gestor CultBR, para aqui
@@ -261,7 +290,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            // Busca IDs dos modelos que devem ser exibidos (com metadado federativeEntityId)
+            // Busca IDs dos modelos do ente federado (com metadado federativeEntityId)
             // Inclui modelos cuja oportunidade principal tem o metadado
             $conn = $app->em->getConnection();
             $params = [
@@ -269,8 +298,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 'federativeEntityId' => (string)$federativeEntityId
             ];
             
-            // Consulta otimizada que busca modelos relacionados às oportunidades do ente federado
-            // Busca modelos onde o metadado está na própria oportunidade OU na oportunidade principal (para modelos com parent)
             $sql = "SELECT DISTINCT o.id 
                     FROM opportunity o
                     INNER JOIN opportunity_meta m_model ON m_model.object_id = o.id 
@@ -288,22 +315,20 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $results = $conn->executeQuery($sql, $params)->fetchAll();
                 $allowedModelIds = array_map(fn($r) => (int)$r['id'], $results);
             } catch (\Exception $e) {
-                // Se houver erro, retorna array vazio
                 $allowedModelIds = [];
             }
             
-            // Filtra o resultado para manter apenas os modelos permitidos
-            if (!empty($allowedModelIds)) {
-                $result = array_filter($result, function($model) use ($allowedModelIds) {
-                    // Verifica se o modelo tem ID e se está na lista de permitidos
-                    return isset($model['id']) && in_array((int)$model['id'], $allowedModelIds);
-                });
-                // Reindexa o array após filtrar para manter índices numéricos sequenciais
-                $result = array_values($result);
-            } else {
-                // Se não houver modelos permitidos, retorna array vazio
-                $result = [];
-            }
+            // Filtra o resultado: mantém modelos do ente OU modelos oficiais (sem federativeEntityId)
+            $result = array_filter($result, function ($model) use ($allowedModelIds) {
+                if (!isset($model['id'])) {
+                    return false;
+                }
+                $id = (int)$model['id'];
+                $isFromEntity = in_array($id, $allowedModelIds);
+                $isOfficial = !empty($model['modelIsOfficial']);
+                return $isFromEntity || $isOfficial;
+            });
+            $result = array_values($result);
         });
 
        /**
