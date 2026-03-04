@@ -43,6 +43,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Na edição de agente, exibe o campo "Tipo de agente coletivo" após o campo "Nome do Agente".
+         */
+        $app->hook('template(agent.edit.entity-info):end', function () {
+            $entity = $this->controller->requestedEntity ?? null;
+            if ($entity) {
+                $this->part('agent-edit-tipo-coletivo', ['entity' => $entity]);
+            }
+        });
+
+        /**
          * Verifica se o usuário tem permissão para acessar a rota de minhas oportunidades
          */
         $app->hook('GET(panel.opportunities):before', function () use ($app, $canAccess) {
