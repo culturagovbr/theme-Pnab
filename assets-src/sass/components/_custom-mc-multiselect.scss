@@ -1,0 +1,60 @@
+.custom-mc-multiselect__row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .custom-mc-multiselect__checkboxes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-left: 0;
+        padding-left: 0;
+        align-self: flex-start;
+        flex: 0 0 auto;
+    }
+
+    .custom-mc-multiselect__checkbox {
+        margin-left: 0;
+        padding-left: 0;
+        justify-content: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex-shrink: 0;
+        }
+
+        span {
+            line-height: 1.3;
+        }
+    }
+
+    .custom-mc-multiselect__select {
+        width: 100%;
+    }
+
+    .custom-mc-multiselect__outros {
+        width: 100%;
+        margin-top: 0.25rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .custom-mc-multiselect__row {
+        .custom-mc-multiselect__checkboxes {
+            flex-direction: column;
+        }
+
+        .custom-mc-multiselect__checkbox {
+            width: auto;
+        }
+    }
+}
+
+.custom-mc-multiselect__separator {
+    margin: 1.5rem 0 0;
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
