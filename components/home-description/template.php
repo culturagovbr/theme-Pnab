@@ -6,10 +6,10 @@
 
 use MapasCulturais\i;
 
-$mapa_img = $app->view->asset('img/home/home-description/cult.png', false);
+$bg_url = $app->view->asset('img/home/home-description/background.png', false);
 ?>
 
-<section class="home-network">
+<section class="home-network"<?= $bg_url ? ' style="background-image: url(\'' . addslashes($bg_url) . '\');"' : '' ?>>
     <div class="home-network__container">
         <div class="home-network__text">
             <h2 class="title">A Política Nacional Aldir Blanc</h2>
@@ -24,9 +24,6 @@ $mapa_img = $app->view->asset('img/home/home-description/cult.png', false);
 
                 <strong>Faça parte!</strong> Experimente a plataforma, crie ou atualize seu perfil, registre seus espaços e iniciativas artísticas e divulgue suas atividades.
             </p>
-        </div>
-        <div class="home-network__image">
-            <img src="<?= $mapa_img ?>" alt="Mapa do Brasil por regiões" />
         </div>
     </div>
 </section>
