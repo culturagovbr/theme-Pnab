@@ -274,6 +274,7 @@ return [
                 # Autenticação customizada
                 'client_id' => env('PNAB_AUTH_GOV_BR_CLIENT_ID', null),
                 'client_secret' => env('PNAB_AUTH_GOV_BR_SECRET', null),
+                'dic_agent_fields_update' => json_decode(env('PNAB_AUTH_GOV_BR_DICT_AGENT_FIELDS_UPDATE', '{}'), true),
                 'redirect_uri' => env('PNAB_AUTH_GOV_BR_REDIRECT_URI', null),
                 'url_logout' => env('url_logout', 'https://sso.staging.acesso.gov.br/logout'),
             ]

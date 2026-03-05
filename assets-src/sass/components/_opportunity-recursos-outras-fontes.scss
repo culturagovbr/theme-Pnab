@@ -1,0 +1,33 @@
+// Largura total do componente e da seção de detalhamento (sem alterar grid interno)
+.opportunity-recursos-outras-fontes {
+    width: 100%;
+}
+
+.opportunity-recursos-outras-fontes__detalhamento {
+    width: 100%;
+    margin-top: size(24);
+}
+
+// Título da seção "Detalhamento dos recursos" (estilo de seção, não de label de campo)
+.opportunity-recursos-outras-fontes__detalhamento-titulo {
+    font-family: var(--mc-font-headings);
+    font-size: size(14);
+    font-weight: 600;
+    line-height: size(19);
+    margin: 0 0 size(12) 0;
+    display: block;
+}
+
+// Garante que "*obrigatório" fique vermelho em todo o componente (inclusive fora de .field)
+.opportunity-recursos-outras-fontes .required {
+    color: var(--mc-error);
+    font-weight: 700;
+}
+
+// Evita que o campo monetário seja cortado na linha "Fonte do recurso N"
+.opportunity-recursos-outras-fontes__detalhamento .grid-12 {
+    .field.col-4,
+    .field.col-8 {
+        min-width: 0;
+    }
+}

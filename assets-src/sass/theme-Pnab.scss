@@ -208,6 +208,11 @@ $gray-700: #19191c !default;
 @import './components/federative-entity-selector';
 @import './components/federative-entity-banner';
 @import './components/consolidating-data';
+@import './components/custom-mc-multiselect';
+@import './components/opportunity-recursos-outras-fontes';
+@import './components/opportunity-formas-inscricao-edital';
+@import './components/opportunity-outras-modalidades-acoes-afirmativas';
+@import './components/opportunity-reserva-vagas-cotas';
 @import './layouts/home-register';
 @import './layouts/main-footer';
 @import './layouts/main-header';
@@ -814,3 +819,4 @@ body {
 .entity-card__footer--action .button {
     max-width: 272px;
 }
+
