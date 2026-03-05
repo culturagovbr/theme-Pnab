@@ -13,6 +13,12 @@ return [
     'logo.image' => './img/logo-site.png',
     'logo.hideLabel' => env('LOGO_HIDELABEL', true),
 
+    /*
+    Define o nome do asset da imagem do background no header da home - Substitui o background padrão do módulo
+    ex: `img/home/home-header/home-header2.png` (pasta assets/img/home/home-header/home-header2.png do tema)
+    */
+    'homeHeader.background' => 'img/home/home-header/home-header2.png',
+
     // entidades habilitadas
     'app.enabled.agents'        => true,
     'app.enabled.opportunities' =>  true,
