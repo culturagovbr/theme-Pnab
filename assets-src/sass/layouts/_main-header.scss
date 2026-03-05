@@ -100,6 +100,18 @@
             p {
                 margin: 0;
             }
+
+            // Ícone em cima do texto, igual BaseV2/MapaMinC
+            .mc-header-menu--item {
+                align-items: center;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+
+                .label {
+                    margin: size(8) 0 0;
+                }
+            }
         }
 
         @media (max-width: size(400)) {
