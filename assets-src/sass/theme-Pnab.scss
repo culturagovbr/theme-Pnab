@@ -3,15 +3,15 @@
 @import url('https://fonts.googleapis.com/css2?family=League+Gothic&display=swap');
 
 // COLORS
-$black: #1E1E1E !default;
+$black: #000000 !default;
 $error: #D2381B !default;
-$gray-color-txt: #1E1E1E !default;
+$gray-color-txt: #3c3c3b !default;
 $warning: #FFCA3A !default;
 $white: #FFFFFF !default;
 $banner: #181b4e !default;
 $banner-register: #2F4795 !default;
 $banner-figure: #E20635 !default;
-$button: #2b74d9 !default;
+$button: #0a72e8 !default;
 $pink: #FFCFCF !default;
 $home-map-title: #575757 !default;
 
@@ -80,7 +80,7 @@ $lightness-300: 25%;
 $lightness-700: 25%;
 
 // Brand colors
-$primary-500: #117C83 !default;
+$primary-500: #0a72e8 !default;
 $secondary-500: #9eca80 !default;
 
 // Primary colors
@@ -90,10 +90,10 @@ $primary-main: #006FEE !default;
 $primary-dark: #0050AA !default;
 
 // Entities colors
-$opportunities-500: #c40c0c;
+$opportunities-500: #e8521e;
 $events-500: #117C83;
 $spaces-500: #F0B500;
-$agents-500: #E0720B;
+$agents-500: #e62f76;
 $projects-500: #F24797;
 
 $seals-500: #1E1E1E;
@@ -104,17 +104,23 @@ $error-main: #FF385C;
 $error-light: #FFD7DE;
 $error-dark: #E02244;
 
-$success-500: #498200;
-$success-main: #39DDA2;
-$success-light: #CEF7E8;
-$success-dark: #0CB97B;
+// Check (verde): box #dcffe9, texto #4cb051
+$success-300: #dcffe9 !default;
+$success-500: #4cb051 !default;
+$success-main: #4cb051 !default;
+$success-light: #dcffe9 !default;
+$success-dark: #0CB97B !default;
 
-$warning-500: #FF9F1C;
-$warning-main: #FFD361;
-$warning-light: #FFF4D7;
-$warning-dark: #F3AD43;
+// Comando para usuário (azul): box #0a72e8, texto #ffffff
+$helper-300: #0a72e8 !default;
+$helper-500: #0a72e8 !default;
 
-$helper-500: #0074C1;
+// Atenção (warning): box #fefbec, borda #eee9c1, texto #b04706
+$warning-300: #fefbec !default;
+$warning-500: #b04706 !default;
+$warning-main: #FFD361 !default;
+$warning-light: #fefbec !default;
+$warning-dark: #F3AD43 !default;
 
 // home
 $home-opportunities: #f5bb50;
@@ -211,7 +217,7 @@ body {
     font-weight: $weight-regular;
     font-size: $body-lg-size;
     line-height: $body-lg-lh;
-    color: $neutral-900;
+    color: $gray-color-txt;
 }
 
 .controller-search.action-events form .verified,
