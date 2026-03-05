@@ -133,25 +133,30 @@ $home-register: rgba($primary-500, 0);
 $low-500: #2a327f;
 // $high-500: #FFFFFF;
 
+// Design System v1.0 — Typography (Figma): Poppins, sizes e line-heights
+$font-body: 'Poppins', sans-serif !default;
+$font-headings: 'Poppins', sans-serif !default;
 $font-family-base: 'Poppins', sans-serif !default;
-$font-title: 'League Gothic', sans-serif !default;
+$font-title: 'Poppins', sans-serif !default;
 
 $weight-regular: 400;
 $weight-medium: 500;
 $weight-semibold: 600;
 $weight-bold: 700;
 
-$lh-tight: 1.2;
-$lh-snug: 1.4;
-$lh-base: 1.5;
+$lh-tight: 1.2;   // 120% — Display / Heading
+$lh-snug: 1.4;   // 140% — Body xl (18px)
+$lh-base: 1.5;   // 150% — Body lg/md/sm, Overline
 
 $ls-normal: 0;
-$ls-wide: 0.01em;
+$ls-wide: 0.01em; // 1% — Overline xs
 
+// Display (Bold, 120%)
 $display-1: 80px;
 $display-2: 72px;
 $display-3: 64px;
 
+// Heading (Bold, 120%)
 $h1-size: 56px;
 $h2-size: 48px;
 $h3-size: 40px;
@@ -159,18 +164,23 @@ $h4-size: 32px;
 $h5-size: 24px;
 $h6-size: 20px;
 
+// Body xl (18px, 140%)
 $body-xl-size: 18px;
 $body-xl-lh: $lh-snug;
 
+// Body lg (16px, 150%)
 $body-lg-size: 16px;
 $body-lg-lh: $lh-base;
 
+// Body md (14px, 150%)
 $body-md-size: 14px;
 $body-md-lh: $lh-base;
 
+// Body sm (12px, 150%)
 $body-sm-size: 12px;
 $body-sm-lh: $lh-base;
 
+// Overline xs (10px, 150%, 1% letter-spacing)
 $overline-xs-size: 10px;
 $overline-ls: $ls-wide;
 
@@ -183,6 +193,12 @@ $body-small: $body-sm-size;
 
 // Borders radius
 $border-radius-xxs: 2px;
+
+// Escala gray alinhada ao exemplo (--gray-* e --mc-gray-*)
+$gray-100: #fafafa !default;
+$gray-300: #ececec !default;
+$gray-500: #4b4b53 !default;
+$gray-700: #19191c !default;
 
 @import '../../../BaseV2/assets-src/sass/theme-BaseV2';
 
@@ -210,13 +226,24 @@ $border-radius-xxs: 2px;
     --mc-home-header-gradient: rgba($primary-500, 0);
     --mc-home-feature: #{$home-feature};
     --mc-home-register: #{$home-register};
+
+    /* Compatibilidade com utilitários (ex.: text-[--gray-500], font-medium) */
+    --font-sans: #{$font-family-base};
+    --font-weight-medium: #{$weight-medium};
+    --text-default-color: #494440;
+    --gray-100: #{$gray-100};
+    --gray-200: #ececec;
+    --gray-400: #68686e;
+    --gray-500: #{$gray-500};
+    --gray-700: #{$gray-700};
+    --gray-800: #0d0d0e;
 }
 
 body {
     font-family: $font-family-base;
-    font-weight: $weight-regular;
-    font-size: $body-lg-size;
-    line-height: $body-lg-lh;
+    font-weight: $weight-medium;
+    font-size: $body-md-size;
+    line-height: $body-md-lh;
     color: $gray-color-txt;
 }
 

@@ -109,9 +109,9 @@
         .logIn {
             display: flex;
             align-items: center;
-            justify-content: center; 
+            justify-content: center;
 
-            background: #181b4e;
+            background: var(--mc-primary-500);
             border-radius: 8px;
             color: var(--mc-white);
             font-size: size(14);
