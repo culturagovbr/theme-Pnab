@@ -11,14 +11,6 @@
     position: relative;
     flex-wrap: wrap;
 
-    &__support {
-        padding-bottom: size(39);
-
-        @include mobile {
-            padding-bottom: size(24);
-        }
-    }
-
     &__msgspt {
         text-align: center;
     }
@@ -192,6 +184,8 @@
                 flex-wrap: wrap;
                 gap: size(24);
                 padding: 0;
+                width: 100vw;
+                margin-left: calc(-50vw + 50%);
 
                 @include mobile {
                     flex-direction: column;
@@ -205,13 +199,12 @@
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    width: 100%;
 
                     img,
                     theme-logo,
                     theme-logo img {
-                        max-height: size(100);
-                        max-width: 100%;
-                        width: auto;
+                        width: 100%;
                         height: auto;
                         display: block;
                         object-fit: contain;
