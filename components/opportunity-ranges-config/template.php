@@ -15,7 +15,7 @@ $this->import('
 <div class="opportunity-ranges-config">
     <div class="opportunity-ranges-config__header">
         <h4 class="bold">
-            <?= $this->text('header-title', i::__('Configuração de faixas/linhas')) ?>
+            <?= $this->text('header-title', i::__('Configurações de categorias')) ?>
             <?php $this->info('editais-oportunidades -> configuracoes -> faixas-linhas') ?>
         </h4>
         <h6><?= $this->text('header-description', i::__('Crie e configure as faixas abaixo, inserindo um breve resumo, quantidade e valor de cada uma delas.')) ?></h6>
