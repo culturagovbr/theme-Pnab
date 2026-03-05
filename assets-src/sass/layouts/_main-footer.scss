@@ -10,6 +10,7 @@
     padding: 0;
     position: relative;
     flex-wrap: wrap;
+    overflow-x: hidden;
 
     &__msgspt {
         text-align: center;
