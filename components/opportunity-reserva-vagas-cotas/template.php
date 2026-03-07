@@ -37,16 +37,16 @@ $this->import('
         <span class="opportunity-reserva-vagas-cotas__th">Ações</span>
     </div>
 
-    <div class="opportunity-reserva-vagas-cotas__content" v-for="(cota, index) in cotas" :key="index">
+    <div class="opportunity-reserva-vagas-cotas__content" v-for="(cota, index) in cotas" :key="index" :class="{ 'opportunity-reserva-vagas-cotas__content--lei': isCotaLei(index), 'opportunity-reserva-vagas-cotas__content--ampla': isAmplaConcorrencia(index), 'opportunity-reserva-vagas-cotas__content--extra': isCotaExtra(index) }">
         <div class="field">
             <input v-if="isCotaFixa(index)" class="field__input" type="text" :value="cota.label" readonly disabled>
-            <input v-else class="field__input" type="text" v-model.trim="cota.label" :placeholder="text('descricao')" @blur="autoSave">
+            <input v-else class="field__input" type="text" v-model.trim="cota.label" :placeholder="text('descricao')" @blur="onBlurField(index)">
         </div>
         <div class="field">
-            <input class="field__input" type="number" min="0" step="1" v-model.number="cota.vagas" :disabled="isCotaFixa(index) && cota.naoAplicavel" @blur="autoSave">
+            <input class="field__input" type="number" min="0" step="1" v-model.number="cota.vagas" :disabled="isCotaFixa(index) && cota.naoAplicavel" @blur="onBlurField(index)">
         </div>
         <div class="field">
-            <mc-currency-input class="field__input" :key="`valor-${index}-${cota.naoAplicavel}-${cota.valorDestinado}`" v-model.lazy="cota.valorDestinado" :disabled="isCotaFixa(index) && cota.naoAplicavel" @blur="autoSave"></mc-currency-input>
+            <mc-currency-input class="field__input" :key="`valor-${index}-${cota.naoAplicavel}-${cota.valorDestinado}`" v-model.lazy="cota.valorDestinado" :disabled="isCotaFixa(index) && cota.naoAplicavel" @blur="onBlurField(index)"></mc-currency-input>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-automatico">
             <span v-if="isCotaFixa(index)" class="opportunity-reserva-vagas-cotas__percentual" :aria-label="text('automatico')">{{ percentualCota(cota) }}</span>
@@ -57,6 +57,16 @@ $this->import('
                 <input type="checkbox" v-model="cota.naoAplicavel" @change="onNaoAplicavelChange(cota)">
                 <span>{{ text('naoAplicavel') }}</span>
             </label>
+            <span v-else-if="isPendingNewCota(index)" class="opportunity-reserva-vagas-cotas__actions-pending">
+                <button type="button" class="opportunity-reserva-vagas-cotas__confirm" @click="confirmNewCota()" :aria-label="text('confirmarCota')">
+                    <mc-icon name="check" class="success__color"></mc-icon>
+                    <span>{{ text('confirmarCota') }}</span>
+                </button>
+                <button type="button" class="opportunity-reserva-vagas-cotas__delete" @click="cancelNewCota()" :aria-label="text('cancelarAdicaoCota')">
+                    <mc-icon name="trash" class="danger__color"></mc-icon>
+                    <span>{{ text('cancelarAdicaoCota') }}</span>
+                </button>
+            </span>
             <mc-confirm-button v-else @confirm="removeCota(index)">
                 <template #button="{open}">
                     <button type="button" class="opportunity-reserva-vagas-cotas__delete" @click="open()" :aria-label="text('excluirCota')">
@@ -72,7 +82,7 @@ $this->import('
     </div>
 
     <div class="opportunity-reserva-vagas-cotas__add">
-        <button type="button" class="button button--primary button--icon opportunity-reserva-vagas-cotas__add-btn" @click="addCota">
+        <button type="button" class="button button--primary button--icon opportunity-reserva-vagas-cotas__add-btn" @click="addCota" :disabled="pendingNewCotaIndex !== null">
             <mc-icon name="add"></mc-icon>
             <label>{{ text('adicionarCota') }}</label>
         </button>

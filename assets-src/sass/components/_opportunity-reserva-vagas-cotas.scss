@@ -115,6 +115,7 @@
         align-items: center;
         justify-items: center;
         padding-top: size(8);
+        padding-bottom: size(8);
         width: 100%;
         min-width: 0;
 
@@ -167,6 +168,21 @@
         }
     }
 
+    // Destaque: três cotas prioritárias (lei) e Ampla concorrência — paleta do tema
+    &__content--lei,
+    &__content--ampla {
+        background: rgba(10, 114, 232, 0.06); // --mc-primary-500 com transparência
+        border-left: 3px solid var(--mc-primary-500, #0a72e8);
+        padding-left: size(20);
+    }
+
+    // Cotas customizadas (extras) — barra lateral amarela (paleta do tema)
+    &__content--extra {
+        background: rgba(240, 181, 0, 0.08); // --mc-spaces-500 com transparência
+        border-left: 3px solid var(--mc-spaces-500, #f0b500);
+        padding-left: size(20);
+    }
+
     &__delete {
         background: none;
         border: none;
@@ -190,6 +206,36 @@
         }
     }
 
+    &__actions-pending {
+        display: inline-flex;
+        align-items: center;
+        gap: size(8);
+        flex-wrap: wrap;
+    }
+
+    &__confirm {
+        background: none;
+        border: none;
+        padding: size(4);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: size(6);
+        color: var(--mc-success-500, #4cb051);
+        font-family: var(--mc-font-body);
+        font-size: var(--mc-font-size-xxs);
+        font-weight: 600;
+
+        &:hover {
+            color: var(--mc-success-700, #265728);
+        }
+
+        .mc-icon {
+            font-size: size(20);
+        }
+    }
+
     &__add {
         margin-top: size(8);
     }
@@ -198,6 +244,11 @@
         display: inline-flex;
         align-items: center;
         gap: size(8);
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     }
 
     .required {

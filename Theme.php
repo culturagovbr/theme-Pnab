@@ -1499,8 +1499,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
-     * Valida o metadado reservaVagasCotas da primeira fase: as 3 cotas devem estar
-     * configuradas (vagas e valorDestinado preenchidos) ou marcadas como "Não aplicável".
+     * Valida o metadado reservaVagasCotas da primeira fase: apenas as 3 cotas da lei
+     * devem estar configuradas (vagas e valorDestinado) ou marcadas como "Não aplicável".
+     * Ampla concorrência não é validada.
      *
      * @param \MapasCulturais\Entities\Opportunity $entity Oportunidade/fase sendo salva
      * @param array $postData Dados do PATCH
@@ -1513,20 +1514,20 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         $cotas = self::ensureArray($postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null));
-        if (count($cotas) < 3) {
+        $minCotas = 4; // 3 da lei + Ampla concorrência (sempre última)
+        if (count($cotas) < $minCotas) {
             return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
         }
 
-        // Valida apenas as 3 cotas obrigatórias por lei (índices 0, 1, 2)
-        foreach (array_slice($cotas, 0, 3) as $cota) {
-            $cota = self::ensureArray($cota);
+        // Valida apenas as 3 cotas obrigatórias por lei (índices 0, 1, 2). Ampla concorrência não é validada.
+        foreach ([0, 1, 2] as $idx) {
+            $cota = self::ensureArray($cotas[$idx] ?? []);
             $naoAplicavel = !empty($cota['naoAplicavel']);
             if ($naoAplicavel) {
                 continue;
             }
             $vagas = isset($cota['vagas']) && $cota['vagas'] !== '' && is_numeric($cota['vagas']) ? (int) $cota['vagas'] : null;
             $valor = isset($cota['valorDestinado']) && $cota['valorDestinado'] !== '' && is_numeric($cota['valorDestinado']) ? (float) $cota['valorDestinado'] : null;
-            // Quando a cota se aplica, exige vagas > 0 e valor > 0 (zero não é considerado configurado)
             if ($vagas === null || $valor === null || $vagas < 1 || $valor < 0.01) {
                 return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
             }
