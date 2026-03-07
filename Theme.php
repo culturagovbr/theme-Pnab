@@ -1532,22 +1532,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $convertVal = $metadataKey === 'vacancies' ? 'intval' : 'floatval';
         $totalMetadataInRanges = array_sum(array_map($convertVal, array_column($registrationRanges, $keyTarget)));
+        $totalDefinido = $convertVal($metadataValue);
 
-        // Garante que a soma das faixas não ultrapasse o valor total definido
-        if ($totalMetadataInRanges > $convertVal($metadataValue)) {
-            // Campos específicos para destacar apenas os inputs relacionados
-            if ($metadataKey === 'vacancies') {
+        // Exige que o somatório das categorias seja exatamente igual ao Total de vagas / Valor total (nem menor, nem maior)
+        if ($metadataKey === 'vacancies') {
+            if ($totalMetadataInRanges !== $totalDefinido) {
                 return [
                     'registrationRangesVacancies' => [
-                        i::__('O total de vagas das categorias é superior ao Total de vagas definido.')
+                        i::__('O total de vagas das categorias deve ser igual ao Total de vagas definido;')
                     ]
                 ];
             }
-
-            if ($metadataKey === 'totalResource') {
+        } elseif ($metadataKey === 'totalResource') {
+            // Para valor monetário, tolerância de 0.01 para evitar erros de ponto flutuante
+            if (abs($totalMetadataInRanges - $totalDefinido) > 0.009) {
                 return [
                     'registrationRangesTotalResource' => [
-                        i::__('O total em valores das categorias é superior ao Valor total definido.')
+                        i::__('O total em valores das categorias deve ser igual ao Valor total definido;')
                     ]
                 ];
             }
