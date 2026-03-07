@@ -1,8 +1,9 @@
 /**
  * Componente: Reserva de vagas (cotas)
- * Metadado reservaVagasCotas (array de 3 itens fixos) na phase (primeira fase).
- * Labels vêm de texts.php (i18n).
+ * Metadado reservaVagasCotas: 3 cotas obrigatórias por lei (índices 0,1,2) + cotas extras (índice 3+).
  */
+const NUM_COTAS_FIXAS = 3;
+
 function defaultCotas(labels) {
     return labels.map((label) => ({
         label,
@@ -14,17 +15,22 @@ function defaultCotas(labels) {
 
 function ensureCotas(entity, labels) {
     let cotas = entity.reservaVagasCotas;
-    if (!Array.isArray(cotas) || cotas.length !== 3) {
+    if (!Array.isArray(cotas) || cotas.length < NUM_COTAS_FIXAS) {
         entity.reservaVagasCotas = defaultCotas(labels);
         return;
     }
-    // Garante labels fixos e estrutura em cada item
-    entity.reservaVagasCotas = cotas.map((c, i) => ({
+    const fixed = cotas.slice(0, NUM_COTAS_FIXAS).map((c, i) => ({
         label: labels[i] ?? (c.label || ''),
         vagas: typeof c.vagas === 'number' ? c.vagas : (parseInt(c.vagas, 10) || 0),
         valorDestinado: typeof c.valorDestinado === 'number' ? c.valorDestinado : (parseFloat(c.valorDestinado) || 0),
         naoAplicavel: Boolean(c.naoAplicavel),
     }));
+    const extras = cotas.slice(NUM_COTAS_FIXAS).map((c) => ({
+        label: typeof c.label === 'string' ? c.label.trim() : '',
+        vagas: typeof c.vagas === 'number' ? c.vagas : (parseInt(c.vagas, 10) || 0),
+        valorDestinado: typeof c.valorDestinado === 'number' ? c.valorDestinado : (parseFloat(c.valorDestinado) || 0),
+    }));
+    entity.reservaVagasCotas = [...fixed, ...extras];
 }
 
 app.component('opportunity-reserva-vagas-cotas', {
@@ -45,7 +51,13 @@ app.component('opportunity-reserva-vagas-cotas', {
     computed: {
         cotas() {
             const arr = this.entity.reservaVagasCotas;
-            return Array.isArray(arr) && arr.length === 3 ? arr : [];
+            return Array.isArray(arr) && arr.length >= NUM_COTAS_FIXAS ? arr : [];
+        },
+        cotasFixas() {
+            return this.cotas.slice(0, NUM_COTAS_FIXAS);
+        },
+        cotasExtras() {
+            return this.cotas.slice(NUM_COTAS_FIXAS);
         },
         hasError() {
             const err = this.entity.__validationErrors?.reservaVagasCotas;
@@ -100,6 +112,23 @@ app.component('opportunity-reserva-vagas-cotas', {
                 }
             }
             this.$nextTick(() => this.autoSave());
+        },
+        addCota() {
+            this.entity.reservaVagasCotas = [
+                ...this.entity.reservaVagasCotas,
+                { label: '', vagas: 0, valorDestinado: 0 },
+            ];
+            this.$nextTick(() => this.autoSave());
+        },
+        removeCota(index) {
+            if (index < NUM_COTAS_FIXAS) return;
+            const arr = [...this.entity.reservaVagasCotas];
+            arr.splice(index, 1);
+            this.entity.reservaVagasCotas = arr;
+            this.$nextTick(() => this.autoSave());
+        },
+        isCotaFixa(index) {
+            return index < NUM_COTAS_FIXAS;
         },
     },
 });

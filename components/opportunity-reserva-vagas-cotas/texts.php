@@ -18,4 +18,7 @@ return [
     'infoBlockItem2' => i::__('10% para Pessoas indígenas'),
     'infoBlockItem3' => i::__('5% para Pessoas com deficiência'),
     'validationError' => i::__('Configure todas as cotas ou marque como Não aplicável.'),
+    'adicionarCota' => i::__('Adicionar Cota'),
+    'excluirCota' => i::__('Excluir Cota'),
+    'confirmExcluirCota' => i::__('Deseja excluir esta cota?'),
 ];

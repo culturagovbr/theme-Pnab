@@ -1513,14 +1513,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         $cotas = self::ensureArray($postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null));
-        if (count($cotas) === 0) {
-            return false;
-        }
-        if (count($cotas) !== 3) {
+        if (count($cotas) < 3) {
             return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
         }
 
-        foreach ($cotas as $cota) {
+        // Valida apenas as 3 cotas obrigatórias por lei (índices 0, 1, 2)
+        foreach (array_slice($cotas, 0, 3) as $cota) {
             $cota = self::ensureArray($cota);
             $naoAplicavel = !empty($cota['naoAplicavel']);
             if ($naoAplicavel) {

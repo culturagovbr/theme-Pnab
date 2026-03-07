@@ -88,7 +88,10 @@
         justify-self: center;
     }
 
-    &__header-row &__th:first-child,
+    &__header-row &__th:first-child {
+        justify-self: start;
+    }
+
     &__header-row &__th:last-child {
         justify-self: start;
     }
@@ -162,6 +165,39 @@
             align-items: center;
             gap: size(8);
         }
+    }
+
+    &__delete {
+        background: none;
+        border: none;
+        padding: size(4);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: size(6);
+        color: var(--mc-danger-500);
+        font-family: var(--mc-font-body);
+        font-size: var(--mc-font-size-xxs);
+        font-weight: 600;
+
+        &:hover {
+            color: var(--mc-danger-700);
+        }
+
+        .mc-icon {
+            font-size: size(20);
+        }
+    }
+
+    &__add {
+        margin-top: size(8);
+    }
+
+    &__add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: size(8);
     }
 
     .required {
