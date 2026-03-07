@@ -28,21 +28,25 @@ $this->import('
         </div>
     </div>
 
+    <div class="opportunity-reserva-vagas-cotas__header-row">
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('descricao') }}</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('numeroVagas') }}</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('valorDestinado') }} (R$)</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('automatico') }}</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('naoAplicavel') }}</span>
+    </div>
+
     <div class="opportunity-reserva-vagas-cotas__content" v-for="(cota, index) in cotas" :key="index">
         <div class="field">
-            <label>{{ text('descricao') }}</label>
             <input class="field__input" type="text" :value="cota.label" readonly disabled>
         </div>
         <div class="field">
-            <h6>{{ text('numeroVagas') }}</h6>
             <input class="field__input" type="number" min="0" step="1" v-model.number="cota.vagas" :disabled="cota.naoAplicavel" @blur="autoSave">
         </div>
         <div class="field">
-            <h6>{{ text('valorDestinado') }} (R$)</h6>
             <mc-currency-input class="field__input" :key="`valor-${index}-${cota.naoAplicavel}-${cota.valorDestinado}`" v-model.lazy="cota.valorDestinado" :disabled="cota.naoAplicavel" @blur="autoSave"></mc-currency-input>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-automatico">
-            <h6>{{ text('automatico') }}</h6>
             <span class="opportunity-reserva-vagas-cotas__percentual" :aria-label="text('automatico')">{{ percentualCota(cota) }}</span>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-checkbox">

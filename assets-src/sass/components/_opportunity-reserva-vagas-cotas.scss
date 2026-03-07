@@ -49,6 +49,55 @@
         }
     }
 
+    // Cabeçalho da tabela (mesmo grid das linhas)
+    &__header-row {
+        display: grid;
+        grid-template-columns:
+            calc(30% - size(20))
+            calc(18% - size(12))
+            calc(18% - size(12))
+            minmax(size(72), 10%)
+            minmax(size(120), 1fr);
+        gap: size(20) size(20);
+        align-items: center;
+        justify-items: center;
+        padding: size(8) 0;
+        border-bottom: 1px solid var(--mc-gray-300);
+        width: 100%;
+        min-width: 0;
+
+        @media (max-width: 932px) {
+            grid-template-columns:
+                calc(28% - 1rem)
+                calc(22% - 1rem)
+                calc(22% - 1rem)
+                size(72)
+                minmax(size(120), 1fr);
+        }
+
+        @media (max-width: 675px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    &__th {
+        font-family: var(--mc-font-body);
+        font-size: var(--mc-font-size-xxs);
+        font-weight: 600;
+        color: var(--mc-low-500);
+        justify-self: center;
+    }
+
+    &__header-row &__th:first-child,
+    &__header-row &__th:last-child {
+        justify-self: start;
+    }
+
+    // Primeira linha de dados sem border-top (evita duplicar a linha do header)
+    &__header-row + &__content {
+        border-top: none;
+    }
+
     // Grid: descrição | vagas | valor | automático (% sobre total) | checkbox
     &__content {
         display: grid;
