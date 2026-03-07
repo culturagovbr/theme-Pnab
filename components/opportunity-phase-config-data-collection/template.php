@@ -12,7 +12,6 @@ $this->import('
     entity-field
     mc-confirm-button
     opportunity-phase-publish-date-config
-    opportunity-category
     opportunity-ranges-config
     opportunity-reserva-vagas-cotas
     opportunity-proponent-types
@@ -54,10 +53,6 @@ $this->import('
                     </entity-field>
                 </div>
             <?php $this->applyTemplateHook('opportunity-data-collection-config','end')?>
-        </div>
-
-        <div class="col-12">
-            <opportunity-category v-if="phase.isFirstPhase" :entity="phase"></opportunity-category>
         </div>
 
         <div class="col-12" v-if="phase.isFirstPhase">
