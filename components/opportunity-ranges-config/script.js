@@ -62,7 +62,7 @@ app.component('opportunity-ranges-config', {
                     }
                 });
             } else{
-               this.messages.error("Por favor, preencha todos os campos da faixa antes de adicionar uma nova faixa.");
+               this.messages.error("Por favor, preencha todos os campos da categoria antes de adicionar uma nova categoria.");
             }
         },
         removeRange(item) {

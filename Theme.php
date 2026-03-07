@@ -1539,7 +1539,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($metadataKey === 'vacancies') {
                 return [
                     'registrationRangesVacancies' => [
-                        i::__('O total de vagas das faixas/linhas é superior ao Total de vagas definido.')
+                        i::__('O total de vagas das categorias é superior ao Total de vagas definido.')
                     ]
                 ];
             }
@@ -1547,7 +1547,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($metadataKey === 'totalResource') {
                 return [
                     'registrationRangesTotalResource' => [
-                        i::__('O total em valores das faixas/linhas é superior ao Valor total definido.')
+                        i::__('O total em valores das categorias é superior ao Valor total definido.')
                     ]
                 ];
             }
