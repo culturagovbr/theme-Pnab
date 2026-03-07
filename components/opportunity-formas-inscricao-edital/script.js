@@ -54,9 +54,21 @@ app.component('opportunity-formas-inscricao-edital', {
         errorMessage() {
             const err = this.entity.__validationErrors?.formasInscricaoEdital;
             return Array.isArray(err) && err.length > 0 ? err[0] : '';
+        },
+        emailFieldError() {
+            const err = this.entity.__validationErrors?.formasInscricaoEdital_email;
+            return Array.isArray(err) && err.length > 0 ? err[0] : '';
+        },
+        emailDisplayError() {
+            return this.emailFieldError || this.emailBlurError;
         }
     },
 
+    data() {
+        return {
+            emailBlurError: ''
+        };
+    },
     created() {
         this.ensureData();
     },
@@ -113,6 +125,26 @@ app.component('opportunity-formas-inscricao-edital', {
             const arr = this.entity.formasInscricaoEdital.formas;
             const item = arr.find(f => f.tipo === tipo);
             if (item) item.descricao = valor;
+            if (tipo === 'email') this.emailBlurError = '';
+        },
+        async validateEmailBlur() {
+            const valor = (this.getDescricao('email') || '').trim();
+            if (valor === '') {
+                this.emailBlurError = '';
+                return;
+            }
+            const url = Utils.createUrl('site', 'validaEmailFormasInscricao');
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ email: valor })
+                });
+                const data = await res.json();
+                this.emailBlurError = data.valid ? '' : (data.message || this.text('erroEmailInvalido'));
+            } catch (e) {
+                this.emailBlurError = '';
+            }
         }
     }
 });

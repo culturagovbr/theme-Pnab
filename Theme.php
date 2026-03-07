@@ -6,6 +6,7 @@ use AldirBlanc\Services\UserAccessService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
+use Respect\Validation\Validator;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. * 
@@ -482,6 +483,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $this->enqueueStyle('app-v2', 'main', 'css/theme-Pnab.css');
 
+        /**
+         * Validação de e-mail (formas de inscrição) no blur — usa o mesmo padrão do backend (Respect\Validation).
+         */
+        $app->hook('POST(site.validaEmailFormasInscricao)', function () {
+            $this->requireAuthentication();
+            $email = trim((string) ($this->data['email'] ?? ''));
+            if ($email === '') {
+                $this->json(['valid' => true]);
+                return;
+            }
+            $valid = Validator::email()->validate($email);
+            $this->json([
+                'valid' => $valid,
+                'message' => $valid ? '' : i::__('Informe um e-mail válido.'),
+            ]);
+        });
+
         // Mapeia o ícone do X (antigo Twitter) para o novo logo do X
         $app->hook('component(mc-icon).iconset', function (&$iconset) {
             $iconset['twitter'] = 'simple-icons:x';
@@ -731,6 +749,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                             $descricao = trim((string) ($item['descricao'] ?? ''));
                             if ($descricao === '') {
                                 $errors['formasInscricaoEdital'] = [i::__('Preencha a descrição de cada forma de inscrição marcada.')];
+                                break;
+                            }
+                            $tipo = $item['tipo'] ?? '';
+                            if ($tipo === 'email' && !Validator::email()->validate($descricao)) {
+                                $errors['formasInscricaoEdital_email'] = [i::__('Informe um e-mail válido.')];
                                 break;
                             }
                         }
