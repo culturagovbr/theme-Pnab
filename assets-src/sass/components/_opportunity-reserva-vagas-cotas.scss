@@ -53,11 +53,11 @@
     &__content {
         display: grid;
         grid-template-columns:
-            calc(42% - size(24))
+            calc(30% - size(20))
             calc(18% - size(12))
             calc(18% - size(12))
             minmax(size(72), 10%)
-            size(100);
+            minmax(size(120), 1fr);
         gap: size(20) size(20);
         border-top: 1px solid var(--mc-gray-300);
         align-items: center;
@@ -84,11 +84,11 @@
 
         @media (max-width: 932px) {
             grid-template-columns:
-                calc(35% - 1rem)
+                calc(28% - 1rem)
                 calc(22% - 1rem)
                 calc(22% - 1rem)
                 size(72)
-                size(85);
+                minmax(size(120), 1fr);
         }
 
         @media (max-width: 675px) {
@@ -105,6 +105,14 @@
 
     &__cell-checkbox {
         justify-self: start;
+        white-space: nowrap;
+
+        .field__group.field__checkbox {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            gap: size(8);
+        }
     }
 
     .required {
