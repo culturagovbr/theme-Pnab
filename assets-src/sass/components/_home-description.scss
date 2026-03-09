@@ -1,25 +1,34 @@
+// Imagem de fundo: 1905 x 921 px (proporção 1905/921)
 .home-network {
+  width: 100%;
+  aspect-ratio: 1905 / 921;
+  min-height: 420px;
   background-color: #FEFAF6;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-origin: padding-box;
   padding: size(80) size(16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 
   &__container {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    gap: size(40);
+    justify-content: center;
     margin: 0 auto;
     max-width: size(1170);
     width: 100%;
-
-    @media (max-width: size(800)) {
-      flex-direction: column;
-    }
+    position: relative;
+    z-index: 1;
   }
 
   &__text {
-    max-width: size(560);
-    flex: 1;
+    max-width: size(720);
+    text-align: center;
 
     .title {
       font-size: size(25);
@@ -34,18 +43,6 @@
       font-size: size(20);
       line-height: size(25);
       color: var(--mc-low-800, #101010);
-    }
-  }
-
-  &__image {
-    flex: 1;
-    display: flex;
-    justify-content: end;
-
-    img {
-      width: 100%;
-      height: auto;
-      max-width: size(400);
     }
   }
 }

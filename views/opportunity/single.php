@@ -76,24 +76,24 @@ $this->breadcrumb = [
         <mc-tab label="<?= i::__('Informações') ?>" slug="info">
             <mc-container class="opportunity">
                 <main class="grid-12">
-                    <!-- Campos adicionais do tema Pnab -->
-                    <div class="col-12" v-if="entity.segmento || entity.etapa || entity.pauta || entity.territorio">
+                    <!-- Campos adicionais do tema Pnab (segmento, etapa, pauta, territorio podem ser array/multiselect) -->
+                    <div class="col-12" v-if="(entity.segmento && (!Array.isArray(entity.segmento) || entity.segmento.length)) || (entity.etapa && (!Array.isArray(entity.etapa) || entity.etapa.length)) || (entity.pauta && (!Array.isArray(entity.pauta) || entity.pauta.length)) || (entity.territorio && (!Array.isArray(entity.territorio) || entity.territorio.length)) || entity.etapaOutros || entity.pautaOutros || entity.segmentoOutros">
                         <h3><?= i::__("Informações Adicionais") ?></h3>
-                        <p v-if="entity.segmento"><strong><?php i::_e('Segmento') ?>:</strong> {{entity.segmento}}</p>
+                        <p v-if="entity.segmento && (!Array.isArray(entity.segmento) || entity.segmento.length)"><strong><?php i::_e('Segmento') ?>:</strong> {{ (entity.$PROPERTIES?.segmento?.options && Array.isArray(entity.segmento)) ? entity.segmento.map(function(v) { return entity.$PROPERTIES.segmento.options[v] || v; }).join(', ') : (Array.isArray(entity.segmento) ? entity.segmento.join(', ') : entity.segmento) }}<span v-if="entity.segmentoOutros"> — <?php i::_e('Outros') ?> ({{ entity.segmentoOutros }})</span></p>
                         
-                        <p v-if="entity.etapa || entity.etapaOutros">
+                        <p v-if="(entity.etapa && (!Array.isArray(entity.etapa) || entity.etapa.length)) || entity.etapaOutros">
                             <strong><?php i::_e('Etapa') ?>: </strong> 
                             <span v-if="entity.etapaOutros"><?php i::_e('Outros') ?> ({{entity.etapaOutros}})</span>
-                            <span v-else>{{entity.etapa}}</span>
+                            <span v-else>{{ (entity.$PROPERTIES?.etapa?.options && Array.isArray(entity.etapa)) ? entity.etapa.map(function(v) { return entity.$PROPERTIES.etapa.options[v] || v; }).join(', ') : (Array.isArray(entity.etapa) ? entity.etapa.join(', ') : entity.etapa) }}</span>
                         </p>
                         
-                        <p v-if="entity.pauta || entity.pautaOutros">
+                        <p v-if="(entity.pauta && (!Array.isArray(entity.pauta) || entity.pauta.length)) || entity.pautaOutros">
                             <strong><?php i::_e('Pauta') ?>: </strong> 
                             <span v-if="entity.pautaOutros"><?php i::_e('Outros') ?> ({{entity.pautaOutros}})</span>
-                            <span v-else>{{entity.pauta}}</span>
+                            <span v-else>{{ (entity.$PROPERTIES?.pauta?.options && Array.isArray(entity.pauta)) ? entity.pauta.map(function(v) { return entity.$PROPERTIES.pauta.options[v] || v; }).join(', ') : (Array.isArray(entity.pauta) ? entity.pauta.join(', ') : entity.pauta) }}</span>
                         </p>
                         
-                        <p v-if="entity.territorio"><strong><?php i::_e('Território') ?>:</strong> {{entity.territorio}}</p>
+                        <p v-if="entity.territorio && (!Array.isArray(entity.territorio) || entity.territorio.length)"><strong><?php i::_e('Território') ?>:</strong> {{ (entity.$PROPERTIES?.territorio?.options && Array.isArray(entity.territorio)) ? entity.territorio.map(function(v) { return entity.$PROPERTIES.territorio.options[v] || v; }).join(', ') : (Array.isArray(entity.territorio) ? entity.territorio.join(', ') : entity.territorio) }}</p>
                     </div>
                     
                     <opportunity-subscription class="col-12" :entity="entity"></opportunity-subscription>
