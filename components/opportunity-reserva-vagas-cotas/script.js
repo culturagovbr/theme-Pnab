@@ -2,60 +2,60 @@
  * Componente: Reserva de vagas (cotas)
  * Estrutura: 3 cotas obrigatórias por lei (índices 0,1,2) + cotas extras + 1 cota fixa "Ampla concorrência" sempre por último.
  */
-const NUM_COTAS_LEI = 3;
+const NUM_LAW_QUOTAS = 3;
 
 /** Identificadores de campo para metadata (data-field-identifier) e detecção de erro */
-const COTA_FIELD_NEGRAS = 'negras';
-const COTA_FIELD_INDIGENAS = 'indigenas';
-const COTA_FIELD_PCD = 'pcd';
-const COTA_FIELD_AMPLA = 'ampla-concorrencia';
-const COTA_FIELD_EXTRA_PREFIX = 'extra-';
+const QUOTA_FIELD_BLACK = 'negras';
+const QUOTA_FIELD_INDIGENOUS = 'indigenas';
+const QUOTA_FIELD_PCD = 'pcd';
+const QUOTA_FIELD_GENERAL_COMPETITION = 'ampla-concorrencia';
+const QUOTA_FIELD_EXTRA_PREFIX = 'extra-';
 
-function defaultCota(label, naoAplicavel = true) {
+function defaultQuota(label, notApplicable = true) {
     return {
         label,
         vagas: 0,
         valorDestinado: 0,
-        naoAplicavel: !!naoAplicavel,
+        naoAplicavel: !!notApplicable,
     };
 }
 
-function defaultCotasLei(labelsLei) {
-    return labelsLei.map((label) => defaultCota(label));
+function defaultLawQuotas(lawLabels) {
+    return lawLabels.map((lawLabel) => defaultQuota(lawLabel));
 }
 
-function ensureCotas(entity, labelsLei, labelAmpla) {
-    let cotas = entity.reservaVagasCotas;
-    const fixedStart = Array.isArray(cotas) && cotas.length >= NUM_COTAS_LEI
-        ? cotas.slice(0, NUM_COTAS_LEI).map((c, i) => ({
-            label: labelsLei[i] ?? (c.label || ''),
-            vagas: typeof c.vagas === 'number' ? c.vagas : (parseInt(c.vagas, 10) || 0),
-            valorDestinado: typeof c.valorDestinado === 'number' ? c.valorDestinado : (parseFloat(c.valorDestinado) || 0),
-            naoAplicavel: Boolean(c.naoAplicavel),
+function ensureQuotas(entity, lawLabels, generalCompetitionLabel) {
+    let quotas = entity.reservaVagasCotas;
+    const fixedStart = Array.isArray(quotas) && quotas.length >= NUM_LAW_QUOTAS
+        ? quotas.slice(0, NUM_LAW_QUOTAS).map((quotaItem, lawIndex) => ({
+            label: lawLabels[lawIndex] ?? (quotaItem.label || ''),
+            vagas: typeof quotaItem.vagas === 'number' ? quotaItem.vagas : (parseInt(quotaItem.vagas, 10) || 0),
+            valorDestinado: typeof quotaItem.valorDestinado === 'number' ? quotaItem.valorDestinado : (parseFloat(quotaItem.valorDestinado) || 0),
+            naoAplicavel: Boolean(quotaItem.naoAplicavel),
         }))
-        : defaultCotasLei(labelsLei);
+        : defaultLawQuotas(lawLabels);
 
     let extras = [];
-    let ampla = defaultCota(labelAmpla);
+    let generalCompetition = defaultQuota(generalCompetitionLabel);
 
-    if (Array.isArray(cotas) && cotas.length > NUM_COTAS_LEI) {
-        const ultima = cotas[cotas.length - 1];
-        ampla = {
-            label: labelAmpla,
-            vagas: typeof ultima.vagas === 'number' ? ultima.vagas : (parseInt(ultima.vagas, 10) || 0),
-            valorDestinado: typeof ultima.valorDestinado === 'number' ? ultima.valorDestinado : (parseFloat(ultima.valorDestinado) || 0),
-            naoAplicavel: Boolean(ultima.naoAplicavel),
+    if (Array.isArray(quotas) && quotas.length > NUM_LAW_QUOTAS) {
+        const last = quotas[quotas.length - 1];
+        generalCompetition = {
+            label: generalCompetitionLabel,
+            vagas: typeof last.vagas === 'number' ? last.vagas : (parseInt(last.vagas, 10) || 0),
+            valorDestinado: typeof last.valorDestinado === 'number' ? last.valorDestinado : (parseFloat(last.valorDestinado) || 0),
+            naoAplicavel: Boolean(last.naoAplicavel),
         };
-        if (cotas.length > NUM_COTAS_LEI + 1) {
-            extras = cotas.slice(NUM_COTAS_LEI, -1).map((c) => ({
-                label: typeof c.label === 'string' ? c.label.trim() : '',
-                vagas: typeof c.vagas === 'number' ? c.vagas : (parseInt(c.vagas, 10) || 0),
-                valorDestinado: typeof c.valorDestinado === 'number' ? c.valorDestinado : (parseFloat(c.valorDestinado) || 0),
+        if (quotas.length > NUM_LAW_QUOTAS + 1) {
+            extras = quotas.slice(NUM_LAW_QUOTAS, -1).map((quotaItem) => ({
+                label: typeof quotaItem.label === 'string' ? quotaItem.label.trim() : '',
+                vagas: typeof quotaItem.vagas === 'number' ? quotaItem.vagas : (parseInt(quotaItem.vagas, 10) || 0),
+                valorDestinado: typeof quotaItem.valorDestinado === 'number' ? quotaItem.valorDestinado : (parseFloat(quotaItem.valorDestinado) || 0),
             }));
         }
     }
 
-    entity.reservaVagasCotas = [...fixedStart, ...extras, ampla];
+    entity.reservaVagasCotas = [...fixedStart, ...extras, generalCompetition];
 }
 
 app.component('opportunity-reserva-vagas-cotas', {
@@ -75,21 +75,21 @@ app.component('opportunity-reserva-vagas-cotas', {
 
     data() {
         return {
-            pendingNewCotaIndex: null, // índice da cota extra em edição (aguardando confirmar ou cancelar)
+            pendingNewQuotaIndex: null,
         };
     },
 
     computed: {
-        cotas() {
+        quotas() {
             const arr = this.entity.reservaVagasCotas;
-            const minLength = NUM_COTAS_LEI + 1; // 3 lei + ampla concorrência
+            const minLength = NUM_LAW_QUOTAS + 1;
             return Array.isArray(arr) && arr.length >= minLength ? arr : [];
         },
-        cotasFixas() {
-            return this.cotas.slice(0, NUM_COTAS_LEI);
+        fixedQuotas() {
+            return this.quotas.slice(0, NUM_LAW_QUOTAS);
         },
-        cotasExtras() {
-            return this.cotas.length > NUM_COTAS_LEI + 1 ? this.cotas.slice(NUM_COTAS_LEI, -1) : [];
+        extraQuotas() {
+            return this.quotas.length > NUM_LAW_QUOTAS + 1 ? this.quotas.slice(NUM_LAW_QUOTAS, -1) : [];
         },
         hasError() {
             const err = this.entity.__validationErrors?.reservaVagasCotas;
@@ -100,89 +100,88 @@ app.component('opportunity-reserva-vagas-cotas', {
             return Array.isArray(err) && err.length > 0 ? err[0] : '';
         },
         hintPercentuais() {
-            const t = this.text;
-            return [t('infoBlockTitle'), t('infoBlockItem1'), t('infoBlockItem2'), t('infoBlockItem3')].join('\n');
+            const textFn = this.text;
+            return [textFn('infoBlockTitle'), textFn('infoBlockItem1'), textFn('infoBlockItem2'), textFn('infoBlockItem3')].join('\n');
         },
         totalVagas() {
-            const arr = this.cotas;
-            return arr.reduce((acc, c) => acc + (Number(c.vagas) || 0), 0);
+            const arr = this.quotas;
+            return arr.reduce((sum, quota) => sum + (Number(quota.vagas) || 0), 0);
         },
-        totalValorDestinado() {
-            const arr = this.cotas;
-            return arr.reduce((acc, c) => acc + (Number(c.valorDestinado) || 0), 0);
+        totalAllocatedValue() {
+            const arr = this.quotas;
+            return arr.reduce((sum, quota) => sum + (Number(quota.valorDestinado) || 0), 0);
         },
-        totalValorDestinadoFormatted() {
-            const n = this.totalValorDestinado;
-            if (!Number.isFinite(n)) return 'R$ 0,00';
-            return 'R$ ' + n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        totalAllocatedValueFormatted() {
+            const totalValue = this.totalAllocatedValue;
+            if (!Number.isFinite(totalValue)) return 'R$ 0,00';
+            return 'R$ ' + totalValue.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         },
-        totalPercentualFormatted() {
-            const total = this.entity.vacancies;
-            if (total == null || total === '' || Number(total) <= 0) {
+        totalPercentFormatted() {
+            const totalVacancies = this.entity.vacancies;
+            if (totalVacancies == null || totalVacancies === '' || Number(totalVacancies) <= 0) {
                 return '—';
             }
-            const arr = this.cotas;
-            const sumPct = arr.reduce((acc, c) => {
-                if (c.naoAplicavel) return acc;
-                const n = Number(c.vagas) || 0;
-                return acc + (n / Number(total)) * 100;
+            const arr = this.quotas;
+            const sumPct = arr.reduce((sum, quota) => {
+                if (quota.naoAplicavel) return sum;
+                const slotCount = Number(quota.vagas) || 0;
+                return sum + (slotCount / Number(totalVacancies)) * 100;
             }, 0);
             return sumPct.toFixed(1).replace('.', ',') + '%';
         },
     },
 
     created() {
-        const labelsLei = [this.text('labelCota1'), this.text('labelCota2'), this.text('labelCota3')];
-        const labelAmpla = this.text('labelAmplaConcorrencia');
-        ensureCotas(this.entity, labelsLei, labelAmpla);
+        const lawLabels = [this.text('labelCota1'), this.text('labelCota2'), this.text('labelCota3')];
+        const generalCompetitionLabel = this.text('labelAmplaConcorrencia');
+        ensureQuotas(this.entity, lawLabels, generalCompetitionLabel);
     },
 
     methods: {
-        recalcAmplaConcorrencia() {
+        recalcGeneralCompetition() {
             const total = Number(this.entity.vacancies) || 0;
             const arr = Array.isArray(this.entity.reservaVagasCotas) ? [...this.entity.reservaVagasCotas] : [];
-            const totalCotas = arr.length;
-            if (totalCotas === 0) {
+            const totalQuotas = arr.length;
+            if (totalQuotas === 0) {
                 return;
             }
 
-            const lastIndex = totalCotas - 1;
-            let somaOutras = 0;
-            arr.forEach((cota, idx) => {
-                if (idx !== lastIndex) {
-                    somaOutras += Number(cota.vagas) || 0;
+            const lastIndex = totalQuotas - 1;
+            let othersSum = 0;
+            arr.forEach((quota, index) => {
+                if (index !== lastIndex) {
+                    othersSum += Number(quota.vagas) || 0;
                 }
             });
 
-            let novaAmplaVagas = total - somaOutras;
-            if (!Number.isFinite(novaAmplaVagas)) {
-                novaAmplaVagas = 0;
+            let newGeneralSlots = total - othersSum;
+            if (!Number.isFinite(newGeneralSlots)) {
+                newGeneralSlots = 0;
             }
-            if (novaAmplaVagas < 0) {
-                novaAmplaVagas = 0;
+            if (newGeneralSlots < 0) {
+                newGeneralSlots = 0;
             }
 
-            const amplaAtual = arr[lastIndex] || defaultCota(this.text('labelAmplaConcorrencia'));
-            if ((Number(amplaAtual.vagas) || 0) !== novaAmplaVagas) {
-                const novaAmpla = {
-                    ...amplaAtual,
-                    vagas: novaAmplaVagas,
+            const currentGeneral = arr[lastIndex] || defaultQuota(this.text('labelAmplaConcorrencia'));
+            if ((Number(currentGeneral.vagas) || 0) !== newGeneralSlots) {
+                const newGeneral = {
+                    ...currentGeneral,
+                    vagas: newGeneralSlots,
                 };
                 this.entity.reservaVagasCotas = [
                     ...arr.slice(0, lastIndex),
-                    novaAmpla,
+                    newGeneral,
                 ];
             }
         },
-        getCotaLabels() {
-            const t = this.text;
-            return [t('labelCota1'), t('labelCota2'), t('labelCota3')];
+        getQuotaLabels() {
+            const textFn = this.text;
+            return [textFn('labelCota1'), textFn('labelCota2'), textFn('labelCota3')];
         },
         autoSave() {
             this.entity.save(3000);
         },
-        /** Remove o erro de reservaVagasCotas para a borda voltar ao normal; se o save falhar, o erro volta. */
-        clearReservaVagasCotasError() {
+        clearQuotasReservationError() {
             if (!this.entity.__validationErrors || !this.entity.__validationErrors.reservaVagasCotas) {
                 return;
             }
@@ -190,98 +189,98 @@ app.component('opportunity-reserva-vagas-cotas', {
             delete next.reservaVagasCotas;
             this.entity.__validationErrors = next;
         },
-        onBlurField(index) {
-            if (!this.isPendingNewCota(index)) {
-                if (this.isAmplaConcorrencia(index)) {
-                    const cota = this.entity.reservaVagasCotas[index];
-                    if (cota && ((Number(cota.vagas) || 0) > 0 || (Number(cota.valorDestinado) || 0) > 0)) {
-                        cota.naoAplicavel = false;
+        onBlurField(quotaIndex) {
+            if (!this.isPendingNewQuota(quotaIndex)) {
+                if (this.isGeneralCompetition(quotaIndex)) {
+                    const quota = this.entity.reservaVagasCotas[quotaIndex];
+                    if (quota && ((Number(quota.vagas) || 0) > 0 || (Number(quota.valorDestinado) || 0) > 0)) {
+                        quota.naoAplicavel = false;
                     }
                 } else {
-                    this.recalcAmplaConcorrencia();
+                    this.recalcGeneralCompetition();
                 }
-                this.clearReservaVagasCotasError();
+                this.clearQuotasReservationError();
                 this.autoSave();
             }
         },
-        percentualCota(cota) {
-            const total = this.entity.vacancies;
-            if (total == null || total === '' || Number(total) <= 0) {
+        quotaPercent(quota) {
+            const totalVacancies = this.entity.vacancies;
+            if (totalVacancies == null || totalVacancies === '' || Number(totalVacancies) <= 0) {
                 return '—';
             }
-            const n = Number(cota.vagas) || 0;
-            if (cota.naoAplicavel) {
+            const slotCount = Number(quota.vagas) || 0;
+            if (quota.naoAplicavel) {
                 return '—';
             }
-            const pct = (n / Number(total)) * 100;
-            return pct.toFixed(1).replace('.', ',') + '%';
+            const percentValue = (slotCount / Number(totalVacancies)) * 100;
+            return percentValue.toFixed(1).replace('.', ',') + '%';
         },
-        onNaoAplicavelChange(cota) {
+        onNotApplicableChange(quota) {
             const arr = this.entity.reservaVagasCotas;
             if (!Array.isArray(arr)) {
                 return;
             }
-            const idx = arr.indexOf(cota);
-            if (idx === -1) {
+            const quotaIndex = arr.indexOf(quota);
+            if (quotaIndex === -1) {
                 return;
             }
 
-            if (cota.naoAplicavel) {
+            if (quota.naoAplicavel) {
                 const updated = {
-                    ...cota,
+                    ...quota,
                     vagas: 0,
                     valorDestinado: 0,
                 };
-                arr.splice(idx, 1, updated);
+                arr.splice(quotaIndex, 1, updated);
             }
 
             this.$nextTick(() => {
-                const isAmpla = idx === arr.length - 1;
-                if (!isAmpla) {
-                    this.recalcAmplaConcorrencia();
+                const isGeneral = quotaIndex === arr.length - 1;
+                if (!isGeneral) {
+                    this.recalcGeneralCompetition();
                 }
-                this.clearReservaVagasCotasError();
+                this.clearQuotasReservationError();
                 this.autoSave();
             });
         },
-        addCota() {
-            if (this.pendingNewCotaIndex !== null) return;
+        addQuota() {
+            if (this.pendingNewQuotaIndex !== null) return;
             const arr = [...this.entity.reservaVagasCotas];
             arr.splice(arr.length - 1, 0, { label: '', vagas: 0, valorDestinado: 0 });
             this.entity.reservaVagasCotas = arr;
-            this.pendingNewCotaIndex = arr.length - 2;
+            this.pendingNewQuotaIndex = arr.length - 2;
         },
-        confirmNewCota() {
-            if (this.pendingNewCotaIndex === null) return;
-            this.pendingNewCotaIndex = null;
+        confirmNewQuota() {
+            if (this.pendingNewQuotaIndex === null) return;
+            this.pendingNewQuotaIndex = null;
             this.$nextTick(() => {
-                this.recalcAmplaConcorrencia();
+                this.recalcGeneralCompetition();
                 this.autoSave();
             });
         },
-        cancelNewCota() {
-            if (this.pendingNewCotaIndex === null) return;
-            const idx = this.pendingNewCotaIndex;
-            this.pendingNewCotaIndex = null;
+        cancelNewQuota() {
+            if (this.pendingNewQuotaIndex === null) return;
+            const pendingIndex = this.pendingNewQuotaIndex;
+            this.pendingNewQuotaIndex = null;
             const arr = [...this.entity.reservaVagasCotas];
-            arr.splice(idx, 1);
+            arr.splice(pendingIndex, 1);
             this.entity.reservaVagasCotas = arr;
             this.$nextTick(() => this.autoSave());
         },
-        isPendingNewCota(index) {
-            return this.pendingNewCotaIndex === index;
+        isPendingNewQuota(quotaIndex) {
+            return this.pendingNewQuotaIndex === quotaIndex;
         },
-        removeCota(index) {
-            if (index < NUM_COTAS_LEI || index === this.entity.reservaVagasCotas.length - 1) return;
+        removeQuota(quotaIndex) {
+            if (quotaIndex < NUM_LAW_QUOTAS || quotaIndex === this.entity.reservaVagasCotas.length - 1) return;
             const arr = [...this.entity.reservaVagasCotas];
-            arr.splice(index, 1);
+            arr.splice(quotaIndex, 1);
             this.entity.reservaVagasCotas = arr;
             this.$nextTick(() => {
-                this.recalcAmplaConcorrencia();
+                this.recalcGeneralCompetition();
                 this.autoSave();
             });
         },
-        hasErrorForIndex(index) {
+        hasErrorForIndex(quotaIndex) {
             if (!this.hasError) {
                 return false;
             }
@@ -289,59 +288,55 @@ app.component('opportunity-reserva-vagas-cotas', {
             if (typeof msg !== 'string') {
                 return false;
             }
-            const total = this.entity.reservaVagasCotas?.length ?? 0;
-            if (total === 0) {
+            const totalCount = this.entity.reservaVagasCotas?.length ?? 0;
+            if (totalCount === 0) {
                 return false;
             }
 
-            // Erro de soma: não cita cota específica; destaca a linha Ampla concorrência (última).
             if (msg.indexOf('A soma das vagas reservadas às cotas deve ser igual ao Total de vagas') !== -1) {
-                return index === total - 1;
+                return quotaIndex === totalCount - 1;
             }
 
-            const cota = Array.isArray(this.entity.reservaVagasCotas)
-                ? this.entity.reservaVagasCotas[index]
+            const quota = Array.isArray(this.entity.reservaVagasCotas)
+                ? this.entity.reservaVagasCotas[quotaIndex]
                 : null;
-            if (!cota) {
+            if (!quota) {
                 return false;
             }
-            // Mensagem cita o label entre aspas; tenta casar pelo texto exato.
-            const label = cota.label ? String(cota.label).trim() : '';
+            const label = quota.label ? String(quota.label).trim() : '';
             if (label && msg.indexOf(`"${label}"`) !== -1) {
                 return true;
             }
-            // Fallback: identifica pela cota da lei usando trecho único da mensagem do backend.
-            if (index === 0 && msg.includes('negras')) return true;
-            if (index === 1 && msg.includes('indígenas')) return true;
-            if (index === 2 && msg.includes('deficiência')) return true;
+            if (quotaIndex === 0 && msg.includes('negras')) return true;
+            if (quotaIndex === 1 && msg.includes('indígenas')) return true;
+            if (quotaIndex === 2 && msg.includes('deficiência')) return true;
             return false;
         },
-        /** Retorna o identificador do campo para data-field-identifier (negras, indigenas, pcd, ampla-concorrencia, extra-N). */
-        getFieldIdentifier(index) {
-            if (index < NUM_COTAS_LEI) {
-                const ids = [COTA_FIELD_NEGRAS, COTA_FIELD_INDIGENAS, COTA_FIELD_PCD];
-                return ids[index];
+        getFieldIdentifier(quotaIndex) {
+            if (quotaIndex < NUM_LAW_QUOTAS) {
+                const ids = [QUOTA_FIELD_BLACK, QUOTA_FIELD_INDIGENOUS, QUOTA_FIELD_PCD];
+                return ids[quotaIndex];
             }
             const total = this.entity.reservaVagasCotas?.length ?? 0;
-            if (total > 0 && index === total - 1) {
-                return COTA_FIELD_AMPLA;
+            if (total > 0 && quotaIndex === total - 1) {
+                return QUOTA_FIELD_GENERAL_COMPETITION;
             }
-            return COTA_FIELD_EXTRA_PREFIX + index;
+            return QUOTA_FIELD_EXTRA_PREFIX + quotaIndex;
         },
-        isCotaFixa(index) {
+        isFixedQuota(quotaIndex) {
             const total = this.entity.reservaVagasCotas?.length ?? 0;
-            return index < NUM_COTAS_LEI || index === total - 1;
+            return quotaIndex < NUM_LAW_QUOTAS || quotaIndex === total - 1;
         },
-        isCotaLei(index) {
-            return index < NUM_COTAS_LEI;
+        isLawQuota(quotaIndex) {
+            return quotaIndex < NUM_LAW_QUOTAS;
         },
-        isAmplaConcorrencia(index) {
+        isGeneralCompetition(quotaIndex) {
             const total = this.entity.reservaVagasCotas?.length ?? 0;
-            return total > 0 && index === total - 1;
+            return total > 0 && quotaIndex === total - 1;
         },
-        isCotaExtra(index) {
+        isExtraQuota(quotaIndex) {
             const total = this.entity.reservaVagasCotas?.length ?? 0;
-            return index >= NUM_COTAS_LEI && index < total - 1;
+            return quotaIndex >= NUM_LAW_QUOTAS && quotaIndex < total - 1;
         },
     },
 });

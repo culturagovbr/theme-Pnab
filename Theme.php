@@ -24,7 +24,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     protected const AGENT_COLETIVO_TYPE_ID = 2;
 
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
-    public const OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
+    public const OPTIONS_OTHER_MODALITIES_WITH_SUBLIST = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
     /** Tamanho máximo do campo nome da fonte em "Recursos de outras fontes". */
     private const RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH = 255;
@@ -127,9 +127,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
             $theme->trimSegmentoOutros($postData);
 
-            $reservaVagasErrors = InMincQuotasService::validateReservaVagasCotas($entity, $postData);
-            if ($reservaVagasErrors) {
-                $this->errorJson($reservaVagasErrors, 400);
+            $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
+            if ($quotasReservationErrors) {
+                $this->errorJson($quotasReservationErrors, 400);
             }
         });
 
@@ -767,7 +767,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (!is_array($opcoes) || count($opcoes) === 0) {
                     $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Selecione pelo menos uma opção.')];
                 } else {
-                    foreach (self::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA as $op) {
+                    foreach (self::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST as $op) {
                         if (in_array($op, $opcoes)) {
                             $sublist = $outrasModalidades[$op] ?? null;
                             if (!is_array($sublist) || count($sublist) === 0) {
