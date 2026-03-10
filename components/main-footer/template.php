@@ -32,9 +32,6 @@ $entities = [
     <?php $this->applyTemplateHook("main-footer", "begin") ?>
     <div class="main-footer__content">
         <?php $this->applyTemplateHook("main-footer-logo", "before") ?>
-        <div class="main-footer__support">
-            <?php $this->part('footer-support-message') ?>
-        </div>
 
         <div class="main-footer__content--logo-group">
             <div class="main-footer__logo-item"><img src="<?= $image_url_footer ?>" alt="Logo PNAB" /></div>

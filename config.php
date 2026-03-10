@@ -13,6 +13,12 @@ return [
     'logo.image' => './img/logo-site.png',
     'logo.hideLabel' => env('LOGO_HIDELABEL', true),
 
+    /*
+    Define o nome do asset da imagem do background no header da home - Substitui o background padrão do módulo
+    ex: `img/home/home-header/home-header2.png` (pasta assets/img/home/home-header/home-header2.png do tema)
+    */
+    'homeHeader.background' => 'img/home/home-header/home-header2.png',
+
     // entidades habilitadas
     'app.enabled.agents'        => true,
     'app.enabled.opportunities' =>  true,
@@ -268,7 +274,9 @@ return [
                 # Autenticação customizada
                 'client_id' => env('PNAB_AUTH_GOV_BR_CLIENT_ID', null),
                 'client_secret' => env('PNAB_AUTH_GOV_BR_SECRET', null),
+                'dic_agent_fields_update' => json_decode(env('PNAB_AUTH_GOV_BR_DICT_AGENT_FIELDS_UPDATE', '{}'), true),
                 'redirect_uri' => env('PNAB_AUTH_GOV_BR_REDIRECT_URI', null),
+                'url_logout' => env('url_logout', 'https://sso.staging.acesso.gov.br/logout'),
             ]
         ]
     ],

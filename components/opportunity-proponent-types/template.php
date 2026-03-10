@@ -8,8 +8,8 @@ use MapasCulturais\i;
 
 ?>
 
-<div class="opportunity-proponent-types">
-    <h4 class="bold"><?= i::__("Tipos do proponente")?></h4>
+<div class="opportunity-proponent-types" :class="{'field--error': hasError && getErrors.length > 0}">
+    <h4 class="bold"><?= i::__("Tipos do proponente")?> <span class="required" style="color:red">*</span></h4>
     <h6><?= i::__("Selecione um ou mais tipos de proponente que poderá participar do edital")?></h6>
     <div>
         <div class="opportunity-proponent-types__fields">
@@ -25,5 +25,6 @@ use MapasCulturais\i;
                 </label>
             </div>
         </div>
+        <small v-if="hasError && getErrors.length > 0" class="field__error">{{ getErrors.join('; ') }}</small>
     </div>
 </div>

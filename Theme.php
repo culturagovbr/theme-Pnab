@@ -19,6 +19,14 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         'totalResource' => 'value',
     ];
 
+    protected const AGENT_COLETIVO_TYPE_ID = 2;
+
+    /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
+    public const OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
+
+    /** Tamanho máximo do campo nome da fonte em "Recursos de outras fontes". */
+    private const RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH = 255;
+
     static function getThemeFolder()
     {
         return __DIR__;
@@ -39,6 +47,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($canAccess) {
                 /** @var \MapasCulturais\Theme $this */
                 $this->part('header-menu-opportunity-link');
+            }
+        });
+
+        /**
+         * Na edição de agente, exibe o campo "Tipo de agente coletivo" após o campo "Nome do Agente".
+         */
+        $app->hook('template(agent.edit.entity-info):end', function () {
+            $entity = $this->controller->requestedEntity ?? null;
+            if ($entity) {
+                $this->part('agent-edit-tipo-coletivo', ['entity' => $entity]);
             }
         });
 
@@ -90,15 +108,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $entity = $this->requestedEntity;
             $postData = $this->postData;
 
+            // Acumula erros de vagas e de valores para poder retornar ambos ao mesmo tempo
+            $rangeErrors = [];
             foreach (self::METADATA_RANGE_SUM_KEYS as $metadataKey => $keyTarget) {
                 $totalByMetadata = $theme->validateTotalByMetadata($entity, $postData, $metadataKey, $keyTarget);
-                if ($totalByMetadata) {
-                    $this->errorJson($totalByMetadata, 400);
+                if (is_array($totalByMetadata) && !empty($totalByMetadata)) {
+                    $rangeErrors = array_merge_recursive($rangeErrors, $totalByMetadata);
                 }
+            }
+
+            if (!empty($rangeErrors)) {
+                $this->errorJson($rangeErrors, 400);
             }
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
+            $theme->trimSegmentoOutros($postData);
+
+            $reservaVagasErrors = $theme->validateReservaVagasCotas($entity, $postData);
+            if ($reservaVagasErrors) {
+                $this->errorJson($reservaVagasErrors, 400);
+            }
         });
 
         /**
@@ -111,8 +141,30 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            // Se não tiver selecionado o Ente Federado, para aqui
+            // Verifica se é a aba "Com permissão"
+            $isGrantedTab = isset($api_params['@permissions']) && 
+                           $api_params['@permissions'] === '@control' &&
+                           isset($api_params['user']) && 
+                           $api_params['user'] === '!EQ(@me)';
+            
+            if ($isGrantedTab) {
+                // Remove federativeEntityId se presente, mas mantém outros filtros
+                unset($api_params['federativeEntityId']);
+                return;
+            }
+
+            // Verifica se há federativeEntityId nos parâmetros da requisição
             $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
+            
+            // Se não tiver nos parâmetros, tenta buscar da sessão
+            if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $federativeEntityIdParam = (string)$selectedEntity['id'];
+                }
+            }
+
+            // Se ainda não tiver federativeEntityId, para aqui
             if (!$federativeEntityIdParam) {
                 return;
             }
@@ -154,33 +206,142 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             } else {
                 $api_params['status'] = 'GTE(1)';
             }
-            
-            if (!isset($api_params['@permissions'])) {
-                $api_params['@permissions'] = 'view';
-            }
 
-            // Busca IDs das oportunidades com metadado federativeEntityId (exclui fases)
+            // Busca IDs das oportunidades com metadado federativeEntityId
             $conn = $app->em->getConnection();
             $params = [
                 'meta_key' => 'federativeEntityId',
                 'federativeEntityId' => (string)$federativeEntityId
             ];
             
-            $sql = "SELECT DISTINCT o.id FROM opportunity o 
-                    INNER JOIN opportunity_meta m ON m.object_id = o.id 
-                    WHERE m.key = :meta_key AND m.value = :federativeEntityId AND o.parent_id IS NULL";
+            // Consulta que busca IDs das oportunidades com metadado federativeEntityId
+            $sql = "SELECT DISTINCT o.id 
+                    FROM opportunity o
+                    INNER JOIN opportunity_meta m ON m.key = :meta_key 
+                        AND m.value = :federativeEntityId
+                        AND m.object_id = CASE 
+                            WHEN o.parent_id IS NOT NULL THEN o.parent_id 
+                            ELSE o.id 
+                        END";
             
             $opportunityIds = [];
             try {
                 $results = $conn->executeQuery($sql, $params)->fetchAll();
                 $opportunityIds = array_map(fn($r) => (int)$r['id'], $results);
             } catch (\Exception $e) {
-                // Se houver erro, retorna array vazio
                 $opportunityIds = [];
             }
+
+            // Aba "Meus modelos": incluir também modelos oficiais (isModel=1 com selo verificado),
+            // que não possuem federativeEntityId e por isso não entram na lista do ente
+            $isModelsTab = isset($api_params['isModel']) &&
+                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string)$api_params['isModel'])) &&
+                isset($api_params['status']) &&
+                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string)$api_params['status']));
+            if ($isModelsTab) {
+                $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
+                if (is_numeric($verifiedSealsIds)) {
+                    $verifiedSealsIds = [(int)$verifiedSealsIds];
+                } elseif (!is_array($verifiedSealsIds)) {
+                    $verifiedSealsIds = [];
+                }
+                if (!empty($verifiedSealsIds)) {
+                    $placeholders = implode(',', array_fill(0, count($verifiedSealsIds), '?'));
+                    $sqlOfficial = "SELECT DISTINCT o.id 
+                        FROM opportunity o
+                        INNER JOIN opportunity_meta m ON m.object_id = o.id AND m.key = 'isModel' AND m.value = '1'
+                        INNER JOIN seal_relation sr ON sr.object_id = o.id AND sr.object_type = 'MapasCulturais\\Entities\\Opportunity'
+                        WHERE sr.seal_id IN ($placeholders)";
+                    try {
+                        $officialResults = $conn->executeQuery($sqlOfficial, array_values($verifiedSealsIds))->fetchAll();
+                        $officialIds = array_map(fn($r) => (int)$r['id'], $officialResults);
+                        $opportunityIds = array_values(array_unique(array_merge($opportunityIds, $officialIds)));
+                    } catch (\Exception $e) {
+                        // mantém apenas os do ente em caso de erro
+                    }
+                }
+            }
             
-            $api_params['id'] = empty($opportunityIds) ? 'EQ(-1)' : 'IN(' . implode(',', $opportunityIds) . ')';
+            // Aplica filtro: se não houver nenhum ID permitido, retorna filtro que não encontra nada
+            if (empty($opportunityIds)) {
+                $api_params['id'] = 'EQ(-1)';
+            } else {
+                $api_params['id'] = 'IN(' . implode(',', $opportunityIds) . ')';
+            }
+            
             unset($api_params['federativeEntityId']);
+        });
+
+        /**
+         * Hook para filtrar modelos de oportunidades por federativeEntityId na action findOpportunitiesModels
+         * Intercepta o resultado após a execução e filtra apenas os modelos do ente federado selecionado
+         * A action findOpportunitiesModels retorna um array de objetos com estrutura: {id, descricao, numeroFases, modelIsOfficial, ...}
+         * Modelos oficiais (modelIsOfficial === true) são sempre exibidos para o GestorCultBr, pois não possuem federativeEntityId.
+         */
+        $app->hook('GET(opportunity.findOpportunitiesModels):after', function (&$result) use ($app) {
+            // Se não for gestor CultBR, para aqui
+            if (!UserAccessService::isGestorCultBr()) {
+                return;
+            }
+
+            // Verifica se há federativeEntityId na sessão
+            $federativeEntityId = null;
+            if (isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $federativeEntityId = (int)$selectedEntity['id'];
+                }
+            }
+
+            // Se não tiver federativeEntityId, para aqui (mantém comportamento padrão)
+            if (!$federativeEntityId) {
+                return;
+            }
+
+            // Se o resultado não for um array, para aqui
+            if (!is_array($result)) {
+                return;
+            }
+
+            // Busca IDs dos modelos do ente federado (com metadado federativeEntityId)
+            // Inclui modelos cuja oportunidade principal tem o metadado
+            $conn = $app->em->getConnection();
+            $params = [
+                'meta_key' => 'federativeEntityId',
+                'federativeEntityId' => (string)$federativeEntityId
+            ];
+            
+            $sql = "SELECT DISTINCT o.id 
+                    FROM opportunity o
+                    INNER JOIN opportunity_meta m_model ON m_model.object_id = o.id 
+                        AND m_model.key = 'isModel' 
+                        AND m_model.value = '1'
+                    INNER JOIN opportunity_meta m_fed ON m_fed.key = :meta_key 
+                        AND m_fed.value = :federativeEntityId
+                        AND m_fed.object_id = CASE 
+                            WHEN o.parent_id IS NOT NULL THEN o.parent_id 
+                            ELSE o.id 
+                        END";
+            
+            $allowedModelIds = [];
+            try {
+                $results = $conn->executeQuery($sql, $params)->fetchAll();
+                $allowedModelIds = array_map(fn($r) => (int)$r['id'], $results);
+            } catch (\Exception $e) {
+                $allowedModelIds = [];
+            }
+            
+            // Filtra o resultado: mantém modelos do ente OU modelos oficiais (sem federativeEntityId)
+            $result = array_filter($result, function ($model) use ($allowedModelIds) {
+                if (!isset($model['id'])) {
+                    return false;
+                }
+                $id = (int)$model['id'];
+                $isFromEntity = in_array($id, $allowedModelIds);
+                $isOfficial = !empty($model['modelIsOfficial']);
+                return $isFromEntity || $isOfficial;
+            });
+            $result = array_values($result);
         });
 
        /**
@@ -298,11 +459,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
-            // Remove o menu "Minhas Validações" do grupo original
-            if (isset($nav['registrations']['items'])) {
-                foreach ($nav['registrations']['items'] as $key => $item) {
-                    if (isset($item['route']) && $item['route'] === 'panel/evaluations') {
-                        $nav['registrations']['items'][$key]['condition'] = fn() => false;
+            // Remove o menu "Minhas Validações" do grupo "Editais e Oportunidades" (opportunities)
+            if (isset($nav['opportunities']['items'])) {
+                foreach ($nav['opportunities']['items'] as $key => $item) {
+                    if (isset($item['route']) && $item['route'] === 'panel/validations') {
+                        $nav['opportunities']['items'][$key]['condition'] = fn() => false;
                     }
                 }
             }
@@ -323,7 +484,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         'label' => i::__('Minha Equipe'),
                     ],
                     [
-                        'route' => 'panel/evaluations',
+                        'route' => 'panel/validations',
                         'icon' => 'opportunity',
                         'label' => i::__('Minhas Validações'),
                     ]
@@ -463,7 +624,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $this->part('federative-entity-banner');
             }
         });
-
     }
 
 
@@ -489,17 +649,270 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $app->registerRole($def);
 
         /**
+         * Validação de oportunidade: Exige arquivo de regulamento para validar
+         */
+        $app->hook('opportunity.canValidate', function (&$errors) {
+            $opportunity = $this;
+
+            $regulations = $opportunity->getFiles('rules');
+            if (empty($regulations)) {
+                $errors[] = i::__('O campo "Adicionar regulamento" é obrigatório.');
+            }
+
+            // Validar Tipos de Proponente
+            $proponentTypes = $opportunity->registrationProponentTypes;
+            if (empty($proponentTypes)) {
+                $errors[] = i::__('O campo "Tipos do proponente" é obrigatório.');
+            }
+        });
+
+        /**
+         * Validação de oportunidade: Torna o campo "Tipos do proponente" obrigatório
+         */
+        $app->hook('entity(Opportunity).validations', function(&$validations) {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            if (!$this->isNew() && !$this->isLastPhase) {
+                if (!is_array($this->registrationProponentTypes)) {
+                    $this->registrationProponentTypes = [];
+                }
+                $validations['registrationProponentTypes'] = [
+                    'required' => i::__('O campo "Tipos do proponente" é obrigatório.')
+                ];
+            }
+        });
+
+        /**
+         * Validação adicional: Garante que arrays vazios sejam tratados como inválidos
+         */
+        $app->hook('entity(Opportunity).validationErrors', function(&$errors) use ($app) {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            if (!$this->isNew() && !$this->isLastPhase) {
+                // Validação de Tipos do proponente
+                $proponentTypes = $this->registrationProponentTypes;
+                if (!is_array($proponentTypes) || count($proponentTypes) === 0) {
+                    $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
+                }
+                
+                // Validação de Regulamento
+                $regulations = $this->getFiles('rules');
+                if (empty($regulations)) {
+                    $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
+                }
+
+                // Validação: Utilização de recursos de outras fontes
+                $recursos = self::ensureArray($this->recursosOutrasFontes);
+                $houve = $recursos['houveUtilizacao'] ?? '';
+                if ($houve !== 'sim' && $houve !== 'nao') {
+                    $errors['recursosOutrasFontes'] = [i::__('O campo "Houve utilização de recursos de outras fontes?" é obrigatório.')];
+                } elseif ($houve === 'sim') {
+                    $recursosProprios = $recursos['recursosProprios'] ?? null;
+                    $conveniosParcerias = $recursos['conveniosParcerias'] ?? null;
+                    $emendasParlamentares = $recursos['emendasParlamentares'] ?? null;
+                    $remanescentesCiclo1 = $recursos['remanescentesCiclo1'] ?? null;
+                    $outrasFontes = $recursos['outrasFontes'] ?? null;
+                    $algumaMarcada = $recursosProprios !== null || $conveniosParcerias !== null
+                        || $emendasParlamentares !== null || $remanescentesCiclo1 !== null
+                        || (is_array($outrasFontes) && count($outrasFontes) > 0);
+                    if (!$algumaMarcada) {
+                        $errors['recursosOutrasFontes'] = [i::__('Selecione pelo menos uma fonte de recurso para continuar.')];
+                    } elseif (is_array($outrasFontes) && count($outrasFontes) > 0) {
+                        $algumaComNome = false;
+                        foreach ($outrasFontes as $entrada) {
+                            if (!empty(trim((string) ($entrada['nomeFonte'] ?? '')))) {
+                                $algumaComNome = true;
+                                break;
+                            }
+                        }
+                        if (!$algumaComNome) {
+                            $errors['recursosOutrasFontes'] = [i::__('Preencha o nome de pelo menos uma fonte em "Recursos de outras fontes".')];
+                        }
+                    }
+                }
+
+                // Validação: Formas de inscrição previstas no edital
+                $formasInscricao = self::ensureArray($this->formasInscricaoEdital);
+                $previstas = $formasInscricao['previstasNoEdital'] ?? '';
+                if ($previstas !== 'sim' && $previstas !== 'nao') {
+                    $errors['formasInscricaoEdital'] = [i::__('O campo "Formas de inscrição previstas no edital" é obrigatório.')];
+                } elseif ($previstas === 'sim') {
+                    $formas = $formasInscricao['formas'] ?? null;
+                    if (!is_array($formas) || count($formas) === 0) {
+                        $errors['formasInscricaoEdital'] = [i::__('Selecione pelo menos uma forma de inscrição para continuar.')];
+                    } else {
+                        foreach ($formas as $item) {
+                            $descricao = trim((string) ($item['descricao'] ?? ''));
+                            if ($descricao === '') {
+                                $errors['formasInscricaoEdital'] = [i::__('Preencha a descrição de cada forma de inscrição marcada.')];
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Validação: Outras modalidades de ações afirmativas
+                $outrasModalidades = self::ensureArray($this->outrasModalidadesAcoesAfirmativas);
+                $opcoes = $outrasModalidades['opcoes'] ?? [];
+                if (!is_array($opcoes) || count($opcoes) === 0) {
+                    $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Selecione pelo menos uma opção.')];
+                } else {
+                    foreach (self::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA as $op) {
+                        if (in_array($op, $opcoes)) {
+                            $sublist = $outrasModalidades[$op] ?? null;
+                            if (!is_array($sublist) || count($sublist) === 0) {
+                                $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Por favor, selecione pelo menos uma subcategoria.')];
+                                break;
+                            }
+                        }
+                    }
+                    if (empty($errors['outrasModalidadesAcoesAfirmativas']) && in_array('outra_legislacao', $opcoes)) {
+                        $descricao = trim((string) ($outrasModalidades['outra_legislacao_descricao'] ?? ''));
+                        if ($descricao === '') {
+                            $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Por favor, preencha a descrição.')];
+                        }
+                    }
+                }
+            }
+            
+            // Garante que TODOS os campos com erro sejam incluídos no postData
+            if (!$this->isNew() && !empty($errors)) {
+                $controller = $app->controller('opportunity');
+                if ($controller && isset($controller->postData)) {
+                    foreach ($errors as $field => $fieldErrors) {
+                        if (!isset($controller->postData[$field])) {
+                            // Adiciona o campo ao postData apenas se não estiver presente
+                            $controller->postData[$field] = property_exists($this, $field) ? $this->$field : null;
+                        }
+                    }
+                }
+            }
+        });
+
+        /**
+         * Garante que os campos customizados sejam incluídos no POST mesmo quando não estão presentes
+         * Necessário para que a validação seja executada e o erro seja retornado
+         * Usa a mesma condição das validações existentes: !$entity->isNew() && !$entity->isLastPhase
+         * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
+         */
+        $app->hook('PATCH(opportunity.single):data', function(&$data) {
+            /** @var \MapasCulturais\Controllers\Opportunity $this */
+            $entity = $this->requestedEntity;
+            if ($entity && !$entity->isNew() && !$entity->isLastPhase) {
+                if (!isset($data['registrationProponentTypes']) && !isset($this->postData['registrationProponentTypes'])) {
+                    $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes) 
+                        ? $entity->registrationProponentTypes 
+                        : [];
+                    $this->postData['registrationProponentTypes'] = $data['registrationProponentTypes'];
+                }
+                
+                // Garante que o erro de arquivo seja retornado mesmo quando não está no POST
+                if (!isset($this->postData['rules'])) {
+                    $this->postData['rules'] = null;
+                }
+
+                // Recursos de outras fontes: incluir no payload para validação e sanitizar quando enviado
+                if (!array_key_exists('recursosOutrasFontes', $data)) {
+                    $data['recursosOutrasFontes'] = $entity->recursosOutrasFontes ?? null;
+                    $this->postData['recursosOutrasFontes'] = $data['recursosOutrasFontes'];
+                } else {
+                    $app = \MapasCulturais\App::i();
+                    $theme = $app->view;
+                    if (method_exists($theme, 'sanitizeRecursosOutrasFontes')) {
+                        $theme->sanitizeRecursosOutrasFontes($data);
+                    }
+                }
+
+                // Formas de inscrição previstas no edital: incluir no payload para validação
+                if (!array_key_exists('formasInscricaoEdital', $data)) {
+                    $data['formasInscricaoEdital'] = $entity->formasInscricaoEdital ?? null;
+                    $this->postData['formasInscricaoEdital'] = $data['formasInscricaoEdital'];
+                }
+
+                // Outras modalidades de ações afirmativas: incluir no payload para validação
+                if (!array_key_exists('outrasModalidadesAcoesAfirmativas', $data)) {
+                    $data['outrasModalidadesAcoesAfirmativas'] = $entity->outrasModalidadesAcoesAfirmativas ?? null;
+                    $this->postData['outrasModalidadesAcoesAfirmativas'] = $data['outrasModalidadesAcoesAfirmativas'];
+                }
+            }
+        });
+
+        /**
+         * Garante que os campos obrigatórios do agente coletivo estejam no payload.
+         * Assim a validação roda e retorna erro nos campos que faltaram.
+         */
+        $agentColetivoTypeId = self::AGENT_COLETIVO_TYPE_ID;
+        $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId) {
+            /** @var \MapasCulturais\Controllers\Agent $this */
+            $theme = $app->view;
+            if (!method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
+                return;
+            }
+            $entity = $this->requestedEntity;
+            if (!$entity || $entity->isNew()) {
+                return;
+            }
+            $typeId = is_object($entity->type) ? ($entity->type->id ?? null) : $entity->type;
+
+            if ($typeId === null || (int) $typeId !== $agentColetivoTypeId) {
+                return;
+            }
+            
+            foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
+                if (!array_key_exists($key, $data)) {
+                    $data[$key] = $entity->$key ?? null;
+                    $this->postData[$key] = $data[$key];
+                }
+            }
+        });
+
+        /**
+         * Garante que campos com erro no postData estejam no payload para exibição na edição.
+         */
+        $app->hook('entity(Agent).validationErrors', function (array &$errors) use ($app) {
+            /** @var \MapasCulturais\Entities\Agent $this */
+            if (!empty($errors)) {
+                $controller = $app->controller('agent');
+                if ($controller && isset($controller->postData)) {
+                    foreach ($errors as $field => $fieldErrors) {
+                        if (!array_key_exists($field, $controller->postData)) {
+                            $controller->postData[$field] = $this->$field ?? null;
+                        }
+                    }
+                }
+            }
+        });
+
+        /**
+         * Torna a taxonomia "área de atuação" opcional para Opportunity
+         */
+        $app->hook('app.register:after', function () use ($app) {
+            $taxonomies = $app->getRegisteredTaxonomies('MapasCulturais\Entities\Opportunity');
+            
+            if (isset($taxonomies['area'])) {
+                $taxonomies['area']->required = false;
+            }
+        });
+
+        /**
+         * Modifica o objeto JavaScript para refletir que a taxonomia "área de atuação" é opcional para Opportunity
+         */
+        $app->hook('mapas.printJsObject:before', function () use ($app) {
+            if (isset($this->jsObject['Taxonomies']['area'])) {
+                $this->jsObject['Taxonomies']['area']['required'] = false;
+            }
+        });
+
+        /**
          * Registra metadados de oportunidade: Segmento, Etapa, Pauta e Território
          * Tenta reutilizar as opções do OpportunityWorkplan quando disponível
          * Usa app.init:after para garantir que os metadados do core já foram registrados
          */
         $theme = $this;
         $app->hook('app.init:after', function() use ($app, $theme) {
-            // Registra metadados select obrigatórios em edit
-            $theme->registerSelectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
-            $theme->registerSelectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
-            $theme->registerSelectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
-            $theme->registerSelectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
+            // Registra metadados multiselect obrigatórios em edit (segmento, pauta, etapa, território)
+            $theme->registerMultiselectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
+            $theme->registerMultiselectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
+            $theme->registerMultiselectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
+            $theme->registerMultiselectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
 
             // Registra metadados select obrigatórios em required
             $theme->registerSelectMetadata('tipoDeEdital', i::__('Tipo de Edital'), $theme->getTipoDeEditalOptions(), 'required');
@@ -507,7 +920,142 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
+            $theme->registerSegmentoOutrosMetadata();
+
+            // Metadado: utilização de recursos de outras fontes (objeto; validação via hooks)
+            $theme->registerOpportunityMetadata('recursosOutrasFontes', [
+                'label' => i::__('Houve utilização de recursos de outras fontes?'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: reserva de vagas (cotas)
+            $theme->registerOpportunityMetadata('reservaVagasCotas', [
+                'label' => i::__('Reserva de vagas (cotas)'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: formas de inscrição previstas no edital
+            $theme->registerOpportunityMetadata('formasInscricaoEdital', [
+                'label' => i::__('Formas de inscrição previstas no edital'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: outras modalidades de ações afirmativas
+            $theme->registerOpportunityMetadata('outrasModalidadesAcoesAfirmativas', [
+                'label' => i::__('Outras modalidades de ações afirmativas'),
+                'type' => 'json',
+            ]);
+
+            // Registra metadados de agente
+            $theme->registerAgentMetadataByType(
+                'acessouFomentoCultural', 
+                i::__('Acessou recursos públicos de fomento à cultura nos últimos 5 (cinco) anos?'), 
+                'select', 
+                null, 
+                $theme->getAcessoFomentoCulturalOptions(), 
+                []
+            );
+
+            $theme->registerAgentMetadataByType(
+                'anosExperienciaAreaCultural',
+                i::__('Possui quantos anos de experiência na área cultural?'),
+                'number',
+                null,
+                [],
+                []
+            );
+
+            $theme->registerAgentMetadataByType(
+                'eMestreCulturasTradicionais',
+                i::__('É mestre ou mestra das culturas tradicionais ou populares?'),
+                'boolean',
+                1,
+                [],
+                []
+            );
+
+            $agentClass = 'MapasCulturais\Entities\Agent';
+            $tipoColetivoId = self::AGENT_COLETIVO_TYPE_ID;
+
+            $definitions = $app->getRegisteredMetadata($agentClass, $tipoColetivoId);
+            if (empty($definitions)) {
+                return;
+            }
+
+            foreach ($definitions as $metaKey => $def) {
+                if (!in_array($metaKey, $theme->getRequeredsAgentColetivoMetadata())) {
+                    continue;
+                }
+
+                $def->config['should_validate'] = function ($entity, $value) use ($def) {
+                    if ($entity->isNew()) {
+                        return false;
+                    }
+                    $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
+                    if ($vazio) {
+                        return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para agente coletivo.');
+                    }
+                    return false;
+                };
+            }
         });
+    }
+
+    /**
+     * Registra um metadado do tipo multiselect obrigatório
+     *
+     * @param string $key Chave do metadado
+     * @param string $label Label do campo (já traduzido)
+     * @param array $options Opções do select
+     * @param string $operationType Tipo de operação (edit ou create)
+     */
+    private function registerMultiselectMetadata(string $key, string $label, array $options, string $operationType): void
+    {
+        $metadataValues = [
+            'label' => $label,
+            'type' => 'multiselect',
+            'options' => $options,
+        ];
+
+        $metadataValues['should_validate'] = function ($entity, $value) use ($label, $operationType) {
+            return $this->redefineRuleValidateMultiselect($operationType, $entity, $label, $value);
+        };
+
+        $this->registerOpportunityMetadata($key, $metadataValues);
+    }
+
+    /**
+     * Regra de validação para metadado multiselect obrigatório (array não vazio)
+     *
+     * @param string $operationType Tipo de operação (edit ou create)
+     * @param \MapasCulturais\Entity $entity Entidade que contém os campos
+     * @param string $label Label do campo (já traduzido)
+     * @param mixed $value Valor atual (array para multiselect)
+     * @return string|false Mensagem de erro se inválido, false se válido
+     */
+    private function redefineRuleValidateMultiselect(string $operationType, $entity, string $label, $value)
+    {
+        $isEmpty = $value === null || $value === '' || (is_array($value) && count($value) === 0);
+
+        if (!$isEmpty) {
+            return false;
+        }
+
+        if ($operationType === 'edit') {
+            if (!empty($entity->id)) {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        if ($operationType === 'create') {
+            if (!isset($entity->id) || $entity->id === null || $entity->id === '') {
+                return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
+            }
+            return false;
+        }
+
+        return false;
     }
 
     /**
@@ -566,6 +1114,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Registra o metadado "segmentoOutros" para especificar quando "Outros" for selecionado no segmento
+     */
+    private function registerSegmentoOutrosMetadata(): void
+    {
+        $theme = $this;
+        $this->registerOpportunityMetadata('segmentoOutros', [
+            'label' => i::__('Especificar segmento artístico-cultural'),
+            'type' => 'string',
+            'should_validate' => function ($entity, $value) use ($theme) {
+                $segmento = $entity->segmento ?? [];
+                if (!is_array($segmento)) {
+                    return false;
+                }
+                $opcoes = $theme->getSegmentoOptions();
+                $outrosKey = array_search(i::__('Outros (especificar)'), $opcoes, true);
+                if ($outrosKey === false || !in_array($outrosKey, $segmento, true)) {
+                    return false;
+                }
+                $valorAtual = ($value !== null && $value !== '') ? $value : ($entity->segmentoOutros ?? null);
+                if ($valorAtual === null || $valorAtual === '' || trim((string) $valorAtual) === '') {
+                    return i::__('O campo ') . strtolower(i::__('Especificar segmento artístico-cultural')) . i::__(' é obrigatório quando "Outros (especificar)" é selecionado.');
+                }
+                return false;
+            },
+        ]);
+    }
+
+    /**
      * Registra um metadado "Outros" para especificar quando "Outra" for selecionada
      * 
      * @param string $key Chave do metadado "Outros"
@@ -591,9 +1167,31 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         ]);
     }
 
+    private function registerAgentMetadataByType(string $key, string $label, string $typeMetadata, ?int $agentTypeId, array $options = [], array $validations = []): void
+    {
+        $app = App::i();
+
+        $config = [
+            'label' => $label,
+            'type' => $typeMetadata,
+        ];
+
+        if ($typeMetadata === 'select') {
+            $config['options'] = $options;
+        }
+
+        if ($validations !== []) {
+            $config['validations'] = $validations;
+        }
+
+        $def = new \MapasCulturais\Definitions\Metadata($key, $config);
+        $app->registerMetadata($def, 'MapasCulturais\Entities\Agent', $agentTypeId);
+    }
+
     /**
      * Valida campo "Outros" quando o campo principal contém "outra"
-     * 
+     * Suporta campo principal como string (select) ou array (multiselect)
+     *
      * @param object $entity Entidade que contém os campos
      * @param mixed $value Valor atual do campo "Outros"
      * @param string $campoPrincipal Nome do campo principal (ex: 'etapa', 'pauta')
@@ -604,17 +1202,29 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     private function validateOutrosField($entity, $value, string $campoPrincipal, string $campoOutros, string $mensagemErro)
     {
         $valorPrincipal = $entity->{$campoPrincipal} ?? '';
-        
-        if (!$valorPrincipal || stripos($valorPrincipal, 'outra') === false) {
+
+        $contemOutra = false;
+        if (is_array($valorPrincipal)) {
+            foreach ($valorPrincipal as $v) {
+                if ($v && stripos((string) $v, 'outra') !== false) {
+                    $contemOutra = true;
+                    break;
+                }
+            }
+        } else {
+            $contemOutra = $valorPrincipal && stripos((string) $valorPrincipal, 'outra') !== false;
+        }
+
+        if (!$contemOutra) {
             return false;
         }
-        
+
         $valorAtual = ($value !== null && $value !== '') ? $value : ($entity->{$campoOutros} ?? null);
-        
-        if ($valorAtual === null || $valorAtual === '' || trim((string)$valorAtual) === '') {
+
+        if ($valorAtual === null || $valorAtual === '' || trim((string) $valorAtual) === '') {
             return $mensagemErro;
         }
-        
+
         return false;
     }
 
@@ -642,47 +1252,99 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Prepara opções de multiselect: coloca uma opção "Outros/Outra" por último (opcional)
+     * e adiciona no início as opções especiais "Edital não se direciona" e, opcionalmente, "Todas as opções".
+     *
+     * @param array<string, string> $baseOptions Opções base (key => label)
+     * @param string|null $moveToEndLabel Label da opção a colocar por último (ex: 'Outros', 'Outra (especificar)')
+     * @param string|null $endLabelOverride Label final para essa opção (ex: 'Outros (especificar)'); se null, mantém o label original
+     * @param bool $includeTodasOpcoes Incluir a opção "Todas as opções" (apenas Segmento; Pauta, Etapa e Território usam false)
+     * @return array<string, string>
+     */
+    private function enrichMultiselectOptions(array $baseOptions, ?string $moveToEndLabel = null, ?string $endLabelOverride = null, bool $includeTodasOpcoes = true): array
+    {
+        $rest = [];
+        $endEntry = null;
+        foreach ($baseOptions as $k => $v) {
+            if ($moveToEndLabel !== null && (string) $v === $moveToEndLabel) {
+                $endEntry = [$k => $endLabelOverride ?? $v];
+            } else {
+                $rest[$k] = $v;
+            }
+        }
+        $ordered = $endEntry !== null ? $rest + $endEntry : $baseOptions;
+        $especiais = [
+            '__edital_nao_se_direciona__' => i::__('Edital não se direciona a segmentos específicos'),
+        ];
+        if ($includeTodasOpcoes) {
+            $especiais['__todas_opcoes__'] = i::__('Todas as opções');
+        }
+        return $especiais + $ordered;
+    }
+
+    /**
      * Obtém as opções de Segmento do OpportunityWorkplan
+     * Ordem: 1) "Edital não se direciona a segmentos específicos", 2) "Todas as opções",
+     * 3) demais opções do Workplan com "Outros" por último.
      */
     private function getSegmentoOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoesWorkplan = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Workplan',
             'culturalArtisticSegment'
+        );
+        return $this->enrichMultiselectOptions(
+            $opcoesWorkplan,
+            i::__('Outros'),
+            i::__('Outros (especificar)')
         );
     }
 
     /**
      * Obtém as opções de Etapa do OpportunityWorkplan
+     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
      */
     public function getEtapaOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Goal',
             'culturalMakingStage'
         );
+        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
      * Obtém as opções de Pauta do OpportunityWorkplan
+     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
      */
     public function getPautaOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Workplan',
             'thematicAgenda'
         );
+        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
-     * Obtém as opções de Território do ProjectMonitoring
+     * Obtém as opções de Território. Apenas "Edital não se direciona" no início; sem "Todas as opções" e sem "Outros (especificar)".
      */
     private function getTerritorioOptions(): array
     {
-        return $this->getMetadataOptions(
+        $opcoes = $this->getMetadataOptions(
             'OpportunityWorkplan\Entities\Delivery',
             'priorityAudience'
         );
+        $outra = i::__('Outra (especificar)');
+        $outros = i::__('Outros (especificar)');
+        $filtered = [];
+        foreach ($opcoes as $k => $v) {
+            if ((string) $v === $outra || (string) $v === $outros) {
+                continue;
+            }
+            $filtered[$k] = $v;
+        }
+        return $this->enrichMultiselectOptions($filtered, null, null, false);
     }
 
     /*
@@ -707,8 +1369,46 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Obtém as opções de acesso ao fomento cultural nos últimos 5 anos
+     */
+    private function getAcessoFomentoCulturalOptions(): array
+    {
+        return array(
+            i::__('Sim'),
+            i::__('Não'),
+            i::__('Não sei informar'),
+        );
+    }
+
+    /**
+     * Obtém os metadados obrigatórios para agente coletivo
+     * @return array Array de metadados obrigatórios
+     */
+    public function getRequeredsAgentColetivoMetadata(): array
+    {
+        return [
+            'nomeSocial',
+            'nomeCompleto',
+            'cnpj',
+            'dataDeNascimento',
+            'emailPrivado',
+            'telefonePublico',
+            'emailPublico',
+            'acessouFomentoCultural',
+            'anosExperienciaAreaCultural',
+            'En_CEP',
+            'En_Nome_Logradouro',
+            'En_Num',
+            'En_Bairro',
+            'En_Municipio',
+            'En_Estado',
+        ];
+    }
+
+    /**
      * Aplica trim no campo "Outros" quando o campo principal possui valor "Outra (especificar)"
-     * 
+     * Suporta campo principal como string (select antigo) ou array (multiselect).
+     *
      * @param string $tipo Nome do campo principal (ex: 'etapa', 'pauta')
      * @param string $outroTipo Nome do campo "Outros" (ex: 'etapaOutros', 'pautaOutros')
      * @param array &$postData Referência ao array de dados POST
@@ -716,14 +1416,114 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     private function trimOtherValue(string $tipo, string $outroTipo, array &$postData): void
     {
         $valorEsperado = $tipo === 'etapa' ? OtherValues::OUTRA_ETAPA : OtherValues::OUTRA_PAUTA;
-        
-        if (
-            isset($postData[$tipo]) && isset($postData[$outroTipo]) &&
-            $postData[$tipo] === $valorEsperado && 
-            $postData[$outroTipo] !== null && $postData[$outroTipo] !== ''
-        ) {
-            $postData[$outroTipo] = trim($postData[$outroTipo]);
+        if (!isset($postData[$tipo]) || !isset($postData[$outroTipo]) || $postData[$outroTipo] === null || $postData[$outroTipo] === '') {
+            return;
         }
+        $contemOutra = false;
+        $valorPrincipal = $postData[$tipo];
+        if (is_array($valorPrincipal)) {
+            $opcoes = $tipo === 'etapa' ? $this->getEtapaOptions() : $this->getPautaOptions();
+            $outraKey = array_search($valorEsperado, $opcoes, true);
+            $contemOutra = $outraKey !== false && in_array($outraKey, $valorPrincipal, true);
+        } else {
+            $contemOutra = $valorPrincipal === $valorEsperado;
+        }
+        if ($contemOutra) {
+            $postData[$outroTipo] = trim((string) $postData[$outroTipo]);
+        }
+    }
+
+    /**
+     * Aplica trim no campo segmentoOutros quando "Outros" está em segmento
+     *
+     * @param array &$postData Referência ao array de dados POST
+     */
+    private function trimSegmentoOutros(array &$postData): void
+    {
+        if (!isset($postData['segmento']) || !isset($postData['segmentoOutros']) || $postData['segmentoOutros'] === null || $postData['segmentoOutros'] === '') {
+            return;
+        }
+        $segmento = $postData['segmento'];
+        if (!is_array($segmento)) {
+            return;
+        }
+        $opcoes = $this->getSegmentoOptions();
+        $outrosKey = array_search(i::__('Outros (especificar)'), $opcoes, true);
+        if ($outrosKey !== false && in_array($outrosKey, $segmento, true)) {
+            $postData['segmentoOutros'] = trim((string) $postData['segmentoOutros']);
+        }
+    }
+
+    /**
+     * Sanitiza o metadado recursosOutrasFontes antes de persistir: trim, strip_tags e
+     * limite de tamanho para nomeFonte em cada item de "outras fontes".
+     *
+     * @param array &$data Dados do PATCH (alterados in-place)
+     */
+    public function sanitizeRecursosOutrasFontes(array &$data): void
+    {
+        if (!isset($data['recursosOutrasFontes']) || !is_array($data['recursosOutrasFontes'])) {
+            return;
+        }
+        $raw = $data['recursosOutrasFontes'];
+        $recursos = self::ensureArray($raw);
+        if (isset($recursos['outrasFontes']) && is_array($recursos['outrasFontes'])) {
+            foreach ($recursos['outrasFontes'] as $i => $entrada) {
+                $entrada = is_array($entrada) ? $entrada : [];
+                $nome = isset($entrada['nomeFonte']) ? (string) $entrada['nomeFonte'] : '';
+                $nome = trim(strip_tags($nome));
+                if (mb_strlen($nome) > self::RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH) {
+                    $nome = mb_substr($nome, 0, self::RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH);
+                }
+                $recursos['outrasFontes'][$i]['nomeFonte'] = $nome;
+                if (array_key_exists('_id', $entrada)) {
+                    $recursos['outrasFontes'][$i]['_id'] = $entrada['_id'];
+                }
+                if (array_key_exists('valor', $entrada)) {
+                    $recursos['outrasFontes'][$i]['valor'] = $entrada['valor'];
+                }
+            }
+        }
+        $data['recursosOutrasFontes'] = $recursos;
+    }
+
+    /**
+     * Valida o metadado reservaVagasCotas da primeira fase: as 3 cotas devem estar
+     * configuradas (vagas e valorDestinado preenchidos) ou marcadas como "Não aplicável".
+     *
+     * @param \MapasCulturais\Entities\Opportunity $entity Oportunidade/fase sendo salva
+     * @param array $postData Dados do PATCH
+     * @return array|false Array de erros no formato [ 'reservaVagasCotas' => [msg] ] ou false
+     */
+    private function validateReservaVagasCotas($entity, array $postData)
+    {
+        if (empty($entity->id) || !$entity->isFirstPhase) {
+            return false;
+        }
+
+        $cotas = self::ensureArray($postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null));
+        if (count($cotas) === 0) {
+            return false;
+        }
+        if (count($cotas) !== 3) {
+            return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
+        }
+
+        foreach ($cotas as $cota) {
+            $cota = self::ensureArray($cota);
+            $naoAplicavel = !empty($cota['naoAplicavel']);
+            if ($naoAplicavel) {
+                continue;
+            }
+            $vagas = isset($cota['vagas']) && $cota['vagas'] !== '' && is_numeric($cota['vagas']) ? (int) $cota['vagas'] : null;
+            $valor = isset($cota['valorDestinado']) && $cota['valorDestinado'] !== '' && is_numeric($cota['valorDestinado']) ? (float) $cota['valorDestinado'] : null;
+            // Quando a cota se aplica, exige vagas > 0 e valor > 0 (zero não é considerado configurado)
+            if ($vagas === null || $valor === null || $vagas < 1 || $valor < 0.01) {
+                return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
+            }
+        }
+
+        return false;
     }
 
     private function validateTotalByMetadata($entity, array $postData, string $metadataKey, string $keyTarget)
@@ -745,12 +1545,43 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $convertVal = $metadataKey === 'vacancies' ? 'intval' : 'floatval';
         $totalMetadataInRanges = array_sum(array_map($convertVal, array_column($registrationRanges, $keyTarget)));
 
-        if ($convertVal($metadataValue) > $totalMetadataInRanges) {
-            return [
-                $metadataKey => [i::__('Valor superior ao total das faixas.')]
-            ];
+        // Garante que a soma das faixas não ultrapasse o valor total definido
+        if ($totalMetadataInRanges > $convertVal($metadataValue)) {
+            // Campos específicos para destacar apenas os inputs relacionados
+            if ($metadataKey === 'vacancies') {
+                return [
+                    'registrationRangesVacancies' => [
+                        i::__('O total de vagas das faixas/linhas é superior ao Total de vagas definido.')
+                    ]
+                ];
+            }
+
+            if ($metadataKey === 'totalResource') {
+                return [
+                    'registrationRangesTotalResource' => [
+                        i::__('O total em valores das faixas/linhas é superior ao Valor total definido.')
+                    ]
+                ];
+            }
         }
 
         return false;
+    }
+
+    /**
+     * Garante valor como array (objeto JSON vindo do banco vira array associativo).
+     * Reutilizado em todas as validações de metadado JSON.
+     * Público pois é chamado de dentro de hooks onde $this é a entidade (ex.: opportunity).
+     */
+    public static function ensureArray($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        if (is_object($value)) {
+            $decoded = json_decode(json_encode($value), true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
     }
 }

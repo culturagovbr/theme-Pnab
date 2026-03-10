@@ -28,18 +28,18 @@ app.component('create-opportunity', {
         areaClasses() {
             return this.areaErrors ? 'field error' : 'field';
         },
-        
+
         modalTitle() {
             if (!this.entity?.id) {
                 return __('criarOportunidade', 'create-opportunity');
             }
-            if(this.entity.status==0){
+            if (this.entity.status == 0) {
                 return __('oportunidadeCriada', 'create-opportunity');
             }
         },
 
-        entityType(){
-            switch(this.entity.ownerEntity.__objectType) {
+        entityType() {
+            switch (this.entity.ownerEntity.__objectType) {
                 case 'project':
                     return __('projeto', 'create-opportunity');
                 case 'event':
@@ -52,7 +52,7 @@ app.component('create-opportunity', {
         },
 
         entityColorClass() {
-            switch(this.entity.ownerEntity.__objectType) {
+            switch (this.entity.ownerEntity.__objectType) {
                 case 'project':
                     return 'project__color';
                 case 'event':
@@ -65,7 +65,7 @@ app.component('create-opportunity', {
         },
 
         entityColorBorder() {
-            switch(this.entity.ownerEntity.__objectType) {
+            switch (this.entity.ownerEntity.__objectType) {
                 case 'project':
                     return 'project__border';
                 case 'event':
@@ -81,7 +81,7 @@ app.component('create-opportunity', {
     methods: {
         handleSubmit(event) {
             event.preventDefault();
-        },    
+        },
 
         createEntity() {
             this.entity = new Entity('opportunity');
@@ -91,11 +91,20 @@ app.component('create-opportunity', {
         },
 
         createDraft(modal) {
+            if (!this.entity.ownerEntity && $MAPAS.user && $MAPAS.user.profile) {
+                this.entity.ownerEntity = $MAPAS.user.profile;
+            }
+
             this.entity.status = 0;
             this.save(modal);
         },
 
         createPublic(modal) {
+            // Se não houver ownerEntity selecionada, usa o agente do usuário atual
+            if (!this.entity.ownerEntity && $MAPAS.user && $MAPAS.user.profile) {
+                this.entity.ownerEntity = $MAPAS.user.profile;
+            }
+
             //lançar dois eventos
             this.entity.status = 1;
             this.save(modal);
@@ -103,6 +112,7 @@ app.component('create-opportunity', {
 
         save(modal) {
             modal.loading(true);
+
             this.entity.save().then((response) => {
                 this.$emit('create', response);
                 modal.loading(false);
@@ -136,6 +146,13 @@ app.component('create-opportunity', {
         getObjectTypeErrors() {
             return this.hasObjectTypeErrors() ? this.entity.__validationErrors?.objectType : [];
         },
+        incrementRegistrationTo() {
+            let newDate = new Date(this.entity.registrationFrom._date);
+            newDate.setDate(newDate.getDate() + 2);
+
+            this.entity.registrationTo = new McDate(newDate);
+        },
+
         getOpportunityTypeIdByLabel(label) {
             const options = $DESCRIPTIONS?.opportunity?.type?.options || {};
             const normalizedTarget = this.normalizeLabel(label);
