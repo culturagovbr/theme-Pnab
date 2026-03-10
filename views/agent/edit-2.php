@@ -66,7 +66,7 @@ $this->breadcrumb = [
                                         <entity-profile :entity="entity"></entity-profile>
                                     </div>
                                     <div class="col-9 sm:col-12 grid-12 v-bottom">
-                                        <entity-field :entity="entity" classes="col-12" prop="name" label="<?php i::_e('Nome do Agente') ?>"></entity-field>
+                                        <entity-field :entity="entity" classes="col-12" prop="name" label="<?php i::_e('Nome do Grupo ou Coletivo') ?>"></entity-field>
                                     </div>
                                     <?php $this->applyTemplateHook('entity-info','end') ?>
                                 </div>
@@ -106,35 +106,35 @@ $this->breadcrumb = [
                                     </template>
                                 </entity-field>
                                 <entity-field v-if="global.auth.is('admin')" :entity="entity" prop="type" @change="entity.save(true).then(() => global.reload())" classes="col-12"></entity-field>
-                                <entity-field :entity="entity" classes="col-12" prop="cnpj" label="CNPJ">
+                                <entity-field :entity="entity" classes="col-12" prop="cnpj" label="<?php i::_e('CNPJ') ?>">
                                     <template #info>
                                         <span class="required">*<?php i::_e('obrigatório') ?></span>
                                     </template>
                                 </entity-field>
                                 <entity-field :disabled="!(entity?.cnpj?.length == 18)" :entity="entity" classes="col-12" prop="cnpjAnexo" title-modal="<?php i::_e('Anexar CNPJ - Formatos: (png, jpeg, pdf)') ?>" group-name="docs-cnpj" :hide-label="true"></entity-field>
-                                <entity-field :entity="entity" classes="col-12" prop="dataDeNascimento" label="<?= i::__('Data de fundação') ?>">
+                                <entity-field :entity="entity" classes="col-12" prop="dataDeNascimento" label="<?= i::__('Data de Fundação') ?>">
                                     <template #info>
                                         <span class="required">*<?php i::_e('obrigatório') ?></span>
                                     </template>
                                 </entity-field>
-                                <entity-field :entity="entity" classes="col-12" prop="emailPrivado" label="<?= i::__('E-mail privado ') ?>">
+                                <entity-field :entity="entity" classes="col-12" prop="emailPrivado" label="<?= i::__('E-mail') ?>">
                                     <template #info>
                                         <span class="required">*<?php i::_e('obrigatório') ?></span>
                                     </template>
                                 </entity-field>
-                                <entity-field :entity="entity" classes="col-12" prop="telefonePublico" label="<?= i::__('Telefone público com DDD') ?>">
+                                <entity-field :entity="entity" classes="col-12" prop="telefonePublico" label="<?= i::__('Telefone') ?>">
                                     <template #info>
                                         <span class="required">*<?php i::_e('obrigatório') ?></span>
                                     </template>
                                 </entity-field>
-                                <entity-field :entity="entity" classes="col-12" prop="emailPublico" label="<?= i::__('E-mail público') ?>">
+                                <entity-field :entity="entity" classes="col-12" prop="emailPublico" label="<?= i::__('E-mail Público') ?>">
                                     <template #info>
                                         <span class="required">*<?php i::_e('obrigatório') ?></span>
                                     </template>
                                 </entity-field>
-                                <entity-field :entity="entity" classes="col-6 sm:col-12" prop="telefone1" label="<?= i::__('Telefone privado 1 com DDD') ?>">
+                                <entity-field :entity="entity" classes="col-12" prop="telefone1" label="<?= i::__('Telefone (Alternativo)') ?>">
                                 </entity-field>
-                                <entity-field :entity="entity" classes="col-6 sm:col-12" prop="telefone2" label="<?= i::__('Telefone privado 2 com DDD') ?>">
+                                <entity-field :entity="entity" classes="col-6 sm:col-12" prop="telefone2" label="<?= i::__('Telefone (Alternativo 2)') ?>">
                                 </entity-field>
                                 <entity-field :entity="entity" classes="col-12" prop="acessouFomentoCultural">
                                     <template #info>

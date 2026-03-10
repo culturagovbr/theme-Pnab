@@ -47,7 +47,7 @@ $this->import('
                     <span class="required">*<?php i::_e('obrigatório') ?></span>
                 </template>
             </entity-field>
-            <entity-field @change="address()" classes="col-12" :entity="entity" prop="En_Complemento" label="<?php i::_e('Complemento ou ponto de referência')?>">
+            <entity-field @change="address()" classes="col-12" :entity="entity" prop="En_Complemento" label="<?php i::_e('Complemento ou Ponto de Referência')?>">
             </entity-field>
             <entity-field v-if="statesAndCitiesCountryCode != 'BR'" @change="address()" classes="col-12" :entity="entity" prop="En_Pais" label="<?php i::_e('País') ?>">
                 <template v-if="required" #info>

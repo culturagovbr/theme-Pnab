@@ -961,7 +961,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra metadados de agente
             $theme->registerAgentMetadataByType(
                 'acessouFomentoCultural', 
-                i::__('Acessou recursos públicos de fomento à cultura nos últimos 5 (cinco) anos?'), 
+                i::__('Acessou Recursos Públicos de Fomento à Cultura nos Últimos 5 (Cinco) Anos?'), 
                 'select', 
                 null, 
                 $theme->getAcessoFomentoCulturalOptions(), 
@@ -970,7 +970,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $theme->registerAgentMetadataByType(
                 'anosExperienciaAreaCultural',
-                i::__('Possui quantos anos de experiência na área cultural?'),
+                i::__('Anos de Atuação na Área Cultural?'),
                 'number',
                 null,
                 [],
@@ -1009,6 +1009,20 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     }
                     return false;
                 };
+            }
+
+            // Labels de endereço para agente coletivo conforme dicionário (1ª coluna)
+            $addressLabelsColetivo = [
+                'En_CEP' => i::__('CEP da Sede'),
+                'En_Municipio' => i::__('Cidade'),
+            ];
+            foreach ($addressLabelsColetivo as $metaKey => $newLabel) {
+                $def = $definitions[$metaKey] ?? null;
+                if ($def !== null) {
+                    $config = array_merge([], $def->config);
+                    $config['label'] = $newLabel;
+                    $app->registerMetadata(new \MapasCulturais\Definitions\Metadata($metaKey, $config), $agentClass, $tipoColetivoId);
+                }
             }
         });
     }
