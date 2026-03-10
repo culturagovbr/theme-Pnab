@@ -1,14 +1,12 @@
 /**
- * Componente: Outras modalidades de ações afirmativas (edição de oportunidade).
- * Gerencia o metadado outrasModalidadesAcoesAfirmativas (opcoes, sublistas, descrição).
- * Lista de opções com sublista vem do backend (Theme::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST via jsObject).
+ * Outras modalidades de ações afirmativas. Metadado outrasModalidadesAcoesAfirmativas (opcoes, sublistas, descrição).
+ * Opções com sublista vêm do backend (Theme::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST).
  */
-
 const OPCAO_EXCLUSIVA = 'nao_previstas';
 const OPCAO_OUTRA = 'outra_legislacao';
 const MAX_DESCRICAO = 140;
 
-/** Chaves das opções com sublista (fallback se config não estiver disponível; espelha Theme::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST) */
+/** Fallback das chaves com sublista quando config não está disponível */
 const OPTIONS_WITH_SUBLIST_FALLBACK = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
 app.component('opportunity-outras-modalidades-acoes-afirmativas', {
@@ -27,7 +25,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
     },
 
     computed: {
-        /** Lista { key, labelKey } vinda do backend (fonte única com Theme.php) */
+        /** { key, labelKey } do backend; fallback local se não houver config */
         opcoesComSublista() {
             const config = $MAPAS.config?.opportunityOutrasModalidades?.opcoesComSublista;
             if (Array.isArray(config) && config.length > 0) return config;
@@ -36,7 +34,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
                 labelKey: optionKey.split('_').map((part, partIndex) => (partIndex === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1))).join('')
             }));
         },
-        /** Apenas as chaves (para ensureData, validação, etc.) */
+        /** Só as chaves (ensureData, validação) */
         opcoesComSublistaKeys() {
             return this.opcoesComSublista.map((item) => item.key);
         },
@@ -90,11 +88,11 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             const err = this.entity.__validationErrors?.outrasModalidadesAcoesAfirmativas;
             return Array.isArray(err) && err.length > 0 ? err[0] : '';
         },
-        /** Erro quando nenhuma opção está marcada — mensagem no topo da seção */
+        /** Nenhuma opção marcada — erro no topo da seção */
         hasErrorNenhumaOpcao() {
             return this.hasError && this.opcoesArray.length === 0;
         },
-        /** Erro no campo "outra legislação" (descrição vazia) — mensagem abaixo do input */
+        /** Campo "outra legislação" vazio — erro abaixo do input */
         hasErrorOutraLegislacao() {
             return this.hasError && this.opcoesArray.includes(OPCAO_OUTRA) && this.descricaoOutra.trim() === '';
         }
@@ -172,7 +170,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             this.ensureData();
             this.entity.outrasModalidadesAcoesAfirmativas.outra_legislacao_descricao = (value || '').slice(0, MAX_DESCRICAO);
         },
-        /** Erro na sublista da opção (opção marcada mas nenhuma subcategoria selecionada) — mensagem abaixo desse select */
+        /** Opção marcada mas sublista vazia — erro abaixo do select */
         hasErrorForSublista(optionKey) {
             if (!this.hasError || !this.opcoesArray.includes(optionKey)) return false;
             const arr = this.getSublistModel(optionKey);

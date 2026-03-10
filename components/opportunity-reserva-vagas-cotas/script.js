@@ -1,10 +1,9 @@
 /**
- * Componente: Reserva de vagas (cotas)
- * Estrutura: 3 cotas obrigatórias por lei (índices 0,1,2) + cotas extras + 1 cota fixa "Ampla concorrência" sempre por último.
+ * Reserva de vagas (cotas). 3 cotas da lei (0,1,2) + extras + Ampla concorrência sempre por último.
  */
 const NUM_LAW_QUOTAS = 3;
 
-/** Identificadores de campo para metadata (data-field-identifier) e detecção de erro */
+/** data-field-identifier e detecção de erro por linha */
 const QUOTA_FIELD_BLACK = 'negras';
 const QUOTA_FIELD_INDIGENOUS = 'indigenas';
 const QUOTA_FIELD_PCD = 'pcd';

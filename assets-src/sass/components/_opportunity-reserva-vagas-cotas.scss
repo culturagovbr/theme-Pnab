@@ -1,4 +1,4 @@
-// Espelhado em opportunity-ranges-config (faixas/linhas) — mesma estrutura e grid
+// Mesmo grid do opportunity-ranges-config
 .opportunity-reserva-vagas-cotas {
     display: flex;
     flex-direction: column;
@@ -28,7 +28,7 @@
         cursor: help;
     }
 
-    // Bloco de percentuais (hint), acima das linhas, como na imagem de referência
+    // Hint de percentuais (IN)
     &__hint {
         background: rgba(0, 116, 193, 0.08);
         border: 1px solid var(--mc-primary-300, #b3d9f2);
@@ -49,7 +49,7 @@
         }
     }
 
-    // Cabeçalho da tabela (mesmo grid das linhas)
+    // Header da tabela
     &__header-row {
         display: grid;
         grid-template-columns:
@@ -96,18 +96,18 @@
         justify-self: start;
     }
 
-    // Sem linha entre header e Total (apenas indicativo opaco)
+    // Sem borda entre header e Total
     &:has(&__header-row + &__total) &__header-row {
         border-bottom: none;
         padding-bottom: size(2);
     }
 
-    // Primeira linha após o header é a Total; sem borda própria no topo
+    // Total: sem borda no topo
     &__header-row + &__total {
         border-top: none;
     }
 
-    // Linha de total: meros indicativos — small, cinza claro, próximo do header
+    // Linha Total (entre header e cotas; texto small/cinza)
     &__total {
         display: grid;
         grid-template-columns:
@@ -159,7 +159,7 @@
         }
     }
 
-    // Grid: descrição | vagas | valor | automático (% sobre total) | checkbox
+    // Grid das linhas de cota
     &__content {
         display: grid;
         grid-template-columns:
@@ -226,7 +226,7 @@
         }
     }
 
-    // Destaque: três cotas prioritárias (lei) e Ampla concorrência — paleta do tema
+    // Cotas da lei + Ampla — borda azul
     &__content--lei,
     &__content--ampla {
         background: rgba(10, 114, 232, 0.06); // --mc-primary-500 com transparência
@@ -234,13 +234,13 @@
         padding-left: size(20);
     }
 
-    // Linha em erro de validação: borda esquerda vermelha (sobrescreve a azul/amarela)
+    // Linha em erro de validação
     &__content--error {
         border-left-color: var(--mc-error, #c62828) !important;
         background: rgba(198, 40, 40, 0.06) !important;
     }
 
-    // Cotas customizadas (extras) — barra lateral amarela (paleta do tema)
+    // Cotas extras — borda amarela
     &__content--extra {
         background: rgba(240, 181, 0, 0.08); // --mc-spaces-500 com transparência
         border-left: 3px solid var(--mc-spaces-500, #f0b500);

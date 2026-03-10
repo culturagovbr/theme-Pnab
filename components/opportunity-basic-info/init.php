@@ -14,7 +14,7 @@ $this->jsObject['config']['opportunityOtherOptions'] = [
     'pauta' => OtherValues::OUTRA_PAUTA,
 ];
 
-// Fonte única para opções com sublista (replica Theme::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST + labelKey para i18n)
+// Opções com sublista: replica Theme::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST + labelKey p/ i18n
 $this->jsObject['config']['opportunityOutrasModalidades'] = [
     'opcoesComSublista' => array_map(function ($key) {
         $labelKey = lcfirst(str_replace('_', '', ucwords($key, '_')));
