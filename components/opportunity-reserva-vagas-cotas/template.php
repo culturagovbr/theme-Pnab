@@ -37,7 +37,15 @@ $this->import('
         <span class="opportunity-reserva-vagas-cotas__th">Ações</span>
     </div>
 
-    <div class="opportunity-reserva-vagas-cotas__content" v-for="(cota, index) in cotas" :key="index" :class="{ 'opportunity-reserva-vagas-cotas__content--lei': isCotaLei(index), 'opportunity-reserva-vagas-cotas__content--ampla': isAmplaConcorrencia(index), 'opportunity-reserva-vagas-cotas__content--extra': isCotaExtra(index) }">
+    <small class="opportunity-reserva-vagas-cotas__total">
+        <span class="opportunity-reserva-vagas-cotas__total-label">Total</span>
+        <span class="opportunity-reserva-vagas-cotas__total-vagas">{{ totalVagas }}</span>
+        <span class="opportunity-reserva-vagas-cotas__total-valor">{{ totalValorDestinadoFormatted }}</span>
+        <span class="opportunity-reserva-vagas-cotas__total-automatico">{{ totalPercentualFormatted }}</span>
+        <span class="opportunity-reserva-vagas-cotas__total-acoes"></span>
+    </small>
+
+    <div class="opportunity-reserva-vagas-cotas__content" v-for="(cota, index) in cotas" :key="index" :data-field-identifier="getFieldIdentifier(index)" :class="{ 'opportunity-reserva-vagas-cotas__content--lei': isCotaLei(index), 'opportunity-reserva-vagas-cotas__content--ampla': isAmplaConcorrencia(index), 'opportunity-reserva-vagas-cotas__content--extra': isCotaExtra(index), 'opportunity-reserva-vagas-cotas__content--error': hasErrorForIndex(index) }">
         <div class="field">
             <input v-if="isCotaFixa(index)" class="field__input" type="text" :value="cota.label" readonly disabled>
             <input v-else class="field__input" type="text" v-model.trim="cota.label" :placeholder="text('descricao')" @blur="onBlurField(index)">

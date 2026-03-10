@@ -3,6 +3,7 @@
 namespace Pnab;
 
 use AldirBlanc\Services\UserAccessService;
+use AldirBlanc\Services\InMincQuotasService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
@@ -126,7 +127,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
             $theme->trimSegmentoOutros($postData);
 
-            $reservaVagasErrors = $theme->validateReservaVagasCotas($entity, $postData);
+            $reservaVagasErrors = InMincQuotasService::validateReservaVagasCotas($entity, $postData);
             if ($reservaVagasErrors) {
                 $this->errorJson($reservaVagasErrors, 400);
             }
@@ -1496,44 +1497,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
         }
         $data['recursosOutrasFontes'] = $recursos;
-    }
-
-    /**
-     * Valida o metadado reservaVagasCotas da primeira fase: apenas as 3 cotas da lei
-     * devem estar configuradas (vagas e valorDestinado) ou marcadas como "Não aplicável".
-     * Ampla concorrência não é validada.
-     *
-     * @param \MapasCulturais\Entities\Opportunity $entity Oportunidade/fase sendo salva
-     * @param array $postData Dados do PATCH
-     * @return array|false Array de erros no formato [ 'reservaVagasCotas' => [msg] ] ou false
-     */
-    private function validateReservaVagasCotas($entity, array $postData)
-    {
-        if (empty($entity->id) || !$entity->isFirstPhase) {
-            return false;
-        }
-
-        $cotas = self::ensureArray($postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null));
-        $minCotas = 4; // 3 da lei + Ampla concorrência (sempre última)
-        if (count($cotas) < $minCotas) {
-            return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
-        }
-
-        // Valida apenas as 3 cotas obrigatórias por lei (índices 0, 1, 2). Ampla concorrência não é validada.
-        foreach ([0, 1, 2] as $idx) {
-            $cota = self::ensureArray($cotas[$idx] ?? []);
-            $naoAplicavel = !empty($cota['naoAplicavel']);
-            if ($naoAplicavel) {
-                continue;
-            }
-            $vagas = isset($cota['vagas']) && $cota['vagas'] !== '' && is_numeric($cota['vagas']) ? (int) $cota['vagas'] : null;
-            $valor = isset($cota['valorDestinado']) && $cota['valorDestinado'] !== '' && is_numeric($cota['valorDestinado']) ? (float) $cota['valorDestinado'] : null;
-            if ($vagas === null || $valor === null || $vagas < 1 || $valor < 0.01) {
-                return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
-            }
-        }
-
-        return false;
     }
 
     private function validateTotalByMetadata($entity, array $postData, string $metadataKey, string $keyTarget)
