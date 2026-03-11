@@ -451,8 +451,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Configura o menu do painel: renomeia "Minhas Oportunidades" e move para "Ente Federado"
          */
         $app->hook('panel.nav', function (&$nav) use ($app, $canAccess) {
-            // Removendo o menu de "Meus aplicativos" [para todos os usuários]
-            $nav['more']['condition'] = fn() => false;
+            // "Meus aplicativos" visível apenas para saasSuperAdmin
+            $nav['more']['condition'] = fn() => UserAccessService::isSaasSuperAdmin();
+
+            // Usuário sem canAccess não vê "Minhas Oportunidades" (apenas GestorCultBr pode criar/acessar a página)
+            if (!$canAccess && isset($nav['opportunities']['items'])) {
+                foreach ($nav['opportunities']['items'] as $key => $item) {
+                    if (isset($item['route']) && $item['route'] === 'panel/opportunities') {
+                        $nav['opportunities']['items'][$key]['condition'] = fn() => false;
+                    }
+                }
+            }
 
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
@@ -943,6 +952,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (isset($this->jsObject['Taxonomies']['area'])) {
                 $this->jsObject['Taxonomies']['area']['required'] = false;
             }
+            // Usado no painel para exibir/ocultar o card "Oportunidades" (apenas quem tem canAccess)
+            $this->jsObject['canAccessOpportunitiesPanel'] = UserAccessService::canAccess();
         });
 
         /**
