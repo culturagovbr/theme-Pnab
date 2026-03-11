@@ -1,4 +1,4 @@
-// Espelhado em opportunity-ranges-config (faixas/linhas) — mesma estrutura e grid
+// Mesmo grid do opportunity-ranges-config
 .opportunity-reserva-vagas-cotas {
     display: flex;
     flex-direction: column;
@@ -28,7 +28,7 @@
         cursor: help;
     }
 
-    // Bloco de percentuais (hint), acima das linhas, como na imagem de referência
+    // Hint de percentuais (IN)
     &__hint {
         background: rgba(0, 116, 193, 0.08);
         border: 1px solid var(--mc-primary-300, #b3d9f2);
@@ -49,20 +49,131 @@
         }
     }
 
-    // Grid: descrição | vagas | valor | automático (% sobre total) | checkbox
-    &__content {
+    // Header da tabela
+    &__header-row {
         display: grid;
         grid-template-columns:
-            calc(42% - size(24))
+            calc(30% - size(20))
             calc(18% - size(12))
             calc(18% - size(12))
             minmax(size(72), 10%)
-            size(100);
+            minmax(size(120), 1fr);
+        gap: size(20) size(20);
+        align-items: center;
+        justify-items: center;
+        padding: size(8) 0;
+        border-bottom: 1px solid var(--mc-gray-300);
+        width: 100%;
+        min-width: 0;
+
+        @media (max-width: 932px) {
+            grid-template-columns:
+                calc(28% - 1rem)
+                calc(22% - 1rem)
+                calc(22% - 1rem)
+                size(72)
+                minmax(size(120), 1fr);
+        }
+
+        @media (max-width: 675px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    &__th {
+        font-family: var(--mc-font-body);
+        font-size: var(--mc-font-size-xxs);
+        font-weight: 600;
+        color: var(--mc-low-500);
+        justify-self: center;
+    }
+
+    &__header-row &__th:first-child {
+        justify-self: start;
+    }
+
+    &__header-row &__th:last-child {
+        justify-self: start;
+    }
+
+    // Sem borda entre header e Total
+    &:has(&__header-row + &__total) &__header-row {
+        border-bottom: none;
+        padding-bottom: size(2);
+    }
+
+    // Total: sem borda no topo
+    &__header-row + &__total {
+        border-top: none;
+    }
+
+    // Linha Total (entre header e cotas; texto small/cinza)
+    &__total {
+        display: grid;
+        grid-template-columns:
+            calc(30% - size(20))
+            calc(18% - size(12))
+            calc(18% - size(12))
+            minmax(size(72), 10%)
+            minmax(size(120), 1fr);
+        gap: size(20) size(20);
+        align-items: center;
+        justify-items: center;
+        padding: size(2) 0 size(8);
+        width: 100%;
+        min-width: 0;
+        font-weight: 400;
+        font-size: var(--mc-font-size-xxs);
+        color: var(--mc-gray-500);
+        border-bottom: 1px solid var(--mc-gray-300);
+    }
+
+    &__total-label {
+        justify-self: start;
+    }
+
+    &__total-vagas,
+    &__total-valor {
+        justify-self: center;
+    }
+
+    &__total-automatico,
+    &__total-acoes {
+        justify-self: center;
+    }
+
+    @media (max-width: 932px) {
+        &__total {
+            grid-template-columns:
+                calc(28% - 1rem)
+                calc(22% - 1rem)
+                calc(22% - 1rem)
+                size(72)
+                minmax(size(120), 1fr);
+        }
+    }
+
+    @media (max-width: 675px) {
+        &__total {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    // Grid das linhas de cota
+    &__content {
+        display: grid;
+        grid-template-columns:
+            calc(30% - size(20))
+            calc(18% - size(12))
+            calc(18% - size(12))
+            minmax(size(72), 10%)
+            minmax(size(120), 1fr);
         gap: size(20) size(20);
         border-top: 1px solid var(--mc-gray-300);
         align-items: center;
         justify-items: center;
         padding-top: size(8);
+        padding-bottom: size(8);
         width: 100%;
         min-width: 0;
 
@@ -84,11 +195,11 @@
 
         @media (max-width: 932px) {
             grid-template-columns:
-                calc(35% - 1rem)
+                calc(28% - 1rem)
                 calc(22% - 1rem)
                 calc(22% - 1rem)
                 size(72)
-                size(85);
+                minmax(size(120), 1fr);
         }
 
         @media (max-width: 675px) {
@@ -105,6 +216,103 @@
 
     &__cell-checkbox {
         justify-self: start;
+        white-space: nowrap;
+
+        .field__group.field__checkbox {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            gap: size(8);
+        }
+    }
+
+    // Cotas da lei + Ampla — borda azul
+    &__content--lei,
+    &__content--ampla {
+        background: rgba(10, 114, 232, 0.06); // --mc-primary-500 com transparência
+        border-left: 3px solid var(--mc-primary-500, #0a72e8);
+        padding-left: size(20);
+    }
+
+    // Linha em erro de validação
+    &__content--error {
+        border-left-color: var(--mc-error, #c62828) !important;
+        background: rgba(198, 40, 40, 0.06) !important;
+    }
+
+    // Cotas extras — borda amarela
+    &__content--extra {
+        background: rgba(240, 181, 0, 0.08); // --mc-spaces-500 com transparência
+        border-left: 3px solid var(--mc-spaces-500, #f0b500);
+        padding-left: size(20);
+    }
+
+    &__delete {
+        background: none;
+        border: none;
+        padding: size(4);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: size(6);
+        color: var(--mc-danger-500);
+        font-family: var(--mc-font-body);
+        font-size: var(--mc-font-size-xxs);
+        font-weight: 600;
+
+        &:hover {
+            color: var(--mc-danger-700);
+        }
+
+        .mc-icon {
+            font-size: size(20);
+        }
+    }
+
+    &__actions-pending {
+        display: inline-flex;
+        align-items: center;
+        gap: size(8);
+        flex-wrap: wrap;
+    }
+
+    &__confirm {
+        background: none;
+        border: none;
+        padding: size(4);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: size(6);
+        color: var(--mc-success-500, #4cb051);
+        font-family: var(--mc-font-body);
+        font-size: var(--mc-font-size-xxs);
+        font-weight: 600;
+
+        &:hover {
+            color: var(--mc-success-700, #265728);
+        }
+
+        .mc-icon {
+            font-size: size(20);
+        }
+    }
+
+    &__add {
+        margin-top: size(8);
+    }
+
+    &__add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: size(8);
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     }
 
     .required {

@@ -11,7 +11,7 @@ foreach (['raca', 'renda'] as $field_key) {
 
 // Detalhamento do tipo de agente coletivo (agente continua type=2 Coletivo).
 $agent_types['metadata']['tipoAgenteColetivo'] = [
-    'label' => \MapasCulturais\i::__('Tipo de agente coletivo'),
+    'label' => \MapasCulturais\i::__('Tipo de Agente Coletivo'),
     'type' => 'select',
     'options' => [
         'pj_fins_lucrativos' => \MapasCulturais\i::__('Pessoa jurídica com fins lucrativos'),

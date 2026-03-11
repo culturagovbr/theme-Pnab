@@ -29,6 +29,11 @@ $this->import('
 
             <?php $this->applyTemplateHook('opportunity-data-collection-config','end')?>
         </div>
+
+        <div class="col-12" v-if="phase.isFirstPhase">
+            <opportunity-proponent-types :entity="phase"></opportunity-proponent-types>
+        </div>
+
         <div class="opportunity-data-collection__limits col-12" v-if="phase.isFirstPhase">
                 <div class="opportunity-data-collection__fields">
                     <entity-field :entity="phase" prop="vacancies" :min="0" :autosave="3000" class="field__limits">
@@ -53,10 +58,6 @@ $this->import('
                     </entity-field>
                 </div>
             <?php $this->applyTemplateHook('opportunity-data-collection-config','end')?>
-        </div>
-
-        <div class="col-12" v-if="phase.isFirstPhase">
-            <opportunity-proponent-types :entity="phase"></opportunity-proponent-types>
         </div>
 
         <?php $this->applyTemplateHook('opportunity-data-collection-config','after')?>

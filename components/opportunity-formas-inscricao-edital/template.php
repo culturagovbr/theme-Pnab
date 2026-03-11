@@ -32,7 +32,7 @@ use MapasCulturais\i;
             <p v-if="algumaFormaMarcada && !todasDescricoesPreenchidas" class="field__error" role="alert">{{ text('alertaDescricaoObrigatoria') }}</p>
 
             <div class="grid-12">
-                <div v-for="tipo in TIPOS_FORMAS" :key="tipo" class="field col-12">
+                <div v-for="tipo in TIPOS_FORMAS" :key="tipo" class="field col-12" :class="{ error: tipo === 'email' && emailDisplayError }">
                     <div class="field__group">
                         <label class="field__checkbox">
                             <input type="checkbox" :checked="isTipoMarcado(tipo)" @change="setMarcado(tipo, $event.target.checked)" />
@@ -42,8 +42,9 @@ use MapasCulturais\i;
                     <template v-if="isTipoMarcado(tipo)">
                         <label class="field__title">{{ text('descricao') }}</label>
                         <div class="field__input">
-                            <input type="text" :value="getDescricao(tipo)" @input="setDescricao(tipo, $event.target.value)" :placeholder="text('descricaoPlaceholder')" />
+                            <input :type="tipo === 'email' ? 'email' : 'text'" :value="getDescricao(tipo)" @input="setDescricao(tipo, $event.target.value)" @blur="tipo === 'email' && validateEmailBlur()" :placeholder="tipo === 'email' ? text('descricaoPlaceholderEmail') : text('descricaoPlaceholder')" />
                         </div>
+                        <p v-if="tipo === 'email' && emailDisplayError" class="field__error" role="alert">{{ emailDisplayError }}</p>
                     </template>
                 </div>
             </div>
