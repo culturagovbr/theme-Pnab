@@ -6,6 +6,7 @@ use AldirBlanc\Services\UserAccessService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
+use AldirBlanc\Enum\OpportunityStatus;
 use AldirBlanc\Jobs\OportunidadeCultJob;
 use MapasCulturais\Entities\Opportunity;
 
@@ -124,10 +125,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Hook para disparar o job de integração com o CultBR quando uma oportunidade é atualizada
+         * Hook para disparar o job de integração com o CultBR quando uma oportunidade é atualizada.
+         * Só enfileira o job de update quando a oportunidade estiver com status 1 (Ativado).
          */
         $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
             if (!$theme->validateIntegrationJob($this)) {
+                return;
+            }
+
+            if ((int) $this->status !== OpportunityStatus::ENABLED->value) {
                 return;
             }
 
