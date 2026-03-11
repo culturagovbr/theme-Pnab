@@ -1,0 +1,67 @@
+// Complete seu cadastro (aldirblanc/completeProfile).
+// Estrutura e design alinhados à página de escolha do ente (choose-federative-entity-page).
+.complete-profile-page {
+    padding: size(40) 0 0 0;
+
+    &__container {
+        max-width: 800px;
+        width: 100%;
+        margin: 0 auto;
+        margin-bottom: size(32);
+        padding-left: size(20);
+        padding-right: size(20);
+    }
+
+    &__title {
+        font-size: size(32);
+        font-weight: 700;
+        color: var(--mc-gray-color-txt);
+        margin: 0 0 size(16) 0;
+        text-align: center;
+    }
+
+    &__description {
+        font-size: size(18);
+        color: var(--mc-gray-700);
+        margin: 0 0 size(40) 0;
+        text-align: center;
+        line-height: 1.6;
+    }
+
+    &__card {
+        background: var(--mc-white);
+        border-radius: size(16);
+        padding: size(32);
+        padding-bottom: size(48);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+
+        .mc-card {
+            margin-bottom: size(32);
+
+            &:last-of-type {
+                margin-bottom: 0;
+            }
+        }
+
+        main {
+            display: block;
+        }
+    }
+}
+
+@media (max-width: 870px) {
+    .complete-profile-page {
+        padding: size(24) 0 0 0;
+
+        &__container {
+            margin-bottom: size(24);
+            padding-left: size(16);
+            padding-right: size(16);
+        }
+
+        &__card {
+            padding: size(20);
+            padding-bottom: size(40);
+        }
+    }
+}

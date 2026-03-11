@@ -22,6 +22,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     ];
 
     protected const AGENT_COLETIVO_TYPE_ID = 2;
+    protected const AGENT_INDIVIDUAL_TYPE_ID = 1;
 
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
     public const OPTIONS_OTHER_MODALITIES_WITH_SUBLIST = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
@@ -539,10 +540,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Redireciona para consolidação após login bem-sucedido
          * Limpa a seleção de entidade federativa quando o usuário faz login
          * Não redireciona admins (não há o que consolidar)
+         * Se o agente tem isNotGestorCultBr (API já retornou vazio), redireciona para o painel (2º+ login)
          */
         $app->hook('auth.successful', function () use ($app) {
             // Se for admin em qualquer nível, não precisa consolidar dados
             if (UserAccessService::isAdmin()) {
+                return;
+            }
+
+            $profile = $app->user->profile;
+            if ($profile && $profile->getMetadata('isNotGestorCultBr')) {
+                // 2º ou N-ésimo login: API já retornou vazio, não passar pela consolidação
+                $_SESSION['mapasculturais.auth.redirect_path'] = $app->createUrl('panel', 'index');
                 return;
             }
 
@@ -577,7 +586,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity e federativeEntities
          * Não bloqueia admins (não há o que consolidar)
          */
-        $blockAccessOnError = function () use ($app) {
+        $theme = $this;
+        $blockAccessOnError = function () use ($app, $theme) {
             if ($app->user->is('guest')) {
                 return;
             }
@@ -587,62 +597,81 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
+            $profile = $app->user->profile;
             $route = [$this->id, $this->action];
 
-            // Ignora as rotas de consolidação, sync, seleção, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'logoutOnError'])) {
+            // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'logoutOnError'])) {
                 return;
             }
 
-            // Verifica se o sync foi iniciado mas ainda não foi concluído
+            // Ordem: (1) consolidação, (2) perfil incompleto, (3) gestor sem ente
+
+            // 1. Consolidação: só aplica a quem NÃO tem isNotGestorCultBr (2º+ login sem gestor pula)
             $syncStarted = isset($_SESSION['gestor_cult_sync_started']) && $_SESSION['gestor_cult_sync_started'] === true;
             $syncCompleted = isset($_SESSION['gestor_cult_sync_completed']) && $_SESSION['gestor_cult_sync_completed'] === true;
-            $hasError = isset($_SESSION['gestor_cult_sync_error']) && 
-                       $_SESSION['gestor_cult_sync_error'] !== null && 
-                       $_SESSION['gestor_cult_sync_error'] !== '';
+            $hasError = isset($_SESSION['gestor_cult_sync_error']) &&
+                $_SESSION['gestor_cult_sync_error'] !== null &&
+                $_SESSION['gestor_cult_sync_error'] !== '';
 
-            // Se há erro de sync, bloqueia TODAS as requisições e redireciona para consolidação
-            if ($syncCompleted && $hasError) {
-                // Para requisições AJAX, retorna erro JSON
-                if ($app->request->isAjax()) {
-                    /** @var \MapasCulturais\Controller $this */
-                    header('Content-Type: application/json');
-                    http_response_code(403);
-                    echo json_encode([
-                        'error' => true,
-                        'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
-                        'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
-                    ]);
-                    exit;
-                }
-                
-                // Para requisições normais, redireciona
-                $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
-                $url = $app->createUrl('aldirblanc', 'consolidatingData');
-                $app->redirect($url);
-                return;
-            }
-
-            // Se o sync foi iniciado mas não foi concluído, redireciona para consolidação
-            if ($syncStarted && !$syncCompleted) {
-                if (!$app->request->isAjax()) {
+            if (!$profile || !$profile->getMetadata('isNotGestorCultBr')) {
+                // Se há erro de sync, bloqueia e redireciona para consolidação
+                if ($syncCompleted && $hasError) {
+                    if ($app->request->isAjax()) {
+                        header('Content-Type: application/json');
+                        http_response_code(403);
+                        echo json_encode([
+                            'error' => true,
+                            'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
+                            'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
+                        ]);
+                        exit;
+                    }
                     $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                    $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
+                    return;
                 }
-                $url = $app->createUrl('aldirblanc', 'consolidatingData');
-                $app->redirect($url);
-                return;
+
+                // Se o sync foi iniciado mas não foi concluído, redireciona para consolidação
+                if ($syncStarted && !$syncCompleted) {
+                    if (!$app->request->isAjax()) {
+                        $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                    }
+                    $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
+                    return;
+                }
             }
 
-            // Após o sync terminar sem erro, verifica se é gestor e precisa selecionar entidade
+            // 2. Perfil incompleto (agente individual ou tipo não definido): redireciona para tela de complementar cadastro
+            $profileTypeId = $profile && is_object($profile->type) ? ($profile->type->id ?? null) : ($profile->type ?? null);
+            $isIndividual = $profile && (($profileTypeId === null) || ((int) $profileTypeId === self::AGENT_INDIVIDUAL_TYPE_ID));
+            if ($isIndividual && method_exists($theme, 'hasRequiredAgentFieldsFilled')) {
+                // Usa instância recarregada do banco para evitar perfil em memória/sessão sem __metadata carregado (getMetadata retorna null se __metadata não for iterável)
+                $profileToCheck = $profile->refreshed();
+                if (!$theme->hasRequiredAgentFieldsFilled($profileToCheck)) {
+                    if (!$app->request->isAjax()) {
+                        $app->redirect($app->createUrl('aldirblanc', 'completeProfile'));
+                    } else {
+                        header('Content-Type: application/json');
+                        http_response_code(403);
+                        echo json_encode([
+                            'error' => true,
+                            'message' => 'Complete seu cadastro para continuar.',
+                            'redirectTo' => $app->createUrl('aldirblanc', 'completeProfile'),
+                        ]);
+                        exit;
+                    }
+                    return;
+                }
+            }
+
+            // 3. Gestor sem ente: após consolidação ok (ou isNotGestorCultBr), exige seleção de ente
             if ($syncCompleted && !$hasError && UserAccessService::isGestorCultBr()) {
-                // Verifica se existe entidade federativa selecionada na sessão
                 if (!isset($_SESSION['selectedFederativeEntity'])) {
                     if (!$app->request->isAjax()) {
                         $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                     }
-                    // Redireciona para a tela de seleção
-                    $url = $app->createUrl('aldirblanc', 'selectFederativeEntity');
-                    $app->redirect($url);
+                    $app->redirect($app->createUrl('aldirblanc', 'selectFederativeEntity'));
                 }
             }
         };
@@ -881,7 +910,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Assim a validação roda e retorna erro nos campos que faltaram.
          */
         $agentColetivoTypeId = self::AGENT_COLETIVO_TYPE_ID;
-        $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId) {
+        $agentIndividualTypeId = self::AGENT_INDIVIDUAL_TYPE_ID;
+        $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId, $agentIndividualTypeId) {
             /** @var \MapasCulturais\Controllers\Agent $this */
             $theme = $app->view;
             $entity = $this->requestedEntity;
@@ -898,15 +928,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
             $typeId = is_object($entity->type) ? ($entity->type->id ?? null) : $entity->type;
+            $typeId = $typeId === null ? null : (int) $typeId;
 
-            if ($typeId === null || (int) $typeId !== $agentColetivoTypeId) {
+            if ($typeId === $agentColetivoTypeId && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
+                foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
+                    if (!array_key_exists($key, $data)) {
+                        $data[$key] = $entity->$key ?? null;
+                        $this->postData[$key] = $data[$key];
+                    }
+                }
                 return;
             }
-            
-            foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
-                if (!array_key_exists($key, $data)) {
-                    $data[$key] = $entity->$key ?? null;
-                    $this->postData[$key] = $data[$key];
+
+            if ($typeId === $agentIndividualTypeId && method_exists($theme, 'getRequeredsAgentIndividualMetadata')) {
+                foreach ($theme->getRequeredsAgentIndividualMetadata() as $key) {
+                    if (!array_key_exists($key, $data)) {
+                        $data[$key] = $entity->$key ?? null;
+                        $this->postData[$key] = $data[$key];
+                    }
                 }
             }
 
@@ -1038,6 +1077,22 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 []
             );
 
+            // Detalhamento do tipo de agente coletivo (apenas type=2 Coletivo).
+            $theme->registerAgentMetadataByType(
+                'tipoAgenteColetivo',
+                i::__('Tipo de agente coletivo'),
+                'select',
+                self::AGENT_COLETIVO_TYPE_ID,
+                [
+                    'pj_fins_lucrativos' => i::__('Pessoa jurídica com fins lucrativos'),
+                    'pj_sem_fins_lucrativos' => i::__('Pessoa jurídica sem fins lucrativos'),
+                    'coletivos_grupos_informais' => i::__('Coletivos e grupos informais'),
+                ],
+                [
+                    'required' => i::__('O tipo de agente coletivo é obrigatório'),
+                ]
+            );
+
             $agentClass = 'MapasCulturais\Entities\Agent';
             $tipoColetivoId = self::AGENT_COLETIVO_TYPE_ID;
 
@@ -1089,6 +1144,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $config = array_merge([], $def->config);
                     $config['label'] = $newLabel;
                     $app->registerMetadata(new \MapasCulturais\Definitions\Metadata($metaKey, $config), $agentClass, $tipoColetivoId);
+                }
+            }
+
+            $tipoIndividualId = self::AGENT_INDIVIDUAL_TYPE_ID;
+            $definitionsIndividual = $app->getRegisteredMetadata($agentClass, $tipoIndividualId);
+            if (!empty($definitionsIndividual)) {
+                foreach ($definitionsIndividual as $metaKey => $def) {
+                    if (!in_array($metaKey, $theme->getRequeredsAgentIndividualMetadata())) {
+                        continue;
+                    }
+
+                    $def->config['should_validate'] = function ($entity, $value) use ($def) {
+                        if ($entity->isNew()) {
+                            return false;
+                        }
+                        $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
+                        if ($vazio) {
+                            return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para agente individual.');
+                        }
+                        return false;
+                    };
                 }
             }
         });
@@ -1496,6 +1572,66 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'En_Municipio',
             'En_Estado',
         ];
+    }
+
+    /**
+     * Obtém os metadados obrigatórios para agente individual.
+     *
+     * @return array Array de metadados obrigatórios
+     */
+    public function getRequeredsAgentIndividualMetadata(): array
+    {
+        return [
+            'nomeSocial',
+            'nomeCompleto',
+            'cpf',
+            'emailPrivado',
+            'telefonePublico',
+            'acessouFomentoCultural',
+            'anosExperienciaAreaCultural',
+            'eMestreCulturasTradicionais',
+            'En_CEP',
+            'En_Nome_Logradouro',
+            'En_Num',
+            'En_Bairro',
+            'En_Municipio',
+            'En_Estado',
+            'En_Complemento',
+            'dataDeNascimento',
+            'genero',
+            'orientacaoSexual',
+            'raca',
+            'renda',
+            'escolaridade',
+            'pessoaDeficiente',
+            'comunidadesTradicional',
+        ];
+    }
+
+    /**
+     * Verifica se o agente individual possui todos os campos obrigatórios preenchidos (perfil completo).
+     * Considera apenas agente do tipo individual (tipo 1). name, shortDescription e área são desconsiderados.
+     *
+     * @param \MapasCulturais\Entities\Agent $agent
+     * @return bool
+     */
+    public function hasRequiredAgentFieldsFilled(\MapasCulturais\Entities\Agent $agent): bool
+    {
+        $typeId = is_object($agent->type) ? ($agent->type->id ?? null) : $agent->type;
+        // Considera apenas agente individual (tipo 1). Tipo null é tratado como individual para exigir preenchimento.
+        if ($typeId !== null && (int) $typeId !== self::AGENT_INDIVIDUAL_TYPE_ID) {
+            return true;
+        }
+
+        foreach ($this->getRequeredsAgentIndividualMetadata() as $key) {
+            // Acessa via getMetadata para garantir que __metadata seja carregado (evita null quando relação lazy não foi inicializada)
+            $value = $agent->getMetadata($key);
+            if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
