@@ -419,6 +419,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($meta !== null && $meta->value !== null && $meta->value !== '') {
                 $this->setMetadata('tipoAgenteColetivo', $meta->value);
             }
+
+            if (($this->tipoAgenteColetivo ?? '') === 'coletivos_grupos_informais') {
+                $qtdMeta = $app->repo('AgentMeta')->findOneBy(['owner' => $this, 'key' => 'qtdMembrosColetivo']);
+                $current = $this->qtdMembrosColetivo;
+                $invalid = $current === null || $current === '' || (is_numeric($current) && (int) $current < 2);
+                if ($invalid && $qtdMeta !== null && $qtdMeta->value !== null && $qtdMeta->value !== '' && (int) $qtdMeta->value >= 2) {
+                    $this->setMetadata('qtdMembrosColetivo', $qtdMeta->value);
+                }
+            }
         });
 
         /**
@@ -891,6 +900,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $this->postData[$key] = $data[$key];
                 }
             }
+
+            // Coletivos informais: se qtdMembrosColetivo vier ausente no payload (front costuma omitir 0), forçar 0 para a validação rodar e bloquear o save.
+            if (($entity->tipoAgenteColetivo ?? '') === 'coletivos_grupos_informais' && !array_key_exists('qtdMembrosColetivo', $data)) {
+                $data['qtdMembrosColetivo'] = 0;
+                $this->postData['qtdMembrosColetivo'] = 0;
+            }
         });
 
         /**
@@ -995,6 +1010,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             );
 
             $theme->registerAgentMetadataByType(
+                'qtdMembrosColetivo',
+                i::__('Quantas pessoas fazem parte do coletivo?'),
+                'number',
+                null,
+                [],
+                ['v::numericVal()->min(2)' => i::__('Informe pelo menos 2 membros.')]
+            );
+
+            $theme->registerAgentMetadataByType(
                 'eMestreCulturasTradicionais',
                 i::__('É mestre ou mestra das culturas tradicionais ou populares?'),
                 'boolean',
@@ -1023,6 +1047,21 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
                     if ($vazio) {
                         return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para agente coletivo.');
+                    }
+                    return false;
+                };
+            }
+
+            // qtdMembrosColetivo: obrigatório para coletivos informais; não pode ser nulo; deve ser > 1 (coletivo = plural)
+            if (isset($definitions['qtdMembrosColetivo'])) {
+                $def = $definitions['qtdMembrosColetivo'];
+                $def->config['should_validate'] = function ($entity, $value) use ($def) {
+                    if ($entity->isNew() || ($entity->tipoAgenteColetivo ?? '') !== 'coletivos_grupos_informais') {
+                        return false;
+                    }
+                    $vazio = $value === null || $value === '' || (is_array($value) && empty($value)) || $value === 0 || $value === '0';
+                    if ($vazio) {
+                        return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para coletivos e grupos informais.');
                     }
                     return false;
                 };

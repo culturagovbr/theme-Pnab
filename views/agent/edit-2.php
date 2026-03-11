@@ -150,6 +150,17 @@ $this->breadcrumb = [
                                     </template>
                                 </entity-field>
                                 <entity-field v-if="global.auth.is('admin')" :entity="entity" prop="type" @change="entity.save(true).then(() => global.reload())" classes="col-12"></entity-field>
+                                <entity-field
+                                    v-if="entity.tipoAgenteColetivo === 'coletivos_grupos_informais'"
+                                    :entity="entity"
+                                    classes="col-12"
+                                    prop="qtdMembrosColetivo"
+                                    label="<?php i::_e('Quantas pessoas fazem parte do coletivo?') ?>"
+                                >
+                                    <template #info>
+                                        <span class="required">*<?php i::_e('obrigatório') ?></span>
+                                    </template>
+                                </entity-field>
                                 <entity-field :entity="entity" classes="col-12" prop="emailPrivado" label="<?= i::__('E-mail') ?>">
                                     <template #info>
                                         <span class="required">*<?php i::_e('obrigatório') ?></span>
