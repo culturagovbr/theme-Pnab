@@ -53,14 +53,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Na edição de agente, exibe o campo "Tipo de agente coletivo" após o campo "Nome do Agente".
+         * Na edição de agente, o campo "Tipo de Agente Coletivo" não é exibido:
+         * uma vez configurado (na criação), o usuário não pode mais alterá-lo.
          */
-        $app->hook('template(agent.edit.entity-info):end', function () {
-            $entity = $this->controller->requestedEntity ?? null;
-            if ($entity) {
-                $this->part('agent-edit-tipo-coletivo', ['entity' => $entity]);
-            }
-        });
+        // Hook removido: template(agent.edit.entity-info):end + part('agent-edit-tipo-coletivo')
 
         /**
          * Verifica se o usuário tem permissão para acessar a rota de minhas oportunidades
@@ -407,6 +403,21 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         }
                     }
                 }
+            }
+        });
+
+        /**
+         * Impede alteração do metadado tipoAgenteColetivo após a criação do agente.
+         * Se a entidade já existe, restaura o valor atual do banco antes de persistir.
+         */
+        $app->hook('entity(Agent).save:before', function () use ($app) {
+            /** @var \MapasCulturais\Entities\Agent $this */
+            if ($this->isNew()) {
+                return;
+            }
+            $meta = $app->repo('AgentMeta')->findOneBy(['owner' => $this, 'key' => 'tipoAgenteColetivo']);
+            if ($meta !== null && $meta->value !== null && $meta->value !== '') {
+                $this->setMetadata('tipoAgenteColetivo', $meta->value);
             }
         });
 
@@ -855,10 +866,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId) {
             /** @var \MapasCulturais\Controllers\Agent $this */
             $theme = $app->view;
+            $entity = $this->requestedEntity;
+
+            // Tipo de Agente Coletivo não pode ser alterado após a criação: remove do payload.
+            if ($entity && !$entity->isNew()) {
+                unset($data['tipoAgenteColetivo']);
+            }
+
             if (!method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
                 return;
             }
-            $entity = $this->requestedEntity;
             if (!$entity || $entity->isNew()) {
                 return;
             }
