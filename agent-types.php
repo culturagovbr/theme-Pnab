@@ -18,10 +18,8 @@ $agent_types['metadata']['tipoAgenteColetivo'] = [
         'pj_sem_fins_lucrativos' => \MapasCulturais\i::__('Pessoa jurídica sem fins lucrativos'),
         'coletivos_grupos_informais' => \MapasCulturais\i::__('Coletivos e grupos informais'),
     ],
-    'validations' => [
-        'required' => \MapasCulturais\i::__('O tipo de agente coletivo é obrigatório'),
-    ],
 ];
+
 // Remove o fallback que mostra user->email quando emailPrivado está vazio no banco (conf/agent-types.php).
 // Assim $entity->emailPrivado fica vazio quando não há registro em agent_meta.
 if (isset($agent_types['metadata']['emailPrivado']['unserialize'])) {
