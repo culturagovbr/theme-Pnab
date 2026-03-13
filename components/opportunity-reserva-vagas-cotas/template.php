@@ -57,8 +57,7 @@ $this->import('
             <mc-currency-input class="field__input" :key="`valor-${index}-${quota.naoAplicavel}-${quota.valorDestinado}`" v-model.lazy="quota.valorDestinado" :disabled="isFixedQuota(index) && quota.naoAplicavel" @blur="onBlurField(index)"></mc-currency-input>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-automatico">
-            <span v-if="isFixedQuota(index)" class="opportunity-reserva-vagas-cotas__percentual" :aria-label="text('automatico')">{{ quotaPercent(quota) }}</span>
-            <span v-else class="opportunity-reserva-vagas-cotas__percentual">—</span>
+            <span class="opportunity-reserva-vagas-cotas__percentual" :aria-label="text('automatico')">{{ quotaPercent(quota) }}</span>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-checkbox">
             <label v-if="isFixedQuota(index)" class="field__group field__checkbox">
