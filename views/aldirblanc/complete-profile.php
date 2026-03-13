@@ -61,9 +61,6 @@ $this->import('
                     </template>
                     <template #content>
                         <div class="grid-12">
-                            <entity-field v-if="isFieldVisible('nomeSocial')" :entity="entity" classes="col-12" prop="nomeSocial" label="<?= i::__('Nome artístico ou Nome Social') ?>">
-                                <template #info><span class="required">*<?php i::_e('obrigatório') ?></span></template>
-                            </entity-field>
                             <entity-field v-if="isFieldVisible('nomeCompleto')" :entity="entity" classes="col-12" prop="nomeCompleto" label="<?= i::__('Nome completo') ?>">
                                 <template #info><span class="required">*<?php i::_e('obrigatório') ?></span></template>
                             </entity-field>

@@ -1657,7 +1657,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     public function getRequeredsAgentIndividualMetadata(): array
     {
         return [
-            'nomeSocial',
             'nomeCompleto',
             'cpf',
             'emailPrivado',

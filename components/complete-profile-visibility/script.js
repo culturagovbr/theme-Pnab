@@ -59,7 +59,6 @@ app.component('complete-profile-visibility', {
             const fieldProps = [
                 'name',
                 'shortDescription',
-                'nomeSocial',
                 'nomeCompleto',
                 'type',
                 'cpf',
@@ -98,7 +97,6 @@ app.component('complete-profile-visibility', {
             this.showCardApresentacao =
                 set.has('name') || set.has('terms.area') || set.has('shortDescription');
             this.showCardPessoais =
-                set.has('nomeSocial') ||
                 set.has('nomeCompleto') ||
                 set.has('type') ||
                 set.has('cpf') ||
