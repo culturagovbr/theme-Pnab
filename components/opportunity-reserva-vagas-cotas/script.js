@@ -10,7 +10,7 @@ const QUOTA_FIELD_PCD = 'pcd';
 const QUOTA_FIELD_GENERAL_COMPETITION = 'ampla-concorrencia';
 const QUOTA_FIELD_EXTRA_PREFIX = 'extra-';
 
-function defaultQuota(label, notApplicable = true) {
+function defaultQuota(label, notApplicable = false) {
     return {
         label,
         vagas: 0,
