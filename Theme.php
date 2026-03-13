@@ -8,6 +8,9 @@ use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
 use Respect\Validation\Validator;
+use AldirBlanc\Enum\OpportunityStatus;
+use AldirBlanc\Jobs\OportunidadeCultJob;
+use MapasCulturais\Entities\Opportunity;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. * 
@@ -101,6 +104,48 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (!$canAccess) {
                 $this->errorJson(\MapasCulturais\i::__('Criação não permitida'), 403);
             }
+        });
+
+        /**
+         * Dispara o job de integração com o CultBR quando uma oportunidade é inserida
+         */
+        $app->hook('entity(Opportunity).insert:finish', function () use ($app, $theme) {
+            if (!$theme->validateIntegrationJob($this)) {
+                return;
+            }
+
+            $app->enqueueOrReplaceJob(
+                OportunidadeCultJob::SLUG,
+                [
+                    'action' => 'create',
+                    'opportunity' => $this
+                ],
+            );
+        });
+
+        /**
+         * Hook para disparar o job de integração com o CultBR quando uma oportunidade é atualizada.
+         * Só enfileira o job de update quando a oportunidade estiver com status 1 (Ativado).
+         */
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
+            if (!$theme->validateIntegrationJob($this)) {
+                return;
+            }
+
+            if ((int) $this->status !== OpportunityStatus::ENABLED->value) {
+                return;
+            }
+
+            $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
+
+            $app->enqueueOrReplaceJob(
+                OportunidadeCultJob::SLUG,
+                [
+                    'action' => 'update',
+                    'opportunity' => $this
+                ],
+                $start_string
+            );
         });
 
         $app->hook('PATCH(opportunity.single):before', function () use ($theme) {
@@ -742,10 +787,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Validação de oportunidade: Torna o campo "Tipos do proponente" obrigatório
+         * Validação de oportunidade:
+         * - Torna o campo "Descrição curta" obrigatório em qualquer fase
+         * - Torna o campo "Tipos do proponente" obrigatório nas fases de edição (não novas e não últimas fases)
          */
-        $app->hook('entity(Opportunity).validations', function(&$validations) {
+        $app->hook('entity(Opportunity).validations', function (&$validations) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
+
+            // Descrição curta obrigatória (inclui criação via modal)
+            $validations['shortDescription'] = [
+                'required' => i::__('O campo "Descrição curta" é obrigatório.')
+            ];
+
+            // Tipos do proponente obrigatórios apenas em edição, como já era feito antes
             if (!$this->isNew() && !$this->isLastPhase) {
                 if (!is_array($this->registrationProponentTypes)) {
                     $this->registrationProponentTypes = [];
@@ -1784,5 +1838,32 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return is_array($decoded) ? $decoded : [];
         }
         return [];
+    }
+
+    /**
+     * Valida se o job de integração com o CultBR deve ser disparado
+     */
+    private function validateIntegrationJob($entity)
+    {
+        $federativeEntityId = $entity->getMetadata('federativeEntityId');
+        $subsiteId = $entity->subsite->id;
+        $parent = $entity->parent;
+        $status = $entity->status;
+        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', null);
+
+        // condições para NÃO disparar o job
+        $conditions = [
+            $parent, // Se for uma oportunidade complementar
+            $status === Opportunity::STATUS_PHASE, // Se for uma fase
+            !$federativeEntityId || !$subsiteId, // Se não tiver federativeEntityId ou subsiteId
+            $themePnabSubsiteId !== $subsiteId, // Se o subsiteId do theme Pnab não for o mesmo do subsiteId da oportunidade
+        ];
+
+        // verificar se alguma das condições é true
+        if (in_array(true, $conditions)) {
+            return false;
+        }
+
+        return true;
     }
 }
