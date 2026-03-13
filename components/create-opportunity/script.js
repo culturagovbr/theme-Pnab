@@ -14,6 +14,16 @@ app.component('create-opportunity', {
             entity: null,
             fields: [],
             entityTypeSelected: null,
+            // PAR: exercício → meta → ação → atividade (dados do ente selecionado)
+            parExercicios: [],
+            parExercicioId: '',
+            parMetaId: '',
+            parAcaoId: '',
+            parAtividadeId: '',
+            parLoading: false,
+            parErrors: { exercicio: false, meta: false, acao: false, atividade: false },
+            createdEntity: null,
+            showSuccessModal: false,
         }
     },
 
@@ -76,6 +86,23 @@ app.component('create-opportunity', {
                     return 'agent__border--dark';
             }
         },
+
+        // PAR: opções em cascata a partir do exercício selecionado
+        parMetas() {
+            if (!this.parExercicioId || !this.parExercicios.length) return [];
+            const ex = this.parExercicios.find((e) => String(e.id) === String(this.parExercicioId));
+            return ex && Array.isArray(ex.metas) ? ex.metas : [];
+        },
+        parAcoes() {
+            if (!this.parMetaId || !this.parMetas.length) return [];
+            const meta = this.parMetas.find((m) => String(m.id) === String(this.parMetaId));
+            return meta && Array.isArray(meta.acoes) ? meta.acoes : [];
+        },
+        parAtividades() {
+            if (!this.parAcaoId || !this.parAcoes.length) return [];
+            const acao = this.parAcoes.find((a) => String(a.id) === String(this.parAcaoId));
+            return acao && Array.isArray(acao.atividades) ? acao.atividades : [];
+        },
     },
 
     methods: {
@@ -87,7 +114,80 @@ app.component('create-opportunity', {
             this.entity = new Entity('opportunity');
             this.entity.type = this.getOpportunityTypeIdByLabel('Edital');
             this.entity.tipoDeEdital = null;
-            this.entity.terms = { area: [] }
+            this.entity.terms = { area: [] };
+            this.resetParSelection();
+            this.fetchSelectedEnteExercicios();
+        },
+
+        fetchSelectedEnteExercicios() {
+            this.parLoading = true;
+            this.clearParErrors();
+            const base = ($MAPAS.baseUrl || '').replace(/\/$/, '');
+            const url = base + '/aldirblanc/selectedEnteExercicios';
+            fetch(url, { credentials: 'include' })
+                .then((r) => r.ok ? r.json() : null)
+                .then((data) => {
+                    this.parExercicios = data && Array.isArray(data.exercicios) ? data.exercicios : [];
+                })
+                .catch(() => {
+                    this.parExercicios = [];
+                })
+                .finally(() => {
+                    this.parLoading = false;
+                });
+        },
+
+        clearParErrors() {
+            this.parErrors = { exercicio: false, meta: false, acao: false, atividade: false };
+        },
+
+        resetParSelection() {
+            this.parExercicioId = '';
+            this.parMetaId = '';
+            this.parAcaoId = '';
+            this.parAtividadeId = '';
+        },
+
+        onParExercicioChange() {
+            this.parMetaId = '';
+            this.parAcaoId = '';
+            this.parAtividadeId = '';
+            this.clearParErrors();
+        },
+        onParMetaChange() {
+            this.parAcaoId = '';
+            this.parAtividadeId = '';
+            this.clearParErrors();
+        },
+        onParAcaoChange() {
+            this.parAtividadeId = '';
+            this.clearParErrors();
+        },
+
+        applyParToEntity() {
+            if (!this.entity) return;
+            this.entity.parExercicioId = this.parExercicioId || null;
+            this.entity.parMetaId = this.parMetaId || null;
+            this.entity.parAcaoId = this.parAcaoId || null;
+            this.entity.parAtividadeId = this.parAtividadeId || null;
+        },
+
+        validatePar() {
+            this.clearParErrors();
+            const e = { exercicio: !this.parExercicioId, meta: !this.parMetaId, acao: !this.parAcaoId, atividade: !this.parAtividadeId };
+            const any = e.exercicio || e.meta || e.acao || e.atividade;
+            if (any) {
+                this.parErrors = e;
+                return false;
+            }
+            return true;
+        },
+
+        parErrorMsg(key) {
+            const msg = this.text?.['parCampoObrigatorio_' + key];
+            if (msg) return msg;
+            const labels = { exercicio: 'Exercício', meta: 'Meta', acao: 'Ação', atividade: 'Atividade' };
+            return `O campo ${labels[key]} é obrigatório.`;
         },
 
         createDraft(modal) {
@@ -95,17 +195,21 @@ app.component('create-opportunity', {
                 this.entity.ownerEntity = $MAPAS.user.profile;
             }
 
+            if (!this.validatePar()) return;
+
+            this.applyParToEntity();
             this.entity.status = 0;
             this.save(modal);
         },
 
         createPublic(modal) {
-            // Se não houver ownerEntity selecionada, usa o agente do usuário atual
             if (!this.entity.ownerEntity && $MAPAS.user && $MAPAS.user.profile) {
                 this.entity.ownerEntity = $MAPAS.user.profile;
             }
 
-            //lançar dois eventos
+            if (!this.validatePar()) return;
+
+            this.applyParToEntity();
             this.entity.status = 1;
             this.save(modal);
         },
@@ -114,12 +218,23 @@ app.component('create-opportunity', {
             modal.loading(true);
 
             this.entity.save().then((response) => {
-                this.$emit('create', response);
+                this.createdEntity = this.entity;
                 modal.loading(false);
+                modal.close();
+                this.showSuccessModal = true;
+                this.$nextTick(() => {
+                    this.$refs.successModal?.open();
+                });
+                this.$emit('create', response);
                 Utils.pushEntityToList(this.entity);
             }).catch((e) => {
                 modal.loading(false);
             });
+        },
+
+        onCloseSuccessModal() {
+            this.showSuccessModal = false;
+            this.createdEntity = null;
         },
 
         setEntity(Entity) {
@@ -132,10 +247,16 @@ app.component('create-opportunity', {
         },
 
         destroyEntity() {
-            // para o conteúdo da modal não sumir antes dela fechar
             setTimeout(() => {
                 this.entity = null;
                 this.entityTypeSelected = null;
+                this.resetParSelection();
+                this.parExercicios = [];
+                this.parLoading = false;
+                this.clearParErrors();
+                if (!this.showSuccessModal) {
+                    this.createdEntity = null;
+                }
             }, 200);
         },
 
