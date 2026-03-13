@@ -73,6 +73,34 @@ $this->import('
                     </div>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription" :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="longDescription"></entity-field>
+
+                    <!-- PAR: 4 campos somente visualização (disabled) -->
+                    <div v-if="entity.parExercicioId || entity.parMetaId || entity.parAcaoId || entity.parAtividadeId" class="header-opp__field header-opp__field--par-readonly grid-12 col-12">
+                        <div class="field field--disabled col-12 sm:col-6">
+                            <label class="field__title"><?php i::_e('Exercício') ?></label>
+                            <div class="field__input">
+                                <input type="text" :value="parExercicioLabel" disabled class="field__input--readonly">
+                            </div>
+                        </div>
+                        <div class="field field--disabled col-12 sm:col-6">
+                            <label class="field__title"><?php i::_e('Meta') ?></label>
+                            <div class="field__input">
+                                <input type="text" :value="parMetaLabel" disabled class="field__input--readonly">
+                            </div>
+                        </div>
+                        <div class="field field--disabled col-12 sm:col-6">
+                            <label class="field__title"><?php i::_e('Ação') ?></label>
+                            <div class="field__input">
+                                <input type="text" :value="parAcaoLabel" disabled class="field__input--readonly">
+                            </div>
+                        </div>
+                        <div class="field field--disabled col-12 sm:col-6">
+                            <label class="field__title"><?php i::_e('Atividade') ?></label>
+                            <div class="field__input">
+                                <input type="text" :value="parAtividadeLabel" disabled class="field__input--readonly">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </template>
         </mc-card>

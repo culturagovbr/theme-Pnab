@@ -29,6 +29,7 @@ app.component('opportunity-basic-info' , {
             requiredFields: ['segmento', 'etapa', 'pauta', 'territorio'],
             etapaOutrosField: 'etapaOutros',
             pautaOutrosField: 'pautaOutros',
+            parExercicios: [],
         };
     },
 
@@ -38,6 +39,14 @@ app.component('opportunity-basic-info' , {
         } else {
             const api = new OpportunitiesAPI();
             this.phases = await api.getPhases(this.entity.id);
+        }
+        const base = ($MAPAS.baseUrl || '').replace(/\/$/, '');
+        try {
+            const r = await fetch(base + '/aldirblanc/selectedEnteExercicios', { credentials: 'include' });
+            const data = r.ok ? await r.json() : null;
+            this.parExercicios = (data && Array.isArray(data.exercicios)) ? data.exercicios : [];
+        } catch (_) {
+            this.parExercicios = [];
         }
     },
 
@@ -82,7 +91,40 @@ app.component('opportunity-basic-info' , {
             const val = this.entity.pauta;
             const outra = $MAPAS.config.opportunityOtherOptions.pauta;
             return Array.isArray(val) ? val.includes(outra) : val === outra;
-        }
+        },
+
+        parExercicioLabel() {
+            if (!this.entity.parExercicioId || !this.parExercicios.length) return '';
+            const ex = this.parExercicios.find(e => String(e.id) === String(this.entity.parExercicioId));
+            return ex && ex.ano != null ? ex.ano : '';
+        },
+        parMetaLabel() {
+            if (!this.entity.parMetaId || !this.parExercicioLabel) return '';
+            const ex = this.parExercicios.find(e => String(e.id) === String(this.entity.parExercicioId));
+            if (!ex || !Array.isArray(ex.metas)) return '';
+            const m = ex.metas.find(x => String(x.id) === String(this.entity.parMetaId));
+            return m && m.nome != null ? m.nome : '';
+        },
+        parAcaoLabel() {
+            if (!this.entity.parAcaoId || !this.parMetaLabel) return '';
+            const ex = this.parExercicios.find(e => String(e.id) === String(this.entity.parExercicioId));
+            if (!ex || !Array.isArray(ex.metas)) return '';
+            const meta = ex.metas.find(x => String(x.id) === String(this.entity.parMetaId));
+            if (!meta || !Array.isArray(meta.acoes)) return '';
+            const a = meta.acoes.find(x => String(x.id) === String(this.entity.parAcaoId));
+            return a && a.nome != null ? a.nome : '';
+        },
+        parAtividadeLabel() {
+            if (!this.entity.parAtividadeId || !this.parAcaoLabel) return '';
+            const ex = this.parExercicios.find(e => String(e.id) === String(this.entity.parExercicioId));
+            if (!ex || !Array.isArray(ex.metas)) return '';
+            const meta = ex.metas.find(x => String(x.id) === String(this.entity.parMetaId));
+            if (!meta || !Array.isArray(meta.acoes)) return '';
+            const acao = meta.acoes.find(x => String(x.id) === String(this.entity.parAcaoId));
+            if (!acao || !Array.isArray(acao.atividades)) return '';
+            const at = acao.atividades.find(x => String(x.id) === String(this.entity.parAtividadeId));
+            return at && at.nome != null ? at.nome : '';
+        },
     },
 
     watch: {
