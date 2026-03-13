@@ -148,6 +148,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             );
         });
 
+        /**
+         * Garante que o metadado publishedTimestamp seja definido quando a oportunidade for publicada
+         * (salvo na mesma transação do save/publish)
+         */
+        $app->hook('entity(Opportunity).save:before', function () {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            if ((int) $this->status === Opportunity::STATUS_ENABLED && !$this->getMetadata('publishedTimestamp')) {
+                $this->setMetadata('publishedTimestamp', (new \DateTime())->format('Y-m-d H:i:s'));
+            }
+        });
+
         $app->hook('PATCH(opportunity.single):before', function () use ($theme) {
             $entity = $this->requestedEntity;
             $postData = $this->postData;
