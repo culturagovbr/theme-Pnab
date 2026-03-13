@@ -1671,7 +1671,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'En_Bairro',
             'En_Municipio',
             'En_Estado',
-            'En_Complemento',
             'dataDeNascimento',
             'genero',
             'orientacaoSexual',
