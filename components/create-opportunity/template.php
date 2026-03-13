@@ -19,13 +19,13 @@ $this->import('
         <label><?php i::_e('Crie uma oportunidade para a Política Nacional Aldir Blanc') ?></label>
         <form @submit.prevent="handleSubmit" class="create-modal__fields">
 
-            <entity-field :entity="entity" hide-required label=<?php i::esc_attr_e("Título") ?> prop="name"></entity-field>
+            <entity-field :entity="entity" label=<?php i::esc_attr_e("Título") ?> prop="name"></entity-field>
 
-            <entity-field :entity="entity" hide-required prop="tipoDeEdital"></entity-field>
+            <entity-field :entity="entity" prop="tipoDeEdital"></entity-field>
 
             <entity-terms :entity="entity" hide-required :editable="true" title="<?php i::_e('Área de Interesse') ?>" taxonomy="area"></entity-terms>
 
-            <entity-field :entity="entity" hide-required prop="shortDescription"></entity-field>
+            <entity-field :entity="entity" prop="shortDescription"></entity-field>
 
             <small v-if="hasObjectTypeErrors()" class="field__error">{{getObjectTypeErrors().join('; ')}}</small>
 
