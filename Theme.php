@@ -787,10 +787,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Validação de oportunidade: Torna o campo "Tipos do proponente" obrigatório
+         * Validação de oportunidade:
+         * - Torna o campo "Descrição curta" obrigatório em qualquer fase
+         * - Torna o campo "Tipos do proponente" obrigatório nas fases de edição (não novas e não últimas fases)
          */
-        $app->hook('entity(Opportunity).validations', function(&$validations) {
+        $app->hook('entity(Opportunity).validations', function (&$validations) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
+
+            // Descrição curta obrigatória (inclui criação via modal)
+            $validations['shortDescription'] = [
+                'required' => i::__('O campo "Descrição curta" é obrigatório.')
+            ];
+
+            // Tipos do proponente obrigatórios apenas em edição, como já era feito antes
             if (!$this->isNew() && !$this->isLastPhase) {
                 if (!is_array($this->registrationProponentTypes)) {
                     $this->registrationProponentTypes = [];

@@ -25,6 +25,8 @@ $this->import('
 
             <entity-terms :entity="entity" hide-required :editable="true" title="<?php i::_e('Área de Interesse') ?>" taxonomy="area"></entity-terms>
 
+            <entity-field :entity="entity" hide-required prop="shortDescription"></entity-field>
+
             <small v-if="hasObjectTypeErrors()" class="field__error">{{getObjectTypeErrors().join('; ')}}</small>
 
             <entity-field :entity="entity" hide-required v-for="field in fields" :prop="field"></entity-field>
