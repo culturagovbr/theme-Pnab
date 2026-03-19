@@ -13,7 +13,26 @@ $this->import("
     mc-modal
 ");
 ?>
-<div>
+<div class="opportunity-create-based-model">
+    <teleport to="body">
+        <div
+            v-if="generating"
+            class="opportunity-create-based-model__blocking-overlay"
+            role="alert"
+            aria-live="polite"
+            aria-busy="true"
+            @click.prevent
+            @mousedown.prevent
+            @touchstart.prevent
+        >
+            <div class="opportunity-create-based-model__blocking-panel">
+                <div class="opportunity-create-based-model__spinner" aria-hidden="true"></div>
+                <p class="opportunity-create-based-model__blocking-text">
+                    {{ text('Estamos gerando a oportunidade a partir do modelo…') }}
+                </p>
+            </div>
+        </div>
+    </teleport>
     <mc-modal classes="create-modal create-opportunity-modal" title="<?= i::__('Título do edital') ?>" @open="createEntity()">
         <template #default>
             <div class="create-modal__fields">
@@ -25,12 +44,12 @@ $this->import("
         </template>
 
         <template v-if="!sendSuccess" #actions="modal">
-            <button class="button button--text button--text-del" @click="modal.close()"><?= i::__('cancelar') ?></button>
-            <button class="button button--primary" @click="save(modal)"><?= i::__('Começar') ?></button>
+            <button class="button button--text button--text-del" :disabled="generating" @click="modal.close()"><?= i::__('cancelar') ?></button>
+            <button class="button button--primary" :disabled="generating" @click="save(modal)"><?= i::__('Começar') ?></button>
         </template>
 
         <template #button="modal">
-            <button type="button" @click="modal.open();" class="button button--primary button--icon"><?= i::__('Usar modelo') ?></button>
+            <button type="button" :disabled="generating" @click="modal.open();" class="button button--primary button--icon"><?= i::__('Usar modelo') ?></button>
         </template>
     </mc-modal>
 </div>

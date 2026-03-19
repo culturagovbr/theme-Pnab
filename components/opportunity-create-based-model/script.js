@@ -19,14 +19,32 @@ app.component('opportunity-create-based-model', {
     data() {
         return {
             sendSuccess: false,
+            generating: false,
             formData: {
                 name: '',
             },
         };
     },
 
+    watch: {
+        generating(val) {
+            document.body.classList.toggle(
+                'opportunity-create-based-model--body-locked',
+                !!val
+            );
+        },
+    },
+
+    unmounted() {
+        document.body.classList.remove('opportunity-create-based-model--body-locked');
+    },
+
     methods: {
         async save(modal) {
+            if (this.generating) {
+                return;
+            }
+
             const api = new API(this.entitydefault.__objectType);
 
             const objt = {
@@ -39,18 +57,57 @@ app.component('opportunity-create-based-model', {
                 return;
             }
 
-            await api.POST(`/opportunity/generateopportunity/${objt.entityId}`, objt).then(response =>
-                response.json().then((dataReturn) => {
-                    this.messages.success(
-                        this.text('Aguarde. Estamos gerando a oportunidade baseada no modelo.'),
-                        6000
+            this.generating = true;
+
+            try {
+                const response = await api.POST(
+                    `/opportunity/generateopportunity/${objt.entityId}`,
+                    objt
+                );
+
+                if (!response.ok) {
+                    let errText = this.text(
+                        'Não foi possível gerar a oportunidade. Tente novamente.'
                     );
-                    this.sendSuccess = true;
-                    setTimeout(() => {
-                        window.location.href = `/gestao-de-oportunidade/${dataReturn.id}/#info`;
-                    }, 5000);
-                })
-            );
+                    try {
+                        const errBody = await response.json();
+                        if (errBody?.message) {
+                            errText = errBody.message;
+                        } else if (errBody?.error) {
+                            errText =
+                                typeof errBody.error === 'string'
+                                    ? errBody.error
+                                    : errText;
+                        }
+                    } catch (e) {
+                        /* mantém mensagem genérica */
+                    }
+                    this.messages.error(errText);
+                    this.generating = false;
+                    modal.close();
+                    return;
+                }
+
+                const dataReturn = await response.json();
+                if (!dataReturn?.id) {
+                    this.messages.error(
+                        this.text('Não foi possível gerar a oportunidade. Tente novamente.')
+                    );
+                    this.generating = false;
+                    modal.close();
+                    return;
+                }
+
+                this.sendSuccess = true;
+                // Spinner some com a navegação (sem espera fixa após o response)
+                window.location.href = `/gestao-de-oportunidade/${dataReturn.id}/#info`;
+            } catch (e) {
+                this.messages.error(
+                    this.text('Não foi possível gerar a oportunidade. Tente novamente.')
+                );
+                this.generating = false;
+                modal.close();
+            }
         },
 
         validate(objt) {
