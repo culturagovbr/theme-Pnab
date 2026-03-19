@@ -651,10 +651,25 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Hook que bloqueia acesso quando há erro de consolidação
          * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity e federativeEntities
          * Não bloqueia admins (não há o que consolidar)
+         * Não bloqueia admin em modo "login como usuário" (plugin AdminLoginAsUser): o $app->user vira o impersonado,
+         * então isAdmin() falha e LGPD/termos ou auth.asUserId podiam ser afetados indevidamente.
          */
         $theme = $this;
         $blockAccessOnError = function () use ($app, $theme) {
             if ($app->user->is('guest')) {
+                return;
+            }
+
+            $controllerId = $app->request->controllerId ?? '';
+            $action = $app->request->action ?? '';
+
+            // Voltar como administrador / alternar usuário (AdminLoginAsUser — ex.: mc-link route auth/asUserId)
+            if ($controllerId === 'auth' && $action === 'asUserId') {
+                return;
+            }
+
+            // Sessão ativa de impersonação: não aplicar consolidação/perfil/ente ao usuário "visto" pelo admin
+            if (isset($_SESSION['auth.asUserId'])) {
                 return;
             }
 
@@ -663,7 +678,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            if ($app->request->controllerId === 'lgpd') {
+            if ($controllerId === 'lgpd') {
                 return;
             }
 
