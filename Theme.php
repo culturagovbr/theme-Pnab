@@ -663,6 +663,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
+            if ($app->request->controllerId === 'lgpd') {
+                return;
+            }
+
+            $path = trim($app->request->getPathInfo(), '/');
+            if ($path === 'termos-e-condicoes' || str_starts_with($path, 'termos-e-condicoes/')) {
+                return;
+            }
+
             $profile = $app->user->profile;
             $route = [$this->id, $this->action];
 
