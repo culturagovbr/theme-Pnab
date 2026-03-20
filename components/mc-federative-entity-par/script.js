@@ -1,7 +1,7 @@
 /**
  * Campos em cascata Exercício → Meta → Ação → Atividade a partir do JSON `exercices` do ente.
  * Dados: prop `exercicios`, depois `config.mcFederativeEntityPar.exercicios` (init.php + FederativeEntityService),
- * e por fim GET aldirblanc/parExercicios se `loadParExercicios` e ainda vazio.
+ * e por fim GET aldirblanc/parExercicios (só sessão, sem query) se `loadParExercicios` e ainda vazio.
  */
 app.component('mc-federative-entity-par', {
     template: $TEMPLATES['mc-federative-entity-par'],
@@ -36,7 +36,7 @@ app.component('mc-federative-entity-par', {
             default: false,
         },
         /**
-         * Se true e a lista ainda estiver vazia (prop + injeção PHP), busca via GET aldirblanc/parExercicios.
+         * Se true e a lista ainda estiver vazia (prop + injeção PHP), busca via GET aldirblanc/parExercicios (ente só pela sessão).
          */
         loadParExercicios: {
             type: Boolean,
@@ -361,24 +361,9 @@ app.component('mc-federative-entity-par', {
                 return;
             }
 
-            const selectedFederativeEntityIdFromSession =
-                typeof $MAPAS !== 'undefined'
-                    ? $MAPAS?.config?.aldirblanc?.selectedFederativeEntityId
-                    : null;
-            if (
-                selectedFederativeEntityIdFromSession == null ||
-                selectedFederativeEntityIdFromSession === ''
-            ) {
-                return;
-            }
-
             const aldirblancApiClient = new API('aldirblanc');
             const parExerciciosUrl = aldirblancApiClient.createUrl(
                 'parExercicios'
-            );
-            parExerciciosUrl.searchParams.set(
-                'federativeEntityId',
-                String(selectedFederativeEntityIdFromSession)
             );
 
             try {

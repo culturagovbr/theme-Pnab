@@ -20,15 +20,13 @@ No `script.js`, as strings da UI vêm de `Utils.getTexts('mc-federative-entity-p
 - **`modelValue`** — Objeto `{ parExercicioId, parMetaId, parAcaoId, parAtividadeId }` (strings; vazio = não selecionado). Usar `v-model`.
 - **`emptyHint`** — Mensagem opcional quando não há opções (substitui o texto padrão).
 - **`readonly`** — Só leitura: mostra rótulos resolvidos (ano, nomes), sem selects.
-- **`loadParExercicios`** — Se `true` e a lista ainda estiver vazia após prop + PHP, faz `GET aldirblanc/parExercicios?federativeEntityId=` (id tem de coincidir com a sessão no servidor).
+- **`loadParExercicios`** — Se `true` e a lista ainda estiver vazia após prop + PHP, faz `GET aldirblanc/parExercicios` (sem query: o servidor usa apenas o ente da sessão).
 
 ## Origem dos dados (ordem)
 
 1. Prop **`exercicios`** (se não vazia).
 2. **`$MAPAS.config.mcFederativeEntityPar.exercicios`** (definido em `init.php` ao importar o componente).
 3. Resposta do **GET** acima, quando **`loadParExercicios`** está ativo.
-
-O **`$MAPAS.config.aldirblanc.selectedFederativeEntityId`** é exposto pelo hook do plugin AldirBlanc e serve para o fallback HTTP.
 
 ## Integração no projeto
 
