@@ -45,6 +45,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
+        $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);
 
         /**
          * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
@@ -124,28 +125,41 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Hook para disparar o job de integração com o CultBR quando uma oportunidade é atualizada.
-         * Só enfileira o job de update quando a oportunidade estiver com status 1 (Ativado).
+         * Job CultBR no update: Ativado → update (PUT); rascunho com isGeneratedFromModel → create (POST),
+         * após validateIntegrationJob (clone «usar modelo» não passa por insert:finish).
          */
-        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme, $isOpportunityGeneratedFromModel) {
             if (!$theme->validateIntegrationJob($this)) {
                 return;
             }
 
-            if ((int) $this->status !== OpportunityStatus::ENABLED->value) {
+            // Quando a oportunidade for ativada, disparar o job de update
+            if ((int) $this->status === OpportunityStatus::ENABLED->value) {
+                $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
+
+                $app->enqueueOrReplaceJob(
+                    OportunidadeCultJob::SLUG,
+                    [
+                        'action' => 'update',
+                        'opportunity' => $this
+                    ],
+                    $start_string
+                );
                 return;
             }
 
-            $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
-
-            $app->enqueueOrReplaceJob(
-                OportunidadeCultJob::SLUG,
-                [
-                    'action' => 'update',
-                    'opportunity' => $this
-                ],
-                $start_string
-            );
+            // Quando a oportunidade for um rascunho e foi gerada a partir de um modelo, disparar o job de create
+            if ((int) $this->status === OpportunityStatus::DRAFT->value
+                && $isOpportunityGeneratedFromModel($this)
+            ) {
+                $app->enqueueOrReplaceJob(
+                    OportunidadeCultJob::SLUG,
+                    [
+                        'action' => 'create',
+                        'opportunity' => $this,
+                    ],
+                );
+            }
         });
 
         /**
@@ -1888,26 +1902,59 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Metadado «gerada a partir de modelo» (evita repetir filter_var em hooks e validação).
+     *
+     * @param Opportunity $entity
+     */
+    private function isOpportunityGeneratedFromModel($entity): bool
+    {
+        return (bool) filter_var(
+            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_IS_GENERATED_FROM_MODEL),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
      * Valida se o job de integração com o CultBR deve ser disparado
      */
     private function validateIntegrationJob($entity)
     {
         $federativeEntityId = $entity->getMetadata('federativeEntityId');
-        $subsiteId = $entity->subsite->id;
+        $subsiteId = (int) $entity->subsite?->id;
         $parent = $entity->parent;
         $status = $entity->status;
-        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', null);
+        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', 0);
+        $isGeneratedFromModel = $this->isOpportunityGeneratedFromModel($entity);
 
-        // condições para NÃO disparar o job
-        $conditions = [
-            $parent, // Se for uma oportunidade complementar
-            $status === Opportunity::STATUS_PHASE, // Se for uma fase
-            !$federativeEntityId || !$subsiteId, // Se não tiver federativeEntityId ou subsiteId
-            $themePnabSubsiteId !== $subsiteId, // Se o subsiteId do theme Pnab não for o mesmo do subsiteId da oportunidade
-        ];
+        // Se federativeEntityId não estiver definido, não disparar o job
+        if ($federativeEntityId === null
+            || $federativeEntityId === ''
+            || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
+        ) {
+            return false;
+        }
 
-        // verificar se alguma das condições é true
-        if (in_array(true, $conditions)) {
+        // Se subsiteId não estiver definido, não disparar o job
+        if ($subsiteId < 1) {
+            return false;
+        }
+
+        // Se ALDIRBLANC_SUBSITE_ID não estiver definido, não disparar o job
+        if ($themePnabSubsiteId === 0) {
+            return false;
+        }
+
+        // Subsite da entidade ≠ ALDIRBLANC_SUBSITE_ID: bloqueia, exceto «usar modelo» (já garantido themePnabSubsiteId > 0 acima).
+        if (!$isGeneratedFromModel && $subsiteId !== $themePnabSubsiteId) {
+            return false;
+        }
+
+        if ((int) $status === (int) Opportunity::STATUS_PHASE) {
+            return false;
+        }
+
+        // Se a oportunidade for uma oportunidade complementar, não disparar o job
+        if ((bool) $parent) {
             return false;
         }
 
