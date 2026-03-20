@@ -46,6 +46,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
         $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);
+        $isCultBrCreateNotYetSynced = fn ($entity) => !$this->isOpportunityCultBrCreateSynced($entity);
 
         /**
          * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
@@ -128,7 +129,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Job CultBR no update: Ativado → update (PUT); rascunho com isGeneratedFromModel → create (POST),
          * após validateIntegrationJob (clone «usar modelo» não passa por insert:finish).
          */
-        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme, $isOpportunityGeneratedFromModel) {
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme, $isOpportunityGeneratedFromModel, $isCultBrCreateNotYetSynced) {
             if (!$theme->validateIntegrationJob($this)) {
                 return;
             }
@@ -148,9 +149,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            // Quando a oportunidade for um rascunho e foi gerada a partir de um modelo, disparar o job de create
+            // Rascunho «usar modelo»: um único create até sucesso no Cult; PATCH seguintes não re-enfileiram.
             if ((int) $this->status === OpportunityStatus::DRAFT->value
                 && $isOpportunityGeneratedFromModel($this)
+                && $isCultBrCreateNotYetSynced($this)
             ) {
                 $app->enqueueOrReplaceJob(
                     OportunidadeCultJob::SLUG,
@@ -1910,6 +1912,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     {
         return (bool) filter_var(
             $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_IS_GENERATED_FROM_MODEL),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
+     * True após OportunidadeCultJob create concluir com sucesso (metadado cultBrCreateSynced).
+     *
+     * @param Opportunity $entity
+     */
+    private function isOpportunityCultBrCreateSynced($entity): bool
+    {
+        return (bool) filter_var(
+            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_CULT_BR_CREATE_SYNCED),
             FILTER_VALIDATE_BOOLEAN
         );
     }
