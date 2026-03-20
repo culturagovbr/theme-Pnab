@@ -1,7 +1,7 @@
 <?php
 /**
- * Modal "Título do edital" para usar modelo oficial.
- * Versão Pnab: sem opção de vincular o edital a uma entidade (Projeto, Evento, Espaço, Agente).
+ * Modal «Usar modelo»: PAR + título + descrição curta (integração).
+ * Layout em duas colunas como «Criar oportunidade» (`create-modal__fields--two-cols` no pai).
  *
  * @var MapasCulturais\App $app
  * @var MapasCulturais\Themes\BaseV2\Theme $this
@@ -10,9 +10,12 @@
 use MapasCulturais\i;
 
 $this->import("
+    mc-federative-entity-par
     mc-modal
     mc-teleport-multiple
 ");
+
+$this->useOpportunityAPI();
 ?>
 <div class="opportunity-create-based-model">
     <mc-teleport-multiple
@@ -20,14 +23,40 @@ $this->import("
         :show="generating"
         :messages="generatingMessages"
     ></mc-teleport-multiple>
-    <mc-modal classes="create-modal create-opportunity-modal" title="<?= i::__('Título do edital') ?>" @open="createEntity()">
+    <mc-modal classes="create-modal create-opportunity-modal" title="<?= i::esc_attr__('Configurações da nova oportunidade') ?>" @open="createEntity()">
         <template #default>
-            <div class="create-modal__fields">
-                <div class="field">
-                    <label><?= i::__('Defina um título para o Edital que deseja criar') ?><span class="required">*</span></label>
-                    <input type="text" v-model="formData.name">
+            <label class="create-modal__subtitle"><?php i::_e('Crie uma oportunidade para a Política Nacional Aldir Blanc') ?></label>
+            <p class="create-modal__par-intro"><?php i::_e('Para iniciar, selecione dentro de qual meta, ação e atividade do PAR o seu instrumento será cadastrado.') ?></p>
+            <form class="create-modal__fields create-modal__fields--two-cols" @submit.prevent>
+                <div class="create-modal__col create-modal__col--par">
+                    <div class="create-modal__par create-modal__fields--par">
+                        <mc-federative-entity-par
+                            ref="parInstrumentoRef"
+                            load-par-exercicios
+                            v-model="parSelectionModel"
+                            :empty-hint="text('parEmpty')"
+                        ></mc-federative-entity-par>
+                    </div>
                 </div>
-            </div>
+                <div class="create-modal__col create-modal__col--form">
+                    <div class="field">
+                        <label class="field__title"><?= i::__('Título') ?><span class="required">*</span></label>
+                        <div class="field__input">
+                            <input type="text" v-model="formData.name" maxlength="255">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="field__title"><?= i::__('Descrição curta') ?><span class="required">*</span></label>
+                        <div class="field__input">
+                            <textarea
+                                v-model="formData.shortDescription"
+                                rows="4"
+                                maxlength="400"
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </template>
 
         <template v-if="!sendSuccess" #actions="modal">

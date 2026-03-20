@@ -31,13 +31,18 @@ No `script.js`, as strings da UI vêm de `Utils.getTexts('mc-federative-entity-p
 ## Integração no projeto
 
 - **Criar oportunidade:** `create-opportunity/template.php` importa este componente e usa `load-par-exercicios` sem passar `exercicios`.
+- **Usar modelo:** `opportunity-create-based-model` (modal «Título do edital») importa o mesmo bloco PAR e persiste os ids na oportunidade gerada via `Entity.save` após `generateOpportunity`.
 - **Editar / ver cabeçalho:** `opportunity-basic-info` usa `readonly` + `load-par-exercicios` quando a oportunidade já tem ids PAR.
 
 ## Método útil
 
 - **`validate()`** (via `ref`) — Marca erros visíveis e devolve `true` se os quatro níveis estão coerentes com a hierarquia carregada.
 
+## Layout e largura
+
+O root `.mc-federative-entity-par` usa **100% da largura do pai** (`width` / `max-width` / `min-width: 0` para não rebentar grelhas). Quem define colunas é o chamador (ex. `create-modal__fields--two-cols` nos modais «Criar oportunidade» e «Usar modelo»).
+
 ## Dependências
 
 - Plugin **AldirBlanc**: `FederativeEntityService`, `GET_parExercicios`, metadados `parExercicioId` / `parMetaId` / `parAcaoId` / `parAtividadeId` em `Opportunity`.
-- Estilos: `_create-opportunity-par.scss` (classes `mc-federative-entity-par*`).
+- Estilos: `_create-opportunity-par.scss` (`.mc-federative-entity-par` + modais).

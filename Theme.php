@@ -180,9 +180,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
             $theme->trimSegmentoOutros($postData);
 
-            $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
-            if ($quotasReservationErrors) {
-                $this->errorJson($quotasReservationErrors, 400);
+            // PATCH parcial (ex.: pós "usar modelo": só descrição + PAR) não envia cotas; validar só quando o body altera dados que afetam a regra IN-MinC.
+            $touchesQuotasOrVacancies = false;
+            foreach (['reservaVagasCotas', 'vacancies', 'registrationRanges'] as $key) {
+                if (array_key_exists($key, $postData)) {
+                    $touchesQuotasOrVacancies = true;
+                    break;
+                }
+            }
+            if ($touchesQuotasOrVacancies) {
+                $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
+                if ($quotasReservationErrors) {
+                    $this->errorJson($quotasReservationErrors, 400);
+                }
             }
         });
 
@@ -649,7 +659,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         /**
          * Hook que bloqueia acesso quando há erro de consolidação
-         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity e federativeEntities
+         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity, federativeEntities, saveOpportunityPostGenerate, etc.
          * Não bloqueia admins (não há o que consolidar)
          * Não bloqueia admin em modo "login como usuário" (plugin AdminLoginAsUser): o $app->user vira o impersonado,
          * então isAdmin() falha e LGPD/termos ou auth.asUserId podiam ser afetados indevidamente.
@@ -682,7 +692,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError'])) {
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -695,7 +705,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 

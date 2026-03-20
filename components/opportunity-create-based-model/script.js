@@ -1,6 +1,7 @@
 /**
  * Modal "Usar modelo" - versão Pnab.
  * Não permite vincular o edital a uma entidade (modelo oficial).
+ * Exige seleção PAR quando há exercícios carregados (gestor / ente com dados).
  */
 app.component('opportunity-create-based-model', {
     template: $TEMPLATES['opportunity-create-based-model'],
@@ -22,6 +23,13 @@ app.component('opportunity-create-based-model', {
             generating: false,
             formData: {
                 name: '',
+                shortDescription: '',
+            },
+            parSelectionModel: {
+                parExercicioId: '',
+                parMetaId: '',
+                parAcaoId: '',
+                parAtividadeId: '',
             },
         };
     },
@@ -41,10 +49,10 @@ app.component('opportunity-create-based-model', {
     },
 
     watch: {
-        generating(val) {
+        generating(isGeneratingOverlayVisible) {
             document.body.classList.toggle(
                 'opportunity-create-based-model--body-locked',
-                !!val
+                !!isGeneratingOverlayVisible
             );
         },
     },
@@ -54,19 +62,123 @@ app.component('opportunity-create-based-model', {
     },
 
     methods: {
+        /**
+         * Título, descrição curta (integração) e id do modelo. PAR validado à parte.
+         */
+        validateGeneratePayload(payloadGenerate) {
+            const tituloOk = Boolean(
+                payloadGenerate.name && String(payloadGenerate.name).trim()
+            );
+            const descricaoOk = Boolean(
+                payloadGenerate.shortDescription &&
+                String(payloadGenerate.shortDescription).trim()
+            );
+            return !tituloOk || !descricaoOk || !payloadGenerate.entityId;
+        },
+
+        /**
+         * Quando a lista PAR está vazia (ex.: usuário sem ente / sem exercícios), não bloqueia o fluxo.
+         */
+        validateParSelectionBeforeGenerate() {
+            const parComponent = this.$refs.parInstrumentoRef;
+            if (!parComponent || typeof parComponent.validate !== 'function') {
+                return true;
+            }
+            const exerciciosDisponiveis = parComponent.resolvedExercicios;
+            if (
+                !Array.isArray(exerciciosDisponiveis) ||
+                exerciciosDisponiveis.length === 0
+            ) {
+                return true;
+            }
+            return parComponent.validate();
+        },
+
+        /**
+         * Descrição curta e PAR via plugin AldirBlanc (evita PATCH /oportunidade/… e validações do tema).
+         */
+        async persistPostGenerateFields(newOpportunityId) {
+            const aldirBlancApiClient = new API('aldirblanc');
+            const savePostGenerateRequestPayload = {
+                opportunityId: newOpportunityId,
+                shortDescription: String(this.formData.shortDescription).trim(),
+            };
+            const parInstrumentSelection = this.parSelectionModel;
+            const userFilledAnyParInstrumentField =
+                parInstrumentSelection.parExercicioId ||
+                parInstrumentSelection.parMetaId ||
+                parInstrumentSelection.parAcaoId ||
+                parInstrumentSelection.parAtividadeId;
+            if (userFilledAnyParInstrumentField) {
+                savePostGenerateRequestPayload.parExercicioId =
+                    parInstrumentSelection.parExercicioId || null;
+                savePostGenerateRequestPayload.parMetaId =
+                    parInstrumentSelection.parMetaId || null;
+                savePostGenerateRequestPayload.parAcaoId =
+                    parInstrumentSelection.parAcaoId || null;
+                savePostGenerateRequestPayload.parAtividadeId =
+                    parInstrumentSelection.parAtividadeId || null;
+            }
+            const savePostGenerateEndpointUrl = Utils.createUrl(
+                'aldirblanc',
+                'saveOpportunityPostGenerate'
+            );
+            const httpResponse = await aldirBlancApiClient.POST(
+                savePostGenerateEndpointUrl,
+                savePostGenerateRequestPayload
+            );
+            if (!httpResponse.ok) {
+                let errorResponseBody;
+                try {
+                    errorResponseBody = await httpResponse.json();
+                } catch {
+                    errorResponseBody = null;
+                }
+                const errorDataFromServer = errorResponseBody?.data;
+                let humanReadableMessageFromServer = '';
+                if (typeof errorDataFromServer === 'string') {
+                    humanReadableMessageFromServer = errorDataFromServer;
+                } else if (
+                    errorDataFromServer &&
+                    typeof errorDataFromServer === 'object'
+                ) {
+                    const firstValidationEntry = Object.values(errorDataFromServer)[0];
+                    humanReadableMessageFromServer = Array.isArray(firstValidationEntry)
+                        ? firstValidationEntry[0]
+                        : String(firstValidationEntry ?? '');
+                }
+                const persistenceError = new Error(
+                    errorResponseBody?.message ||
+                        (typeof errorResponseBody?.error === 'string'
+                            ? errorResponseBody.error
+                            : '') ||
+                        humanReadableMessageFromServer ||
+                        'save failed'
+                );
+                persistenceError.data = errorDataFromServer ?? errorResponseBody;
+                throw persistenceError;
+            }
+        },
+
         async save(modal) {
             if (this.generating) {
                 return;
             }
 
-            const api = new API(this.entitydefault.__objectType);
+            const opportunityApiClient = new API(this.entitydefault.__objectType);
 
-            const objt = {
-                name: this.formData.name,
+            const generateFromModelRequestPayload = {
+                name: String(this.formData.name).trim(),
+                shortDescription: String(this.formData.shortDescription).trim(),
                 entityId: this.entitydefault.id,
             };
 
-            if (this.validate(objt)) {
+            if (this.validateGeneratePayload(generateFromModelRequestPayload)) {
+                this.messages.error(this.text('Todos os campos são obrigatórios.'));
+                return;
+            }
+
+            if (!this.validateParSelectionBeforeGenerate()) {
                 this.messages.error(this.text('Todos os campos são obrigatórios.'));
                 return;
             }
@@ -74,36 +186,38 @@ app.component('opportunity-create-based-model', {
             this.generating = true;
 
             try {
-                const response = await api.POST(
-                    `/opportunity/generateopportunity/${objt.entityId}`,
-                    objt
+                const generateOpportunityHttpResponse = await opportunityApiClient.POST(
+                    `/opportunity/generateopportunity/${generateFromModelRequestPayload.entityId}`,
+                    generateFromModelRequestPayload
                 );
 
-                if (!response.ok) {
-                    let errText = this.text(
+                if (!generateOpportunityHttpResponse.ok) {
+                    let errorMessageForUser = this.text(
                         'Não foi possível gerar a oportunidade. Tente novamente.'
                     );
                     try {
-                        const errBody = await response.json();
-                        if (errBody?.message) {
-                            errText = errBody.message;
-                        } else if (errBody?.error) {
-                            errText =
-                                typeof errBody.error === 'string'
-                                    ? errBody.error
-                                    : errText;
+                        const generateErrorResponseBody =
+                            await generateOpportunityHttpResponse.json();
+                        if (generateErrorResponseBody?.message) {
+                            errorMessageForUser = generateErrorResponseBody.message;
+                        } else if (generateErrorResponseBody?.error) {
+                            errorMessageForUser =
+                                typeof generateErrorResponseBody.error === 'string'
+                                    ? generateErrorResponseBody.error
+                                    : errorMessageForUser;
                         }
-                    } catch (e) {
+                    } catch {
                         /* mantém mensagem genérica */
                     }
-                    this.messages.error(errText);
+                    this.messages.error(errorMessageForUser);
                     this.generating = false;
                     modal.close();
                     return;
                 }
 
-                const dataReturn = await response.json();
-                if (!dataReturn?.id) {
+                const generateOpportunitySuccessPayload =
+                    await generateOpportunityHttpResponse.json();
+                if (!generateOpportunitySuccessPayload?.id) {
                     this.messages.error(
                         this.text('Não foi possível gerar a oportunidade. Tente novamente.')
                     );
@@ -112,11 +226,29 @@ app.component('opportunity-create-based-model', {
                     return;
                 }
 
+                try {
+                    await this.persistPostGenerateFields(
+                        generateOpportunitySuccessPayload.id
+                    );
+                } catch (postGenerateFieldsPersistError) {
+                    console.error(postGenerateFieldsPersistError);
+                    this.messages.error(
+                        this.text(
+                            'Não foi possível salvar descrição curta ou dados do PAR na nova oportunidade.'
+                        )
+                    );
+                    this.generating = false;
+                    return;
+                }
+
                 this.sendSuccess = true;
 
-                await new Promise((r) => setTimeout(r, 5000));
-                window.location.href = `/gestao-de-oportunidade/${dataReturn.id}/#info`;
-            } catch (e) {
+                await new Promise((resolveAfterDelay) =>
+                    setTimeout(resolveAfterDelay, 5000)
+                );
+                window.location.href = `/gestao-de-oportunidade/${generateOpportunitySuccessPayload.id}/#info`;
+            } catch (generateOpportunityRequestFailure) {
+                console.error(generateOpportunityRequestFailure);
                 this.messages.error(
                     this.text('Não foi possível gerar a oportunidade. Tente novamente.')
                 );
@@ -125,12 +257,16 @@ app.component('opportunity-create-based-model', {
             }
         },
 
-        validate(objt) {
-            return !objt.name || !objt.entityId;
-        },
-
         createEntity() {
-            // Mantido para compatibilidade com @open; não usamos entity nesta versão
+            this.formData.name = '';
+            this.formData.shortDescription = '';
+            this.parSelectionModel = {
+                parExercicioId: '',
+                parMetaId: '',
+                parAcaoId: '',
+                parAtividadeId: '',
+            };
+            this.sendSuccess = false;
         },
     },
 });

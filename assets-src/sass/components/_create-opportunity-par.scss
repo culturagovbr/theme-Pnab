@@ -92,6 +92,44 @@
     color: var(--mc-gray-500, #4b4b53);
 }
 
+// Campos simples (título / descrição curta) no modal «Usar modelo», alinhados ao visual dos selects PAR
+.create-modal.create-opportunity-modal .create-modal__col--form {
+    .field {
+        margin-bottom: 1rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .field__title {
+        display: flex;
+        font-family: var(--mc-font-headings, inherit);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+        margin-bottom: 0.25rem;
+    }
+
+    .field__input input,
+    .field__input textarea {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        border-radius: var(--mc-border-radius-xs, 4px);
+        border: 1px solid var(--mc-gray-500, #4b4b53);
+        font-family: var(--mc-font-body, inherit);
+        font-size: var(--mc-font-size-xxs, 14px);
+        line-height: 1.4;
+        padding: 14px;
+    }
+
+    .field__input textarea {
+        min-height: 5.5rem;
+        resize: vertical;
+    }
+}
+
 .create-modal__fields--two-cols {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -107,6 +145,9 @@
     min-width: 0;
 
     &--par {
+        // Coluna só no layout pai: o bloco PAR (mc-federative-entity-par) preenche 100% desta célula
+        display: flex;
+        flex-direction: column;
         padding-inline-end: 1.5rem;
         border-right: 1px solid var(--mc-gray-300, #e0e0e0);
         margin-right: 1rem;
@@ -130,73 +171,102 @@
     }
 }
 
-// Bloco PAR (Exercício → Meta → Ação → Atividade) — mesma estrutura e visual do entity-field (ex.: Tipo de Edital)
-.create-modal__par {
-    .create-modal__par-loading {
-        min-height: 12rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem 0;
-    }
+// Componente mc-federative-entity-par: 100% da largura do pai (quem define colunas é create-modal__fields--two-cols, grid da página, etc.)
+.mc-federative-entity-par {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 
-    .create-modal__par-empty,
-    .mc-federative-entity-par__empty,
-    .mc-federative-entity-par__no-options {
-        margin: 0.5rem 0;
-        padding: 0.5rem 0;
+    &__empty,
+    &__no-options {
+        margin: 0.25rem 0 0;
+        padding: 0;
         color: var(--gray-500, #68686e);
         font-size: 0.875rem;
         line-height: 1.4;
     }
 
-    .field + .field {
-        margin-top: 0.75rem;
+    &__field {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
-    // Alinha visual ao .field do projeto: label .field__title + .field__input com select dentro
-    .field {
-        .field__title {
-            display: flex;
-            font-family: var(--mc-font-headings, inherit);
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 1.35;
-            margin-bottom: 0.25rem;
-        }
-        .field__input {
+    .field__title {
+        display: flex;
+        font-family: var(--mc-font-headings, inherit);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+        margin-bottom: 0.25rem;
+    }
+
+    .field__input {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+
+        select {
             width: 100%;
-            select {
-                width: 100%;
-                border-radius: var(--mc-border-radius-xs, 4px);
-                border: 1px solid var(--mc-gray-500, #4b4b53);
-                font-family: var(--mc-font-body, inherit);
-                font-size: var(--mc-font-size-xxs, 14px);
-                line-height: normal;
-                padding: 14px;
-                appearance: none;
-                -webkit-appearance: none;
-                -moz-appearance: none;
-                background: url(https://api.iconify.design/ic/baseline-arrow-drop-down.svg) no-repeat calc(100% - 10px) center/20px;
-                background-color: var(--mc-white, #fff);
-            }
-            select:disabled {
-                cursor: default;
-                opacity: 0.5;
-            }
+            max-width: 100%;
+            box-sizing: border-box;
+            border-radius: var(--mc-border-radius-xs, 4px);
+            border: 1px solid var(--mc-gray-500, #4b4b53);
+            font-family: var(--mc-font-body, inherit);
+            font-size: var(--mc-font-size-xxs, 14px);
+            line-height: normal;
+            padding: 14px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: url(https://api.iconify.design/ic/baseline-arrow-drop-down.svg) no-repeat calc(100% - 10px) center/20px;
+            background-color: var(--mc-white, #fff);
         }
-        // Padrão de erro do projeto (igual entity-field): borda vermelha + ícone + padding
-        &.error .field__input select {
-            border: 2px solid #ff0000;
-            background: url(https://api.iconify.design/fa6-solid/circle-exclamation.svg?color=red) no-repeat right 16px center / 16px;
-            padding-right: 40px;
+
+        select:disabled {
+            cursor: default;
+            opacity: 0.5;
         }
     }
+
+    .field__input--readonly {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .field.error .field__input select {
+        border: 2px solid #ff0000;
+        background: url(https://api.iconify.design/fa6-solid/circle-exclamation.svg?color=red) no-repeat right 16px center / 16px;
+        padding-right: 40px;
+    }
+
     .field__error {
         font-family: var(--mc-font-body, inherit);
         font-size: 12px;
         font-weight: 600;
         line-height: 16px;
         color: var(--mc-error, #d2381b);
+    }
+}
+
+// Wrapper opcional nos modais (Criar oportunidade / Usar modelo): só garante que o slot não encolha no grid
+.create-modal__par {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    .create-modal__par-loading {
+        min-height: 12rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 0;
     }
 }
