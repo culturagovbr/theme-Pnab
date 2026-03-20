@@ -1,0 +1,31 @@
+// Campos PAR somente leitura (após Descrição Longa) na edição da oportunidade
+.header-opp__field--par-readonly {
+    margin-top: 1rem;
+
+    .field--disabled {
+        .field__title {
+            font-family: var(--mc-font-headings, inherit);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.35;
+            margin-bottom: 0.25rem;
+        }
+        .field__input--readonly,
+        .field__input input.field__input--readonly,
+        .field__input .field__input--readonly {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: var(--mc-border-radius-xs, 4px);
+            border: 1px solid var(--mc-gray-300, #e0e0e0);
+            background-color: var(--mc-gray-100, #f5f5f5);
+            color: var(--mc-gray-600, #4b4b53);
+            font-family: var(--mc-font-body, inherit);
+            font-size: var(--mc-font-size-xxs, 14px);
+            padding: 14px;
+            cursor: default;
+            opacity: 0.9;
+            pointer-events: none;
+            min-height: 2.75rem;
+        }
+    }
+}

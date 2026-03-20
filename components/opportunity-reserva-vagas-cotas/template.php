@@ -8,6 +8,7 @@
 use MapasCulturais\i;
 
 $this->import('
+    mc-confirm-button
     mc-currency-input
     mc-icon
 ');
@@ -28,29 +29,70 @@ $this->import('
         </div>
     </div>
 
-    <div class="opportunity-reserva-vagas-cotas__content" v-for="(cota, index) in cotas" :key="index">
+    <div class="opportunity-reserva-vagas-cotas__header-row">
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('descricao') }}</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('numeroVagas') }}</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('valorDestinado') }} (R$)</span>
+        <span class="opportunity-reserva-vagas-cotas__th">{{ text('automatico') }}</span>
+        <span class="opportunity-reserva-vagas-cotas__th">Ações</span>
+    </div>
+
+    <small class="opportunity-reserva-vagas-cotas__total">
+        <span class="opportunity-reserva-vagas-cotas__total-label">Total</span>
+        <span class="opportunity-reserva-vagas-cotas__total-vagas">{{ totalVagas }}</span>
+        <span class="opportunity-reserva-vagas-cotas__total-valor">{{ totalAllocatedValueFormatted }}</span>
+        <span class="opportunity-reserva-vagas-cotas__total-automatico">{{ totalPercentFormatted }}</span>
+        <span class="opportunity-reserva-vagas-cotas__total-acoes"></span>
+    </small>
+
+    <div class="opportunity-reserva-vagas-cotas__content" v-for="(quota, index) in quotas" :key="index" :data-field-identifier="getFieldIdentifier(index)" :class="{ 'opportunity-reserva-vagas-cotas__content--lei': isLawQuota(index), 'opportunity-reserva-vagas-cotas__content--ampla': isGeneralCompetition(index), 'opportunity-reserva-vagas-cotas__content--extra': isExtraQuota(index), 'opportunity-reserva-vagas-cotas__content--error': hasErrorForIndex(index) }">
         <div class="field">
-            <label>{{ text('descricao') }}</label>
-            <input class="field__input" type="text" :value="cota.label" readonly disabled>
+            <input v-if="isFixedQuota(index)" class="field__input" type="text" :value="quota.label" readonly disabled>
+            <input v-else class="field__input" type="text" v-model.trim="quota.label" :placeholder="text('descricao')" @blur="onBlurField(index)">
         </div>
         <div class="field">
-            <h6>{{ text('numeroVagas') }}</h6>
-            <input class="field__input" type="number" min="0" step="1" v-model.number="cota.vagas" :disabled="cota.naoAplicavel" @blur="autoSave">
+            <input class="field__input" type="number" min="0" step="1" v-model.number="quota.vagas" :disabled="isFixedQuota(index) && quota.naoAplicavel" @blur="onBlurField(index)">
         </div>
         <div class="field">
-            <h6>{{ text('valorDestinado') }} (R$)</h6>
-            <mc-currency-input class="field__input" :key="`valor-${index}-${cota.naoAplicavel}-${cota.valorDestinado}`" v-model.lazy="cota.valorDestinado" :disabled="cota.naoAplicavel" @blur="autoSave"></mc-currency-input>
+            <mc-currency-input class="field__input" :key="`valor-${index}-${quota.naoAplicavel}-${quota.valorDestinado}`" v-model.lazy="quota.valorDestinado" :disabled="isFixedQuota(index) && quota.naoAplicavel" @blur="onBlurField(index)"></mc-currency-input>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-automatico">
-            <h6>{{ text('automatico') }}</h6>
-            <span class="opportunity-reserva-vagas-cotas__percentual" :aria-label="text('automatico')">{{ percentualCota(cota) }}</span>
+            <span class="opportunity-reserva-vagas-cotas__percentual" :aria-label="text('automatico')">{{ quotaPercent(quota) }}</span>
         </div>
         <div class="field opportunity-reserva-vagas-cotas__cell-checkbox">
-            <label class="field__group field__checkbox">
-                <input type="checkbox" v-model="cota.naoAplicavel" @change="onNaoAplicavelChange(cota)">
+            <label v-if="isFixedQuota(index)" class="field__group field__checkbox">
+                <input type="checkbox" v-model="quota.naoAplicavel" @change="onNotApplicableChange(quota)">
                 <span>{{ text('naoAplicavel') }}</span>
             </label>
+            <span v-else-if="isPendingNewQuota(index)" class="opportunity-reserva-vagas-cotas__actions-pending">
+                <button type="button" class="opportunity-reserva-vagas-cotas__confirm" @click="confirmNewQuota()" :aria-label="text('confirmarCota')">
+                    <mc-icon name="check" class="success__color"></mc-icon>
+                    <span>{{ text('confirmarCota') }}</span>
+                </button>
+                <button type="button" class="opportunity-reserva-vagas-cotas__delete" @click="cancelNewQuota()" :aria-label="text('cancelarAdicaoCota')">
+                    <mc-icon name="trash" class="danger__color"></mc-icon>
+                    <span>{{ text('cancelarAdicaoCota') }}</span>
+                </button>
+            </span>
+            <mc-confirm-button v-else @confirm="removeQuota(index)">
+                <template #button="{open}">
+                    <button type="button" class="opportunity-reserva-vagas-cotas__delete" @click="open()" :aria-label="text('excluirCota')">
+                        <mc-icon name="trash" class="danger__color"></mc-icon>
+                        <span>{{ text('excluirCota') }}</span>
+                    </button>
+                </template>
+                <template #message>
+                    {{ text('confirmExcluirCota') }}
+                </template>
+            </mc-confirm-button>
         </div>
+    </div>
+
+    <div class="opportunity-reserva-vagas-cotas__add">
+        <button type="button" class="button button--primary button--icon opportunity-reserva-vagas-cotas__add-btn" @click="addQuota" :disabled="pendingNewQuotaIndex !== null">
+            <mc-icon name="add"></mc-icon>
+            <label>{{ text('adicionarCota') }}</label>
+        </button>
     </div>
 
     <small v-if="hasError" class="field__error" role="alert">{{ errorMessage }}</small>

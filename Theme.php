@@ -3,9 +3,14 @@
 namespace Pnab;
 
 use AldirBlanc\Services\UserAccessService;
+use AldirBlanc\Services\InMincQuotasService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
+use Respect\Validation\Validator;
+use AldirBlanc\Enum\OpportunityStatus;
+use AldirBlanc\Jobs\OportunidadeCultJob;
+use MapasCulturais\Entities\Opportunity;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. * 
@@ -20,9 +25,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     ];
 
     protected const AGENT_COLETIVO_TYPE_ID = 2;
+    protected const AGENT_INDIVIDUAL_TYPE_ID = 1;
 
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
-    public const OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
+    public const OPTIONS_OTHER_MODALITIES_WITH_SUBLIST = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
     /** Tamanho máximo do campo nome da fonte em "Recursos de outras fontes". */
     private const RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH = 255;
@@ -39,6 +45,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
+        $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);
+        $isCultBrCreateNotYetSynced = fn ($entity) => !$this->isOpportunityCultBrCreateSynced($entity);
 
         /**
          * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
@@ -51,14 +59,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Na edição de agente, exibe o campo "Tipo de agente coletivo" após o campo "Nome do Agente".
+         * Na edição de agente, o campo "Tipo de Agente Coletivo" não é exibido:
+         * uma vez configurado (na criação), o usuário não pode mais alterá-lo.
          */
-        $app->hook('template(agent.edit.entity-info):end', function () {
-            $entity = $this->controller->requestedEntity ?? null;
-            if ($entity) {
-                $this->part('agent-edit-tipo-coletivo', ['entity' => $entity]);
-            }
-        });
+        // Hook removido: template(agent.edit.entity-info):end + part('agent-edit-tipo-coletivo')
 
         /**
          * Verifica se o usuário tem permissão para acessar a rota de minhas oportunidades
@@ -104,6 +108,73 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
         });
 
+        /**
+         * Dispara o job de integração com o CultBR quando uma oportunidade é inserida
+         */
+        $app->hook('entity(Opportunity).insert:finish', function () use ($app, $theme) {
+            if (!$theme->validateIntegrationJob($this)) {
+                return;
+            }
+
+            $app->enqueueOrReplaceJob(
+                OportunidadeCultJob::SLUG,
+                [
+                    'action' => 'create',
+                    'opportunity' => $this
+                ],
+            );
+        });
+
+        /**
+         * Job CultBR no update: Ativado → update (PUT); rascunho com isGeneratedFromModel → create (POST),
+         * após validateIntegrationJob (clone «usar modelo» não passa por insert:finish).
+         */
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme, $isOpportunityGeneratedFromModel, $isCultBrCreateNotYetSynced) {
+            if (!$theme->validateIntegrationJob($this)) {
+                return;
+            }
+
+            // Quando a oportunidade for ativada, disparar o job de update
+            if ((int) $this->status === OpportunityStatus::ENABLED->value) {
+                $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
+
+                $app->enqueueOrReplaceJob(
+                    OportunidadeCultJob::SLUG,
+                    [
+                        'action' => 'update',
+                        'opportunity' => $this
+                    ],
+                    $start_string
+                );
+                return;
+            }
+
+            // Rascunho «usar modelo»: um único create até sucesso no Cult; PATCH seguintes não re-enfileiram.
+            if ((int) $this->status === OpportunityStatus::DRAFT->value
+                && $isOpportunityGeneratedFromModel($this)
+                && $isCultBrCreateNotYetSynced($this)
+            ) {
+                $app->enqueueOrReplaceJob(
+                    OportunidadeCultJob::SLUG,
+                    [
+                        'action' => 'create',
+                        'opportunity' => $this,
+                    ],
+                );
+            }
+        });
+
+        /**
+         * Garante que o metadado publishedTimestamp seja definido quando a oportunidade for publicada
+         * (salvo na mesma transação do save/publish)
+         */
+        $app->hook('entity(Opportunity).save:before', function () {
+            /** @var \MapasCulturais\Entities\Opportunity $this */
+            if ((int) $this->status === Opportunity::STATUS_ENABLED && !$this->getMetadata('publishedTimestamp')) {
+                $this->setMetadata('publishedTimestamp', (new \DateTime())->format('Y-m-d H:i:s'));
+            }
+        });
+
         $app->hook('PATCH(opportunity.single):before', function () use ($theme) {
             $entity = $this->requestedEntity;
             $postData = $this->postData;
@@ -125,9 +196,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
             $theme->trimSegmentoOutros($postData);
 
-            $reservaVagasErrors = $theme->validateReservaVagasCotas($entity, $postData);
-            if ($reservaVagasErrors) {
-                $this->errorJson($reservaVagasErrors, 400);
+            // PATCH parcial (ex.: pós "usar modelo": só descrição + PAR) não envia cotas; validar só quando o body altera dados que afetam a regra IN-MinC.
+            $touchesQuotasOrVacancies = false;
+            foreach (['reservaVagasCotas', 'vacancies', 'registrationRanges'] as $key) {
+                if (array_key_exists($key, $postData)) {
+                    $touchesQuotasOrVacancies = true;
+                    break;
+                }
+            }
+            if ($touchesQuotasOrVacancies) {
+                $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
+                if ($quotasReservationErrors) {
+                    $this->errorJson($quotasReservationErrors, 400);
+                }
             }
         });
 
@@ -409,6 +490,30 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Impede alteração do metadado tipoAgenteColetivo após a criação do agente.
+         * Se a entidade já existe, restaura o valor atual do banco antes de persistir.
+         */
+        $app->hook('entity(Agent).save:before', function () use ($app) {
+            /** @var \MapasCulturais\Entities\Agent $this */
+            if ($this->isNew()) {
+                return;
+            }
+            $meta = $app->repo('AgentMeta')->findOneBy(['owner' => $this, 'key' => 'tipoAgenteColetivo']);
+            if ($meta !== null && $meta->value !== null && $meta->value !== '') {
+                $this->setMetadata('tipoAgenteColetivo', $meta->value);
+            }
+
+            if (($this->tipoAgenteColetivo ?? '') === 'coletivos_grupos_informais') {
+                $qtdMeta = $app->repo('AgentMeta')->findOneBy(['owner' => $this, 'key' => 'qtdMembrosColetivo']);
+                $current = $this->qtdMembrosColetivo;
+                $invalid = $current === null || $current === '' || (is_numeric($current) && (int) $current < 2);
+                if ($invalid && $qtdMeta !== null && $qtdMeta->value !== null && $qtdMeta->value !== '' && (int) $qtdMeta->value >= 2) {
+                    $this->setMetadata('qtdMembrosColetivo', $qtdMeta->value);
+                }
+            }
+        });
+
+        /**
          * Limpa cache de permissões quando o Ente Federado selecionado muda
          * Isso garante que as permissões sejam recalculadas imediatamente
          */
@@ -422,15 +527,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Bloqueia a renderização e a criação de um novo aplicativo
          */
-        $app->hook('GET(panel.apps):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
-        $app->hook('POST(app.index):before', fn() => $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403));
+        $app->hook('GET(panel.apps):before', function () {
+            // Libera para SuperSaasAdmin, se não for, bloqueia
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403);
+            }
+        });
+        $app->hook('POST(app.index):before', function () {
+            // Libera para SuperSaasAdmin, se não for, bloqueia
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $this->errorJson(\MapasCulturais\i::__('Acesso não permitido'), 403);
+            }
+        });
 
         /**
          * Configura o menu do painel: renomeia "Minhas Oportunidades" e move para "Ente Federado"
          */
         $app->hook('panel.nav', function (&$nav) use ($app, $canAccess) {
-            // Removendo o menu de "Meus aplicativos" [para todos os usuários]
-            $nav['more']['condition'] = fn() => false;
+            // "Meus aplicativos" visível apenas para saasSuperAdmin
+            $nav['more']['condition'] = fn() => UserAccessService::isSaasSuperAdmin();
+
+            // Usuário sem canAccess não vê "Minhas Oportunidades" (apenas GestorCultBr pode criar/acessar a página)
+            if (!$canAccess && isset($nav['opportunities']['items'])) {
+                foreach ($nav['opportunities']['items'] as $key => $item) {
+                    if (isset($item['route']) && $item['route'] === 'panel/opportunities') {
+                        $nav['opportunities']['items'][$key]['condition'] = fn() => false;
+                    }
+                }
+            }
 
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
@@ -482,6 +606,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $this->enqueueStyle('app-v2', 'main', 'css/theme-Pnab.css');
 
+        /**
+         * Validação de e-mail (formas de inscrição) no blur — usa o mesmo padrão do backend (Respect\Validation).
+         */
+        $app->hook('POST(site.validaEmailFormasInscricao)', function () {
+            $this->requireAuthentication();
+            $email = trim((string) ($this->data['email'] ?? ''));
+            if ($email === '') {
+                $this->json(['valid' => true]);
+                return;
+            }
+            $valid = Validator::email()->validate($email);
+            $this->json([
+                'valid' => $valid,
+                'message' => $valid ? '' : i::__('Informe um e-mail válido.'),
+            ]);
+        });
+
         // Mapeia o ícone do X (antigo Twitter) para o novo logo do X
         $app->hook('component(mc-icon).iconset', function (&$iconset) {
             $iconset['twitter'] = 'simple-icons:x';
@@ -491,10 +632,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Redireciona para consolidação após login bem-sucedido
          * Limpa a seleção de entidade federativa quando o usuário faz login
          * Não redireciona admins (não há o que consolidar)
+         * Se o agente tem isNotGestorCultBr (API já retornou vazio), redireciona para o painel (2º+ login)
          */
         $app->hook('auth.successful', function () use ($app) {
             // Se for admin em qualquer nível, não precisa consolidar dados
             if (UserAccessService::isAdmin()) {
+                return;
+            }
+
+            $profile = $app->user->profile;
+            if ($profile && $profile->getMetadata('isNotGestorCultBr')) {
+                // 2º ou N-ésimo login: API já retornou vazio, não passar pela consolidação
+                $_SESSION['mapasculturais.auth.redirect_path'] = $app->createUrl('panel', 'index');
                 return;
             }
 
@@ -526,11 +675,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         /**
          * Hook que bloqueia acesso quando há erro de consolidação
-         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity e federativeEntities
+         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity, federativeEntities, saveOpportunityPostGenerate, etc.
          * Não bloqueia admins (não há o que consolidar)
+         * Não bloqueia admin em modo "login como usuário" (plugin AdminLoginAsUser): o $app->user vira o impersonado,
+         * então isAdmin() falha e LGPD/termos ou auth.asUserId podiam ser afetados indevidamente.
          */
-        $blockAccessOnError = function () use ($app) {
+        $theme = $this;
+        $blockAccessOnError = function () use ($app, $theme) {
             if ($app->user->is('guest')) {
+                return;
+            }
+
+            $controllerId = $app->request->controllerId ?? '';
+            $action = $app->request->action ?? '';
+
+            // Voltar como administrador / alternar usuário (AdminLoginAsUser — ex.: mc-link route auth/asUserId)
+            if ($controllerId === 'auth' && $action === 'asUserId') {
+                return;
+            }
+
+            // Sessão ativa de impersonação: não aplicar consolidação/perfil/ente ao usuário "visto" pelo admin
+            if (isset($_SESSION['auth.asUserId'])) {
                 return;
             }
 
@@ -539,62 +704,94 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
+            if ($controllerId === 'lgpd') {
+                return;
+            }
+
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+                return;
+            }
+
+            $path = trim($app->request->getPathInfo(), '/');
+            if ($path === 'termos-e-condicoes' || str_starts_with($path, 'termos-e-condicoes/')) {
+                return;
+            }
+
+            $profile = $app->user->profile;
             $route = [$this->id, $this->action];
 
-            // Ignora as rotas de consolidação, sync, seleção, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'logoutOnError'])) {
+            // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
-            // Verifica se o sync foi iniciado mas ainda não foi concluído
+            // Ordem: (1) consolidação, (2) perfil incompleto, (3) gestor sem ente
+
+            // 1. Consolidação: só aplica a quem NÃO tem isNotGestorCultBr (2º+ login sem gestor pula)
             $syncStarted = isset($_SESSION['gestor_cult_sync_started']) && $_SESSION['gestor_cult_sync_started'] === true;
             $syncCompleted = isset($_SESSION['gestor_cult_sync_completed']) && $_SESSION['gestor_cult_sync_completed'] === true;
-            $hasError = isset($_SESSION['gestor_cult_sync_error']) && 
-                       $_SESSION['gestor_cult_sync_error'] !== null && 
-                       $_SESSION['gestor_cult_sync_error'] !== '';
+            $hasError = isset($_SESSION['gestor_cult_sync_error']) &&
+                $_SESSION['gestor_cult_sync_error'] !== null &&
+                $_SESSION['gestor_cult_sync_error'] !== '';
 
-            // Se há erro de sync, bloqueia TODAS as requisições e redireciona para consolidação
-            if ($syncCompleted && $hasError) {
-                // Para requisições AJAX, retorna erro JSON
-                if ($app->request->isAjax()) {
-                    /** @var \MapasCulturais\Controller $this */
-                    header('Content-Type: application/json');
-                    http_response_code(403);
-                    echo json_encode([
-                        'error' => true,
-                        'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
-                        'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
-                    ]);
-                    exit;
-                }
-                
-                // Para requisições normais, redireciona
-                $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
-                $url = $app->createUrl('aldirblanc', 'consolidatingData');
-                $app->redirect($url);
-                return;
-            }
-
-            // Se o sync foi iniciado mas não foi concluído, redireciona para consolidação
-            if ($syncStarted && !$syncCompleted) {
-                if (!$app->request->isAjax()) {
+            if (!$profile || !$profile->getMetadata('isNotGestorCultBr')) {
+                // Se há erro de sync, bloqueia e redireciona para consolidação
+                if ($syncCompleted && $hasError) {
+                    if ($app->request->isAjax()) {
+                        header('Content-Type: application/json');
+                        http_response_code(403);
+                        echo json_encode([
+                            'error' => true,
+                            'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
+                            'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
+                        ]);
+                        exit;
+                    }
                     $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                    $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
+                    return;
                 }
-                $url = $app->createUrl('aldirblanc', 'consolidatingData');
-                $app->redirect($url);
-                return;
+
+                // Se o sync foi iniciado mas não foi concluído, redireciona para consolidação
+                if ($syncStarted && !$syncCompleted) {
+                    if (!$app->request->isAjax()) {
+                        $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                    }
+                    $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
+                    return;
+                }
             }
 
-            // Após o sync terminar sem erro, verifica se é gestor e precisa selecionar entidade
+            // 2. Perfil incompleto (agente individual ou tipo não definido): redireciona para tela de complementar cadastro
+            $profileTypeId = $profile && is_object($profile->type) ? ($profile->type->id ?? null) : ($profile->type ?? null);
+            $isIndividual = $profile && (($profileTypeId === null) || ((int) $profileTypeId === self::AGENT_INDIVIDUAL_TYPE_ID));
+            if ($isIndividual && method_exists($theme, 'hasRequiredAgentFieldsFilled')) {
+                // Usa instância recarregada do banco para evitar perfil em memória/sessão sem __metadata carregado (getMetadata retorna null se __metadata não for iterável)
+                $profileToCheck = $profile->refreshed();
+                if (!$theme->hasRequiredAgentFieldsFilled($profileToCheck)) {
+                    if (!$app->request->isAjax()) {
+                        $app->redirect($app->createUrl('aldirblanc', 'completeProfile'));
+                    } else {
+                        header('Content-Type: application/json');
+                        http_response_code(403);
+                        echo json_encode([
+                            'error' => true,
+                            'message' => 'Complete seu cadastro para continuar.',
+                            'redirectTo' => $app->createUrl('aldirblanc', 'completeProfile'),
+                        ]);
+                        exit;
+                    }
+                    return;
+                }
+            }
+
+            // 3. Gestor sem ente: após consolidação ok (ou isNotGestorCultBr), exige seleção de ente
             if ($syncCompleted && !$hasError && UserAccessService::isGestorCultBr()) {
-                // Verifica se existe entidade federativa selecionada na sessão
                 if (!isset($_SESSION['selectedFederativeEntity'])) {
                     if (!$app->request->isAjax()) {
                         $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                     }
-                    // Redireciona para a tela de seleção
-                    $url = $app->createUrl('aldirblanc', 'selectFederativeEntity');
-                    $app->redirect($url);
+                    $app->redirect($app->createUrl('aldirblanc', 'selectFederativeEntity'));
                 }
             }
         };
@@ -655,10 +852,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Validação de oportunidade: Torna o campo "Tipos do proponente" obrigatório
+         * Validação de oportunidade:
+         * - Torna o campo "Descrição curta" obrigatório em qualquer fase
+         * - Torna o campo "Tipos do proponente" obrigatório nas fases de edição (não novas e não últimas fases)
          */
-        $app->hook('entity(Opportunity).validations', function(&$validations) {
+        $app->hook('entity(Opportunity).validations', function (&$validations) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
+
+            // Descrição curta obrigatória (inclui criação via modal)
+            $validations['shortDescription'] = [
+                'required' => i::__('O campo "Descrição curta" é obrigatório.')
+            ];
+
+            // Tipos do proponente obrigatórios apenas em edição, como já era feito antes
             if (!$this->isNew() && !$this->isLastPhase) {
                 if (!is_array($this->registrationProponentTypes)) {
                     $this->registrationProponentTypes = [];
@@ -733,6 +939,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                                 $errors['formasInscricaoEdital'] = [i::__('Preencha a descrição de cada forma de inscrição marcada.')];
                                 break;
                             }
+                            $tipo = $item['tipo'] ?? '';
+                            if ($tipo === 'email' && !Validator::email()->validate($descricao)) {
+                                $errors['formasInscricaoEdital_email'] = [i::__('Informe um e-mail válido.')];
+                                break;
+                            }
                         }
                     }
                 }
@@ -743,7 +954,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (!is_array($opcoes) || count($opcoes) === 0) {
                     $errors['outrasModalidadesAcoesAfirmativas'] = [i::__('Selecione pelo menos uma opção.')];
                 } else {
-                    foreach (self::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA as $op) {
+                    foreach (self::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST as $op) {
                         if (in_array($op, $opcoes)) {
                             $sublist = $outrasModalidades[$op] ?? null;
                             if (!is_array($sublist) || count($sublist) === 0) {
@@ -828,27 +1039,49 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Assim a validação roda e retorna erro nos campos que faltaram.
          */
         $agentColetivoTypeId = self::AGENT_COLETIVO_TYPE_ID;
-        $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId) {
+        $agentIndividualTypeId = self::AGENT_INDIVIDUAL_TYPE_ID;
+        $app->hook('PATCH(agent.single):data', function (&$data) use ($app, $agentColetivoTypeId, $agentIndividualTypeId) {
             /** @var \MapasCulturais\Controllers\Agent $this */
             $theme = $app->view;
+            $entity = $this->requestedEntity;
+
+            // Tipo de Agente Coletivo não pode ser alterado após a criação: remove do payload.
+            if ($entity && !$entity->isNew()) {
+                unset($data['tipoAgenteColetivo']);
+            }
+
             if (!method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
                 return;
             }
-            $entity = $this->requestedEntity;
             if (!$entity || $entity->isNew()) {
                 return;
             }
             $typeId = is_object($entity->type) ? ($entity->type->id ?? null) : $entity->type;
+            $typeId = $typeId === null ? null : (int) $typeId;
 
-            if ($typeId === null || (int) $typeId !== $agentColetivoTypeId) {
+            if ($typeId === $agentColetivoTypeId && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
+                foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
+                    if (!array_key_exists($key, $data)) {
+                        $data[$key] = $entity->$key ?? null;
+                        $this->postData[$key] = $data[$key];
+                    }
+                }
                 return;
             }
-            
-            foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
-                if (!array_key_exists($key, $data)) {
-                    $data[$key] = $entity->$key ?? null;
-                    $this->postData[$key] = $data[$key];
+
+            if ($typeId === $agentIndividualTypeId && method_exists($theme, 'getRequeredsAgentIndividualMetadata')) {
+                foreach ($theme->getRequeredsAgentIndividualMetadata() as $key) {
+                    if (!array_key_exists($key, $data)) {
+                        $data[$key] = $entity->$key ?? null;
+                        $this->postData[$key] = $data[$key];
+                    }
                 }
+            }
+
+            // Coletivos informais: se qtdMembrosColetivo vier ausente no payload (front costuma omitir 0), forçar 0 para a validação rodar e bloquear o save.
+            if (($entity->tipoAgenteColetivo ?? '') === 'coletivos_grupos_informais' && !array_key_exists('qtdMembrosColetivo', $data)) {
+                $data['qtdMembrosColetivo'] = 0;
+                $this->postData['qtdMembrosColetivo'] = 0;
             }
         });
 
@@ -887,6 +1120,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (isset($this->jsObject['Taxonomies']['area'])) {
                 $this->jsObject['Taxonomies']['area']['required'] = false;
             }
+            // Usado no painel para exibir/ocultar o card "Oportunidades" (apenas quem tem canAccess)
+            $this->jsObject['canAccessOpportunitiesPanel'] = UserAccessService::canAccess();
         });
 
         /**
@@ -937,7 +1172,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Registra metadados de agente
             $theme->registerAgentMetadataByType(
                 'acessouFomentoCultural', 
-                i::__('Acessou recursos públicos de fomento à cultura nos últimos 5 (cinco) anos?'), 
+                i::__('Acessou Recursos Públicos de Fomento à Cultura nos Últimos 5 (Cinco) Anos?'), 
                 'select', 
                 null, 
                 $theme->getAcessoFomentoCulturalOptions(), 
@@ -946,11 +1181,20 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $theme->registerAgentMetadataByType(
                 'anosExperienciaAreaCultural',
-                i::__('Possui quantos anos de experiência na área cultural?'),
+                i::__('Anos de Atuação na Área Cultural?'),
                 'number',
                 null,
                 [],
                 []
+            );
+
+            $theme->registerAgentMetadataByType(
+                'qtdMembrosColetivo',
+                i::__('Quantas pessoas fazem parte do coletivo?'),
+                'number',
+                null,
+                [],
+                ['v::numericVal()->min(2)' => i::__('Informe pelo menos 2 membros.')]
             );
 
             $theme->registerAgentMetadataByType(
@@ -960,6 +1204,22 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 1,
                 [],
                 []
+            );
+
+            // Detalhamento do tipo de agente coletivo (apenas type=2 Coletivo).
+            $theme->registerAgentMetadataByType(
+                'tipoAgenteColetivo',
+                i::__('Tipo de agente coletivo'),
+                'select',
+                self::AGENT_COLETIVO_TYPE_ID,
+                [
+                    'pj_fins_lucrativos' => i::__('Pessoa jurídica com fins lucrativos'),
+                    'pj_sem_fins_lucrativos' => i::__('Pessoa jurídica sem fins lucrativos'),
+                    'coletivos_grupos_informais' => i::__('Coletivos e grupos informais'),
+                ],
+                [
+                    'required' => i::__('O tipo de agente coletivo é obrigatório'),
+                ]
             );
 
             $agentClass = 'MapasCulturais\Entities\Agent';
@@ -985,6 +1245,56 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     }
                     return false;
                 };
+            }
+
+            // qtdMembrosColetivo: obrigatório para coletivos informais; não pode ser nulo; deve ser > 1 (coletivo = plural)
+            if (isset($definitions['qtdMembrosColetivo'])) {
+                $def = $definitions['qtdMembrosColetivo'];
+                $def->config['should_validate'] = function ($entity, $value) use ($def) {
+                    if ($entity->isNew() || ($entity->tipoAgenteColetivo ?? '') !== 'coletivos_grupos_informais') {
+                        return false;
+                    }
+                    $vazio = $value === null || $value === '' || (is_array($value) && empty($value)) || $value === 0 || $value === '0';
+                    if ($vazio) {
+                        return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para coletivos e grupos informais.');
+                    }
+                    return false;
+                };
+            }
+
+            // Labels de endereço para agente coletivo conforme dicionário (1ª coluna)
+            $addressLabelsColetivo = [
+                'En_CEP' => i::__('CEP da Sede'),
+                'En_Municipio' => i::__('Cidade'),
+            ];
+            foreach ($addressLabelsColetivo as $metaKey => $newLabel) {
+                $def = $definitions[$metaKey] ?? null;
+                if ($def !== null) {
+                    $config = array_merge([], $def->config);
+                    $config['label'] = $newLabel;
+                    $app->registerMetadata(new \MapasCulturais\Definitions\Metadata($metaKey, $config), $agentClass, $tipoColetivoId);
+                }
+            }
+
+            $tipoIndividualId = self::AGENT_INDIVIDUAL_TYPE_ID;
+            $definitionsIndividual = $app->getRegisteredMetadata($agentClass, $tipoIndividualId);
+            if (!empty($definitionsIndividual)) {
+                foreach ($definitionsIndividual as $metaKey => $def) {
+                    if (!in_array($metaKey, $theme->getRequeredsAgentIndividualMetadata())) {
+                        continue;
+                    }
+
+                    $def->config['should_validate'] = function ($entity, $value) use ($def) {
+                        if ($entity->isNew()) {
+                            return false;
+                        }
+                        $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
+                        if ($vazio) {
+                            return i::__('O campo ') . strtolower($def->label) . i::__(' é obrigatório para agente individual.');
+                        }
+                        return false;
+                    };
+                }
             }
         });
     }
@@ -1394,6 +1704,64 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Obtém os metadados obrigatórios para agente individual.
+     *
+     * @return array Array de metadados obrigatórios
+     */
+    public function getRequeredsAgentIndividualMetadata(): array
+    {
+        return [
+            'nomeCompleto',
+            'cpf',
+            'emailPrivado',
+            'telefonePublico',
+            'acessouFomentoCultural',
+            'anosExperienciaAreaCultural',
+            'eMestreCulturasTradicionais',
+            'En_CEP',
+            'En_Nome_Logradouro',
+            'En_Num',
+            'En_Bairro',
+            'En_Municipio',
+            'En_Estado',
+            'dataDeNascimento',
+            'genero',
+            'orientacaoSexual',
+            'raca',
+            'renda',
+            'escolaridade',
+            'pessoaDeficiente',
+            'comunidadesTradicional',
+        ];
+    }
+
+    /**
+     * Verifica se o agente individual possui todos os campos obrigatórios preenchidos (perfil completo).
+     * Considera apenas agente do tipo individual (tipo 1). name, shortDescription e área são desconsiderados.
+     *
+     * @param \MapasCulturais\Entities\Agent $agent
+     * @return bool
+     */
+    public function hasRequiredAgentFieldsFilled(\MapasCulturais\Entities\Agent $agent): bool
+    {
+        $typeId = is_object($agent->type) ? ($agent->type->id ?? null) : $agent->type;
+        // Considera apenas agente individual (tipo 1). Tipo null é tratado como individual para exigir preenchimento.
+        if ($typeId !== null && (int) $typeId !== self::AGENT_INDIVIDUAL_TYPE_ID) {
+            return true;
+        }
+
+        foreach ($this->getRequeredsAgentIndividualMetadata() as $key) {
+            // Acessa via getMetadata para garantir que __metadata seja carregado (evita null quando relação lazy não foi inicializada)
+            $value = $agent->getMetadata($key);
+            if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Aplica trim no campo "Outros" quando o campo principal possui valor "Outra (especificar)"
      * Suporta campo principal como string (select antigo) ou array (multiselect).
      *
@@ -1475,45 +1843,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $data['recursosOutrasFontes'] = $recursos;
     }
 
-    /**
-     * Valida o metadado reservaVagasCotas da primeira fase: as 3 cotas devem estar
-     * configuradas (vagas e valorDestinado preenchidos) ou marcadas como "Não aplicável".
-     *
-     * @param \MapasCulturais\Entities\Opportunity $entity Oportunidade/fase sendo salva
-     * @param array $postData Dados do PATCH
-     * @return array|false Array de erros no formato [ 'reservaVagasCotas' => [msg] ] ou false
-     */
-    private function validateReservaVagasCotas($entity, array $postData)
-    {
-        if (empty($entity->id) || !$entity->isFirstPhase) {
-            return false;
-        }
-
-        $cotas = self::ensureArray($postData['reservaVagasCotas'] ?? ($entity->reservaVagasCotas ?? null));
-        if (count($cotas) === 0) {
-            return false;
-        }
-        if (count($cotas) !== 3) {
-            return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
-        }
-
-        foreach ($cotas as $cota) {
-            $cota = self::ensureArray($cota);
-            $naoAplicavel = !empty($cota['naoAplicavel']);
-            if ($naoAplicavel) {
-                continue;
-            }
-            $vagas = isset($cota['vagas']) && $cota['vagas'] !== '' && is_numeric($cota['vagas']) ? (int) $cota['vagas'] : null;
-            $valor = isset($cota['valorDestinado']) && $cota['valorDestinado'] !== '' && is_numeric($cota['valorDestinado']) ? (float) $cota['valorDestinado'] : null;
-            // Quando a cota se aplica, exige vagas > 0 e valor > 0 (zero não é considerado configurado)
-            if ($vagas === null || $valor === null || $vagas < 1 || $valor < 0.01) {
-                return ['reservaVagasCotas' => [i::__('Configure todas as cotas ou marque como Não aplicável.')]];
-            }
-        }
-
-        return false;
-    }
-
     private function validateTotalByMetadata($entity, array $postData, string $metadataKey, string $keyTarget)
     {
         if (!isset($postData[$metadataKey]) && !isset($postData['registrationRanges'])) {
@@ -1532,22 +1861,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $convertVal = $metadataKey === 'vacancies' ? 'intval' : 'floatval';
         $totalMetadataInRanges = array_sum(array_map($convertVal, array_column($registrationRanges, $keyTarget)));
+        $totalDefinido = $convertVal($metadataValue);
 
-        // Garante que a soma das faixas não ultrapasse o valor total definido
-        if ($totalMetadataInRanges > $convertVal($metadataValue)) {
-            // Campos específicos para destacar apenas os inputs relacionados
-            if ($metadataKey === 'vacancies') {
+        // Exige que o somatório das categorias seja exatamente igual ao Total de vagas / Valor total (nem menor, nem maior)
+        if ($metadataKey === 'vacancies') {
+            if ($totalMetadataInRanges !== $totalDefinido) {
                 return [
                     'registrationRangesVacancies' => [
-                        i::__('O total de vagas das faixas/linhas é superior ao Total de vagas definido.')
+                        i::__('O total de vagas das categorias deve ser igual ao Total de vagas definido;')
                     ]
                 ];
             }
-
-            if ($metadataKey === 'totalResource') {
+        } elseif ($metadataKey === 'totalResource') {
+            // Para valor monetário, tolerância de 0.01 para evitar erros de ponto flutuante
+            if (abs($totalMetadataInRanges - $totalDefinido) > 0.009) {
                 return [
                     'registrationRangesTotalResource' => [
-                        i::__('O total em valores das faixas/linhas é superior ao Valor total definido.')
+                        i::__('O total em valores das categorias deve ser igual ao Valor total definido;')
                     ]
                 ];
             }
@@ -1571,5 +1901,78 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return is_array($decoded) ? $decoded : [];
         }
         return [];
+    }
+
+    /**
+     * Metadado «gerada a partir de modelo» (evita repetir filter_var em hooks e validação).
+     *
+     * @param Opportunity $entity
+     */
+    private function isOpportunityGeneratedFromModel($entity): bool
+    {
+        return (bool) filter_var(
+            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_IS_GENERATED_FROM_MODEL),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
+     * True após OportunidadeCultJob create concluir com sucesso (metadado cultBrCreateSynced).
+     *
+     * @param Opportunity $entity
+     */
+    private function isOpportunityCultBrCreateSynced($entity): bool
+    {
+        return (bool) filter_var(
+            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_CULT_BR_CREATE_SYNCED),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
+     * Valida se o job de integração com o CultBR deve ser disparado
+     */
+    private function validateIntegrationJob($entity)
+    {
+        $federativeEntityId = $entity->getMetadata('federativeEntityId');
+        $subsiteId = (int) $entity->subsite?->id;
+        $parent = $entity->parent;
+        $status = $entity->status;
+        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', 0);
+        $isGeneratedFromModel = $this->isOpportunityGeneratedFromModel($entity);
+
+        // Se federativeEntityId não estiver definido, não disparar o job
+        if ($federativeEntityId === null
+            || $federativeEntityId === ''
+            || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
+        ) {
+            return false;
+        }
+
+        // Se subsiteId não estiver definido, não disparar o job
+        if ($subsiteId < 1) {
+            return false;
+        }
+
+        // Se ALDIRBLANC_SUBSITE_ID não estiver definido, não disparar o job
+        if ($themePnabSubsiteId === 0) {
+            return false;
+        }
+
+        // Subsite da entidade ≠ ALDIRBLANC_SUBSITE_ID: bloqueia, exceto «usar modelo» (já garantido themePnabSubsiteId > 0 acima).
+        if (!$isGeneratedFromModel && $subsiteId !== $themePnabSubsiteId) {
+            return false;
+        }
+
+        if ((int) $status === (int) Opportunity::STATUS_PHASE) {
+            return false;
+        }
+
+        // Se a oportunidade for uma oportunidade complementar, não disparar o job
+        if ((bool) $parent) {
+            return false;
+        }
+
+        return true;
     }
 }

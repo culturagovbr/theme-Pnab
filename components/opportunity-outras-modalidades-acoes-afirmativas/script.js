@@ -1,15 +1,13 @@
 /**
- * Componente: Outras modalidades de ações afirmativas (edição de oportunidade).
- * Gerencia o metadado outrasModalidadesAcoesAfirmativas (opcoes, sublistas, descrição).
- * Lista de opções com sublista vem do backend (Theme::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA via jsObject).
+ * Outras modalidades de ações afirmativas. Metadado outrasModalidadesAcoesAfirmativas (opcoes, sublistas, descrição).
+ * Opções com sublista vêm do backend (Theme::OPTIONS_OTHER_MODALITIES_WITH_SUBLIST).
  */
-
 const OPCAO_EXCLUSIVA = 'nao_previstas';
 const OPCAO_OUTRA = 'outra_legislacao';
 const MAX_DESCRICAO = 140;
 
-/** Chaves das opções com sublista (fallback se config não estiver disponível; espelha Theme::OPCOES_OUTRAS_MODALIDADES_COM_SUBLISTA) */
-const OPCOES_COM_SUBLISTA_FALLBACK = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
+/** Fallback das chaves com sublista quando config não está disponível */
+const OPTIONS_WITH_SUBLIST_FALLBACK = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
 app.component('opportunity-outras-modalidades-acoes-afirmativas', {
     template: $TEMPLATES['opportunity-outras-modalidades-acoes-afirmativas'],
@@ -27,18 +25,18 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
     },
 
     computed: {
-        /** Lista { key, labelKey } vinda do backend (fonte única com Theme.php) */
+        /** { key, labelKey } do backend; fallback local se não houver config */
         opcoesComSublista() {
             const config = $MAPAS.config?.opportunityOutrasModalidades?.opcoesComSublista;
             if (Array.isArray(config) && config.length > 0) return config;
-            return OPCOES_COM_SUBLISTA_FALLBACK.map(key => ({
-                key,
-                labelKey: key.split('_').map((s, i) => (i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1))).join('')
+            return OPTIONS_WITH_SUBLIST_FALLBACK.map((optionKey) => ({
+                key: optionKey,
+                labelKey: optionKey.split('_').map((part, partIndex) => (partIndex === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1))).join('')
             }));
         },
-        /** Apenas as chaves (para ensureData, validação, etc.) */
+        /** Só as chaves (ensureData, validação) */
         opcoesComSublistaKeys() {
-            return this.opcoesComSublista.map(item => item.key);
+            return this.opcoesComSublista.map((item) => item.key);
         },
         data() {
             const raw = this.entity.outrasModalidadesAcoesAfirmativas;
@@ -52,7 +50,7 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             return this.opcoesArray.includes(OPCAO_EXCLUSIVA);
         },
         isOpcaoMarcada() {
-            return (key) => this.opcoesArray.includes(key);
+            return (optionKey) => this.opcoesArray.includes(optionKey);
         },
         sublistItems() {
             return [
@@ -68,9 +66,9 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             ];
         },
         sublistLabels() {
-            return this.sublistItems.reduce((acc, item) => {
-                acc[item.value] = item.label;
-                return acc;
+            return this.sublistItems.reduce((accumulator, item) => {
+                accumulator[item.value] = item.label;
+                return accumulator;
             }, {});
         },
         descricaoOutra() {
@@ -90,11 +88,11 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             const err = this.entity.__validationErrors?.outrasModalidadesAcoesAfirmativas;
             return Array.isArray(err) && err.length > 0 ? err[0] : '';
         },
-        /** Erro quando nenhuma opção está marcada — mensagem no topo da seção */
+        /** Nenhuma opção marcada — erro no topo da seção */
         hasErrorNenhumaOpcao() {
             return this.hasError && this.opcoesArray.length === 0;
         },
-        /** Erro no campo "outra legislação" (descrição vazia) — mensagem abaixo do input */
+        /** Campo "outra legislação" vazio — erro abaixo do input */
         hasErrorOutraLegislacao() {
             return this.hasError && this.opcoesArray.includes(OPCAO_OUTRA) && this.descricaoOutra.trim() === '';
         }
@@ -110,19 +108,19 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
                 opcoes: [],
                 outra_legislacao_descricao: ''
             };
-            this.opcoesComSublistaKeys.forEach(op => { def[op] = []; });
+            this.opcoesComSublistaKeys.forEach((optionKey) => { def[optionKey] = []; });
             return def;
         },
         normalizeData(raw) {
             if (raw === null || raw === undefined) return this.getDefaultData();
             if (typeof raw === 'object' && !Array.isArray(raw)) {
-                const d = { ...this.getDefaultData(), ...raw };
-                if (!Array.isArray(d.opcoes)) d.opcoes = [];
-                this.opcoesComSublistaKeys.forEach(op => {
-                    d[op] = Array.isArray(d[op]) ? d[op] : [];
+                const data = { ...this.getDefaultData(), ...raw };
+                if (!Array.isArray(data.opcoes)) data.opcoes = [];
+                this.opcoesComSublistaKeys.forEach((optionKey) => {
+                    data[optionKey] = Array.isArray(data[optionKey]) ? data[optionKey] : [];
                 });
-                d.outra_legislacao_descricao = typeof d.outra_legislacao_descricao === 'string' ? d.outra_legislacao_descricao : '';
-                return d;
+                data.outra_legislacao_descricao = typeof data.outra_legislacao_descricao === 'string' ? data.outra_legislacao_descricao : '';
+                return data;
             }
             return this.getDefaultData();
         },
@@ -130,52 +128,52 @@ app.component('opportunity-outras-modalidades-acoes-afirmativas', {
             if (!this.entity.outrasModalidadesAcoesAfirmativas || typeof this.entity.outrasModalidadesAcoesAfirmativas !== 'object') {
                 this.entity.outrasModalidadesAcoesAfirmativas = { ...this.getDefaultData() };
             }
-            const d = this.entity.outrasModalidadesAcoesAfirmativas;
-            if (!Array.isArray(d.opcoes)) d.opcoes = [];
-            this.opcoesComSublistaKeys.forEach(op => {
-                if (!Array.isArray(d[op])) d[op] = [];
+            const data = this.entity.outrasModalidadesAcoesAfirmativas;
+            if (!Array.isArray(data.opcoes)) data.opcoes = [];
+            this.opcoesComSublistaKeys.forEach((optionKey) => {
+                if (!Array.isArray(data[optionKey])) data[optionKey] = [];
             });
-            if (typeof d.outra_legislacao_descricao !== 'string') d.outra_legislacao_descricao = '';
+            if (typeof data.outra_legislacao_descricao !== 'string') data.outra_legislacao_descricao = '';
         },
         setNaoPrevistas(checked) {
             this.ensureData();
-            const d = this.entity.outrasModalidadesAcoesAfirmativas;
+            const data = this.entity.outrasModalidadesAcoesAfirmativas;
             if (checked) {
-                d.opcoes = [OPCAO_EXCLUSIVA];
-                this.opcoesComSublistaKeys.forEach(op => { d[op] = []; });
-                d.outra_legislacao_descricao = '';
+                data.opcoes = [OPCAO_EXCLUSIVA];
+                this.opcoesComSublistaKeys.forEach((optionKey) => { data[optionKey] = []; });
+                data.outra_legislacao_descricao = '';
             } else {
-                d.opcoes = d.opcoes.filter(k => k !== OPCAO_EXCLUSIVA);
+                data.opcoes = data.opcoes.filter((optionKey) => optionKey !== OPCAO_EXCLUSIVA);
             }
         },
-        setOpcao(key, checked) {
+        setOpcao(optionKey, checked) {
             this.ensureData();
-            const d = this.entity.outrasModalidadesAcoesAfirmativas;
+            const data = this.entity.outrasModalidadesAcoesAfirmativas;
             if (checked) {
-                if (d.opcoes.includes(OPCAO_EXCLUSIVA)) {
-                    d.opcoes = [];
+                if (data.opcoes.includes(OPCAO_EXCLUSIVA)) {
+                    data.opcoes = [];
                 }
-                if (!d.opcoes.includes(key)) d.opcoes.push(key);
-                if (this.opcoesComSublistaKeys.includes(key) && !Array.isArray(d[key])) d[key] = [];
+                if (!data.opcoes.includes(optionKey)) data.opcoes.push(optionKey);
+                if (this.opcoesComSublistaKeys.includes(optionKey) && !Array.isArray(data[optionKey])) data[optionKey] = [];
             } else {
-                d.opcoes = d.opcoes.filter(k => k !== key);
-                if (this.opcoesComSublistaKeys.includes(key)) d[key] = [];
-                if (key === OPCAO_OUTRA) d.outra_legislacao_descricao = '';
+                data.opcoes = data.opcoes.filter((key) => key !== optionKey);
+                if (this.opcoesComSublistaKeys.includes(optionKey)) data[optionKey] = [];
+                if (optionKey === OPCAO_OUTRA) data.outra_legislacao_descricao = '';
             }
         },
-        getSublistModel(op) {
+        getSublistModel(optionKey) {
             this.ensureData();
-            const arr = this.entity.outrasModalidadesAcoesAfirmativas[op];
+            const arr = this.entity.outrasModalidadesAcoesAfirmativas[optionKey];
             return Array.isArray(arr) ? arr : [];
         },
-        setDescricaoOutra(val) {
+        setDescricaoOutra(value) {
             this.ensureData();
-            this.entity.outrasModalidadesAcoesAfirmativas.outra_legislacao_descricao = (val || '').slice(0, MAX_DESCRICAO);
+            this.entity.outrasModalidadesAcoesAfirmativas.outra_legislacao_descricao = (value || '').slice(0, MAX_DESCRICAO);
         },
-        /** Erro na sublista da opção (opção marcada mas nenhuma subcategoria selecionada) — mensagem abaixo desse select */
-        hasErrorForSublista(op) {
-            if (!this.hasError || !this.opcoesArray.includes(op)) return false;
-            const arr = this.getSublistModel(op);
+        /** Opção marcada mas sublista vazia — erro abaixo do select */
+        hasErrorForSublista(optionKey) {
+            if (!this.hasError || !this.opcoesArray.includes(optionKey)) return false;
+            const arr = this.getSublistModel(optionKey);
             return !Array.isArray(arr) || arr.length === 0;
         }
     }

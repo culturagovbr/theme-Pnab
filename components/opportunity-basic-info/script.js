@@ -82,7 +82,28 @@ app.component('opportunity-basic-info' , {
             const val = this.entity.pauta;
             const outra = $MAPAS.config.opportunityOtherOptions.pauta;
             return Array.isArray(val) ? val.includes(outra) : val === outra;
-        }
+        },
+
+        parSelecoesParaExibicao() {
+            return {
+                parExercicioId:
+                    this.entity.parExercicioId != null
+                        ? String(this.entity.parExercicioId)
+                        : '',
+                parMetaId:
+                    this.entity.parMetaId != null
+                        ? String(this.entity.parMetaId)
+                        : '',
+                parAcaoId:
+                    this.entity.parAcaoId != null
+                        ? String(this.entity.parAcaoId)
+                        : '',
+                parAtividadeId:
+                    this.entity.parAtividadeId != null
+                        ? String(this.entity.parAtividadeId)
+                        : '',
+            };
+        },
     },
 
     watch: {

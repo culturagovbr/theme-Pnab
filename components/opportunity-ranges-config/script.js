@@ -62,7 +62,7 @@ app.component('opportunity-ranges-config', {
                     }
                 });
             } else{
-               this.messages.error("Por favor, preencha todos os campos da faixa antes de adicionar uma nova faixa.");
+               this.messages.error("Por favor, preencha todos os campos da categoria antes de adicionar uma nova categoria.");
             }
         },
         removeRange(item) {
@@ -83,11 +83,8 @@ app.component('opportunity-ranges-config', {
                 }
             }
         },
-        autoSave() {
-            if (this.areAllRangesValid()) {
-                this.entity.save(3000);
-            }
-        },
+        /** Persistência apenas ao clicar em «Salvar» — evita PATCH com entidade incompleta e erros de obrigatoriedade. */
+        autoSave() {},
         areAllRangesValid() {
             return this.entity.registrationRanges.every(range => range.label.trim().length > 0);
         },

@@ -22,9 +22,9 @@ return [
     'text:home-map.title' => 'Visualize também no Mapa',
     'text:home-map.description' => 'Os agentes, espaços e eventos culturais cadastrados podem ser vistos a partir de sua localização no mapa do Brasil. Encontre-os aqui:',
 
-    // Tela inicial (área de cadastro)
-    'text:home-register.title' => 'Faça seu cadastro e colabore com a PNAB!',
-    'text:home-register.description' => 'Participe dessa plataforma livre, colaborativa e interativa de mapeamento cultural brasileiro. Ao se cadastrar na PNAB, você fará parte de uma rede de fazedores de cultura e ainda fortalecerá a gestão de cultura do Brasil.',
+    // Tela inicial (área de cadastro) 
+    'text:home-register.title' => 'Faça seu cadastro e participe <br> da Política Nacional Aldir Blanc',
+    'text:home-register.description' => 'O <strong>Cult.br Editais</strong> é uma plataforma gratuita. Gestores culturais divulgam editais da <strong>Política Nacional Aldir Blanc</strong> e agentes culturais submetem suas propostas. Aqui você pode realizar a inscrição, seleção, monitoramento e prestação de informações sobre projetos. Acesse e faça parte da <strong>maior política pública de fomento cultural da história!</strong>',
 
     // Texto que será exibido nas buscas do Google
     'text:search-map.agentText' => 'Neste espaço, é possível buscar e conhecer os agentes culturais cadastrados no Mapa da Cultura. Explore a diversidade de artistas, produtores, grupos, coletivos, bandas, instituições, que fazem parte da cultura! Participe e seja protagonista da cultura brasileira!',

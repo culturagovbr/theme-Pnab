@@ -14,6 +14,14 @@ app.component('create-opportunity', {
             entity: null,
             fields: [],
             entityTypeSelected: null,
+            parModel: {
+                parExercicioId: '',
+                parMetaId: '',
+                parAcaoId: '',
+                parAtividadeId: '',
+            },
+            createdEntity: null,
+            showSuccessModal: false,
         }
     },
 
@@ -87,7 +95,34 @@ app.component('create-opportunity', {
             this.entity = new Entity('opportunity');
             this.entity.type = this.getOpportunityTypeIdByLabel('Edital');
             this.entity.tipoDeEdital = null;
-            this.entity.terms = { area: [] }
+            this.entity.terms = { area: [] };
+            this.resetParSelection();
+        },
+
+        resetParSelection() {
+            this.parModel = {
+                parExercicioId: '',
+                parMetaId: '',
+                parAcaoId: '',
+                parAtividadeId: '',
+            };
+        },
+
+        applyParToEntity() {
+            if (!this.entity) return;
+            const m = this.parModel;
+            this.entity.parExercicioId = m.parExercicioId || null;
+            this.entity.parMetaId = m.parMetaId || null;
+            this.entity.parAcaoId = m.parAcaoId || null;
+            this.entity.parAtividadeId = m.parAtividadeId || null;
+        },
+
+        validatePar() {
+            const ref = this.$refs.parPar;
+            if (!ref || typeof ref.validate !== 'function') {
+                return false;
+            }
+            return ref.validate();
         },
 
         createDraft(modal) {
@@ -95,17 +130,21 @@ app.component('create-opportunity', {
                 this.entity.ownerEntity = $MAPAS.user.profile;
             }
 
+            if (!this.validatePar()) return;
+
+            this.applyParToEntity();
             this.entity.status = 0;
             this.save(modal);
         },
 
         createPublic(modal) {
-            // Se não houver ownerEntity selecionada, usa o agente do usuário atual
             if (!this.entity.ownerEntity && $MAPAS.user && $MAPAS.user.profile) {
                 this.entity.ownerEntity = $MAPAS.user.profile;
             }
 
-            //lançar dois eventos
+            if (!this.validatePar()) return;
+
+            this.applyParToEntity();
             this.entity.status = 1;
             this.save(modal);
         },
@@ -114,12 +153,23 @@ app.component('create-opportunity', {
             modal.loading(true);
 
             this.entity.save().then((response) => {
-                this.$emit('create', response);
+                this.createdEntity = this.entity;
                 modal.loading(false);
+                modal.close();
+                this.showSuccessModal = true;
+                this.$nextTick(() => {
+                    this.$refs.successModal?.open();
+                });
+                this.$emit('create', response);
                 Utils.pushEntityToList(this.entity);
             }).catch((e) => {
                 modal.loading(false);
             });
+        },
+
+        onCloseSuccessModal() {
+            this.showSuccessModal = false;
+            this.createdEntity = null;
         },
 
         setEntity(Entity) {
@@ -132,10 +182,13 @@ app.component('create-opportunity', {
         },
 
         destroyEntity() {
-            // para o conteúdo da modal não sumir antes dela fechar
             setTimeout(() => {
                 this.entity = null;
                 this.entityTypeSelected = null;
+                this.resetParSelection();
+                if (!this.showSuccessModal) {
+                    this.createdEntity = null;
+                }
             }, 200);
         },
 

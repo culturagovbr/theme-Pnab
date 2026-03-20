@@ -9,4 +9,5 @@ return [
     'espaço' => i::__('espaço'),
     'evento' => i::__('evento'),
     'projeto' => i::__('projeto'),
+    'parEmpty' => i::__('Nenhum exercício disponível para o ente federado selecionado.'),
 ];
