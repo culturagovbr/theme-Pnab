@@ -177,9 +177,8 @@ app.component('opportunity-reserva-vagas-cotas', {
             const textFn = this.text;
             return [textFn('labelCota1'), textFn('labelCota2'), textFn('labelCota3')];
         },
-        autoSave() {
-            this.entity.save(3000);
-        },
+        /** Persistência apenas ao clicar em «Salvar» — evita PATCH com entidade incompleta. */
+        autoSave() {},
         clearQuotasReservationError() {
             if (!this.entity.__validationErrors || !this.entity.__validationErrors.reservaVagasCotas) {
                 return;
