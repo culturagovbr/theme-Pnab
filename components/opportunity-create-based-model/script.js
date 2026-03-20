@@ -99,7 +99,8 @@ app.component('opportunity-create-based-model', {
                 }
 
                 this.sendSuccess = true;
-                // Spinner some com a navegação (sem espera fixa após o response)
+
+                await new Promise((r) => setTimeout(r, 5000));
                 window.location.href = `/gestao-de-oportunidade/${dataReturn.id}/#info`;
             } catch (e) {
                 this.messages.error(
