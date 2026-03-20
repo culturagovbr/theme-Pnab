@@ -45,6 +45,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
+        $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);
+        $isCultBrCreateNotYetSynced = fn ($entity) => !$this->isOpportunityCultBrCreateSynced($entity);
 
         /**
          * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
@@ -124,28 +126,42 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Hook para disparar o job de integração com o CultBR quando uma oportunidade é atualizada.
-         * Só enfileira o job de update quando a oportunidade estiver com status 1 (Ativado).
+         * Job CultBR no update: Ativado → update (PUT); rascunho com isGeneratedFromModel → create (POST),
+         * após validateIntegrationJob (clone «usar modelo» não passa por insert:finish).
          */
-        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme, $isOpportunityGeneratedFromModel, $isCultBrCreateNotYetSynced) {
             if (!$theme->validateIntegrationJob($this)) {
                 return;
             }
 
-            if ((int) $this->status !== OpportunityStatus::ENABLED->value) {
+            // Quando a oportunidade for ativada, disparar o job de update
+            if ((int) $this->status === OpportunityStatus::ENABLED->value) {
+                $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
+
+                $app->enqueueOrReplaceJob(
+                    OportunidadeCultJob::SLUG,
+                    [
+                        'action' => 'update',
+                        'opportunity' => $this
+                    ],
+                    $start_string
+                );
                 return;
             }
 
-            $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
-
-            $app->enqueueOrReplaceJob(
-                OportunidadeCultJob::SLUG,
-                [
-                    'action' => 'update',
-                    'opportunity' => $this
-                ],
-                $start_string
-            );
+            // Rascunho «usar modelo»: um único create até sucesso no Cult; PATCH seguintes não re-enfileiram.
+            if ((int) $this->status === OpportunityStatus::DRAFT->value
+                && $isOpportunityGeneratedFromModel($this)
+                && $isCultBrCreateNotYetSynced($this)
+            ) {
+                $app->enqueueOrReplaceJob(
+                    OportunidadeCultJob::SLUG,
+                    [
+                        'action' => 'create',
+                        'opportunity' => $this,
+                    ],
+                );
+            }
         });
 
         /**
@@ -180,9 +196,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->trimOtherValue('pauta', 'pautaOutros', $postData);
             $theme->trimSegmentoOutros($postData);
 
-            $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
-            if ($quotasReservationErrors) {
-                $this->errorJson($quotasReservationErrors, 400);
+            // PATCH parcial (ex.: pós "usar modelo": só descrição + PAR) não envia cotas; validar só quando o body altera dados que afetam a regra IN-MinC.
+            $touchesQuotasOrVacancies = false;
+            foreach (['reservaVagasCotas', 'vacancies', 'registrationRanges'] as $key) {
+                if (array_key_exists($key, $postData)) {
+                    $touchesQuotasOrVacancies = true;
+                    break;
+                }
+            }
+            if ($touchesQuotasOrVacancies) {
+                $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
+                if ($quotasReservationErrors) {
+                    $this->errorJson($quotasReservationErrors, 400);
+                }
             }
         });
 
@@ -649,12 +675,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         /**
          * Hook que bloqueia acesso quando há erro de consolidação
-         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity e federativeEntities
+         * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity, federativeEntities, saveOpportunityPostGenerate, etc.
          * Não bloqueia admins (não há o que consolidar)
+         * Não bloqueia admin em modo "login como usuário" (plugin AdminLoginAsUser): o $app->user vira o impersonado,
+         * então isAdmin() falha e LGPD/termos ou auth.asUserId podiam ser afetados indevidamente.
          */
         $theme = $this;
         $blockAccessOnError = function () use ($app, $theme) {
             if ($app->user->is('guest')) {
+                return;
+            }
+
+            $controllerId = $app->request->controllerId ?? '';
+            $action = $app->request->action ?? '';
+
+            // Voltar como administrador / alternar usuário (AdminLoginAsUser — ex.: mc-link route auth/asUserId)
+            if ($controllerId === 'auth' && $action === 'asUserId') {
+                return;
+            }
+
+            // Sessão ativa de impersonação: não aplicar consolidação/perfil/ente ao usuário "visto" pelo admin
+            if (isset($_SESSION['auth.asUserId'])) {
                 return;
             }
 
@@ -663,11 +704,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
+            if ($controllerId === 'lgpd') {
+                return;
+            }
+
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+                return;
+            }
+
+            $path = trim($app->request->getPathInfo(), '/');
+            if ($path === 'termos-e-condicoes' || str_starts_with($path, 'termos-e-condicoes/')) {
+                return;
+            }
+
             $profile = $app->user->profile;
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'logoutOnError'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -1850,26 +1904,72 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * Metadado «gerada a partir de modelo» (evita repetir filter_var em hooks e validação).
+     *
+     * @param Opportunity $entity
+     */
+    private function isOpportunityGeneratedFromModel($entity): bool
+    {
+        return (bool) filter_var(
+            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_IS_GENERATED_FROM_MODEL),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
+     * True após OportunidadeCultJob create concluir com sucesso (metadado cultBrCreateSynced).
+     *
+     * @param Opportunity $entity
+     */
+    private function isOpportunityCultBrCreateSynced($entity): bool
+    {
+        return (bool) filter_var(
+            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_CULT_BR_CREATE_SYNCED),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
      * Valida se o job de integração com o CultBR deve ser disparado
      */
     private function validateIntegrationJob($entity)
     {
         $federativeEntityId = $entity->getMetadata('federativeEntityId');
-        $subsiteId = $entity->subsite->id;
+        $subsiteId = (int) $entity->subsite?->id;
         $parent = $entity->parent;
         $status = $entity->status;
-        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', null);
+        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', 0);
+        $isGeneratedFromModel = $this->isOpportunityGeneratedFromModel($entity);
 
-        // condições para NÃO disparar o job
-        $conditions = [
-            $parent, // Se for uma oportunidade complementar
-            $status === Opportunity::STATUS_PHASE, // Se for uma fase
-            !$federativeEntityId || !$subsiteId, // Se não tiver federativeEntityId ou subsiteId
-            $themePnabSubsiteId !== $subsiteId, // Se o subsiteId do theme Pnab não for o mesmo do subsiteId da oportunidade
-        ];
+        // Se federativeEntityId não estiver definido, não disparar o job
+        if ($federativeEntityId === null
+            || $federativeEntityId === ''
+            || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
+        ) {
+            return false;
+        }
 
-        // verificar se alguma das condições é true
-        if (in_array(true, $conditions)) {
+        // Se subsiteId não estiver definido, não disparar o job
+        if ($subsiteId < 1) {
+            return false;
+        }
+
+        // Se ALDIRBLANC_SUBSITE_ID não estiver definido, não disparar o job
+        if ($themePnabSubsiteId === 0) {
+            return false;
+        }
+
+        // Subsite da entidade ≠ ALDIRBLANC_SUBSITE_ID: bloqueia, exceto «usar modelo» (já garantido themePnabSubsiteId > 0 acima).
+        if (!$isGeneratedFromModel && $subsiteId !== $themePnabSubsiteId) {
+            return false;
+        }
+
+        if ((int) $status === (int) Opportunity::STATUS_PHASE) {
+            return false;
+        }
+
+        // Se a oportunidade for uma oportunidade complementar, não disparar o job
+        if ((bool) $parent) {
             return false;
         }
 

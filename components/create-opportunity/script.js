@@ -14,14 +14,12 @@ app.component('create-opportunity', {
             entity: null,
             fields: [],
             entityTypeSelected: null,
-            // PAR: exercício → meta → ação → atividade (dados do ente selecionado)
-            parExercicios: [],
-            parExercicioId: '',
-            parMetaId: '',
-            parAcaoId: '',
-            parAtividadeId: '',
-            parLoading: false,
-            parErrors: { exercicio: false, meta: false, acao: false, atividade: false },
+            parModel: {
+                parExercicioId: '',
+                parMetaId: '',
+                parAcaoId: '',
+                parAtividadeId: '',
+            },
             createdEntity: null,
             showSuccessModal: false,
         }
@@ -86,23 +84,6 @@ app.component('create-opportunity', {
                     return 'agent__border--dark';
             }
         },
-
-        // PAR: opções em cascata a partir do exercício selecionado
-        parMetas() {
-            if (!this.parExercicioId || !this.parExercicios.length) return [];
-            const ex = this.parExercicios.find((e) => String(e.id) === String(this.parExercicioId));
-            return ex && Array.isArray(ex.metas) ? ex.metas : [];
-        },
-        parAcoes() {
-            if (!this.parMetaId || !this.parMetas.length) return [];
-            const meta = this.parMetas.find((m) => String(m.id) === String(this.parMetaId));
-            return meta && Array.isArray(meta.acoes) ? meta.acoes : [];
-        },
-        parAtividades() {
-            if (!this.parAcaoId || !this.parAcoes.length) return [];
-            const acao = this.parAcoes.find((a) => String(a.id) === String(this.parAcaoId));
-            return acao && Array.isArray(acao.atividades) ? acao.atividades : [];
-        },
     },
 
     methods: {
@@ -116,78 +97,32 @@ app.component('create-opportunity', {
             this.entity.tipoDeEdital = null;
             this.entity.terms = { area: [] };
             this.resetParSelection();
-            this.fetchSelectedEnteExercicios();
-        },
-
-        fetchSelectedEnteExercicios() {
-            this.parLoading = true;
-            this.clearParErrors();
-            const base = ($MAPAS.baseUrl || '').replace(/\/$/, '');
-            const url = base + '/aldirblanc/selectedEnteExercicios';
-            fetch(url, { credentials: 'include' })
-                .then((r) => r.ok ? r.json() : null)
-                .then((data) => {
-                    this.parExercicios = data && Array.isArray(data.exercicios) ? data.exercicios : [];
-                })
-                .catch(() => {
-                    this.parExercicios = [];
-                })
-                .finally(() => {
-                    this.parLoading = false;
-                });
-        },
-
-        clearParErrors() {
-            this.parErrors = { exercicio: false, meta: false, acao: false, atividade: false };
         },
 
         resetParSelection() {
-            this.parExercicioId = '';
-            this.parMetaId = '';
-            this.parAcaoId = '';
-            this.parAtividadeId = '';
-        },
-
-        onParExercicioChange() {
-            this.parMetaId = '';
-            this.parAcaoId = '';
-            this.parAtividadeId = '';
-            this.clearParErrors();
-        },
-        onParMetaChange() {
-            this.parAcaoId = '';
-            this.parAtividadeId = '';
-            this.clearParErrors();
-        },
-        onParAcaoChange() {
-            this.parAtividadeId = '';
-            this.clearParErrors();
+            this.parModel = {
+                parExercicioId: '',
+                parMetaId: '',
+                parAcaoId: '',
+                parAtividadeId: '',
+            };
         },
 
         applyParToEntity() {
             if (!this.entity) return;
-            this.entity.parExercicioId = this.parExercicioId || null;
-            this.entity.parMetaId = this.parMetaId || null;
-            this.entity.parAcaoId = this.parAcaoId || null;
-            this.entity.parAtividadeId = this.parAtividadeId || null;
+            const m = this.parModel;
+            this.entity.parExercicioId = m.parExercicioId || null;
+            this.entity.parMetaId = m.parMetaId || null;
+            this.entity.parAcaoId = m.parAcaoId || null;
+            this.entity.parAtividadeId = m.parAtividadeId || null;
         },
 
         validatePar() {
-            this.clearParErrors();
-            const e = { exercicio: !this.parExercicioId, meta: !this.parMetaId, acao: !this.parAcaoId, atividade: !this.parAtividadeId };
-            const any = e.exercicio || e.meta || e.acao || e.atividade;
-            if (any) {
-                this.parErrors = e;
+            const ref = this.$refs.parPar;
+            if (!ref || typeof ref.validate !== 'function') {
                 return false;
             }
-            return true;
-        },
-
-        parErrorMsg(key) {
-            const msg = this.text?.['parCampoObrigatorio_' + key];
-            if (msg) return msg;
-            const labels = { exercicio: 'Exercício', meta: 'Meta', acao: 'Ação', atividade: 'Atividade' };
-            return `O campo ${labels[key]} é obrigatório.`;
+            return ref.validate();
         },
 
         createDraft(modal) {
@@ -251,9 +186,6 @@ app.component('create-opportunity', {
                 this.entity = null;
                 this.entityTypeSelected = null;
                 this.resetParSelection();
-                this.parExercicios = [];
-                this.parLoading = false;
-                this.clearParErrors();
                 if (!this.showSuccessModal) {
                     this.createdEntity = null;
                 }

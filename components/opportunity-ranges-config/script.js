@@ -83,11 +83,8 @@ app.component('opportunity-ranges-config', {
                 }
             }
         },
-        autoSave() {
-            if (this.areAllRangesValid()) {
-                this.entity.save(3000);
-            }
-        },
+        /** Persistência apenas ao clicar em «Salvar» — evita PATCH com entidade incompleta e erros de obrigatoriedade. */
+        autoSave() {},
         areAllRangesValid() {
             return this.entity.registrationRanges.every(range => range.label.trim().length > 0);
         },
