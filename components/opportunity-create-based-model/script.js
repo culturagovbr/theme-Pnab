@@ -26,6 +26,20 @@ app.component('opportunity-create-based-model', {
         };
     },
 
+    computed: {
+        /** Passos do overlay: chaves alinhadas a `texts.php` (i18n / `text()`). */
+        generatingMessages() {
+            return [
+                this.text('Estamos gerando a oportunidade a partir do modelo…'),
+                this.text('Copiando os dados do modelo…'),
+                this.text('Copiando os dados das fases…'),
+                this.text('Copiando os dados do formulário…'),
+                this.text('Consolidando os dados…'),
+                this.text('Preparando a nova oportunidade…'),
+            ];
+        },
+    },
+
     watch: {
         generating(val) {
             document.body.classList.toggle(

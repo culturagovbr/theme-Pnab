@@ -11,28 +11,15 @@ use MapasCulturais\i;
 
 $this->import("
     mc-modal
+    mc-teleport-multiple
 ");
 ?>
 <div class="opportunity-create-based-model">
-    <teleport to="body">
-        <div
-            v-if="generating"
-            class="opportunity-create-based-model__blocking-overlay"
-            role="alert"
-            aria-live="polite"
-            aria-busy="true"
-            @click.prevent
-            @mousedown.prevent
-            @touchstart.prevent
-        >
-            <div class="opportunity-create-based-model__blocking-panel">
-                <div class="opportunity-create-based-model__spinner" aria-hidden="true"></div>
-                <p class="opportunity-create-based-model__blocking-text">
-                    {{ text('Estamos gerando a oportunidade a partir do modelo…') }}
-                </p>
-            </div>
-        </div>
-    </teleport>
+    <mc-teleport-multiple
+        to="body"
+        :show="generating"
+        :messages="generatingMessages"
+    ></mc-teleport-multiple>
     <mc-modal classes="create-modal create-opportunity-modal" title="<?= i::__('Título do edital') ?>" @open="createEntity()">
         <template #default>
             <div class="create-modal__fields">

@@ -1,0 +1,93 @@
+/**
+ * mc-teleport-multiple — overlay fullscreen, painel e animação de fade entre mensagens.
+ * Duração do fade: variável --mc-teleport-multiple-fade-duration (definida no componente Vue).
+ */
+.mc-teleport-multiple__blocking-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: size(24);
+    background: rgba($neutral-900, 0.55);
+    pointer-events: auto;
+    touch-action: none;
+
+    &--pass-through {
+        pointer-events: none;
+        touch-action: auto;
+    }
+}
+
+.mc-teleport-multiple__blocking-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: size(24);
+    box-sizing: border-box;
+    width: min(420px, calc(100vw - #{size(48)}));
+    min-width: 0;
+    padding: size(40) size(32);
+    background: var(--mc-white, #{$white});
+    border-radius: size(16);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    text-align: center;
+}
+
+.mc-teleport-multiple__spinner {
+    width: size(56);
+    height: size(56);
+    flex-shrink: 0;
+    border: 5px solid var(--mc-gray-100, #{$gray-100});
+    border-top-color: var(--mc-primary-500, #{$primary-500});
+    border-radius: 50%;
+    animation: mc-teleport-multiple-spin 0.85s linear infinite;
+}
+
+/* Altura estável: troca de texto não redimensiona o painel (3–4 linhas em body-md). */
+.mc-teleport-multiple__message-track {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    font-size: $body-md-size;
+    min-height: calc(3em * #{$body-md-lh});
+    max-height: calc(4em * #{$body-md-lh});
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.mc-teleport-multiple__blocking-text {
+    margin: 0;
+    width: 100%;
+    max-height: 100%;
+    font-family: $font-family-base;
+    font-size: $body-md-size;
+    line-height: $body-md-lh;
+    font-weight: $weight-medium;
+    color: var(--mc-gray-color-txt, #{$gray-color-txt});
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.mc-teleport-multiple-fade-enter-active,
+.mc-teleport-multiple-fade-leave-active {
+    transition: opacity var(--mc-teleport-multiple-fade-duration, 320ms) ease;
+}
+
+.mc-teleport-multiple-fade-enter-from,
+.mc-teleport-multiple-fade-leave-to {
+    opacity: 0;
+}
+
+@keyframes mc-teleport-multiple-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
