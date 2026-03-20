@@ -682,6 +682,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError'])) {
+                return;
+            }
+
             $path = trim($app->request->getPathInfo(), '/');
             if ($path === 'termos-e-condicoes' || str_starts_with($path, 'termos-e-condicoes/')) {
                 return;
@@ -691,7 +695,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'logoutOnError'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError'])) {
                 return;
             }
 

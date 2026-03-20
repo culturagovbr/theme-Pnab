@@ -140,11 +140,14 @@
         padding: 1rem 0;
     }
 
-    .create-modal__par-empty {
+    .create-modal__par-empty,
+    .mc-federative-entity-par__empty,
+    .mc-federative-entity-par__no-options {
         margin: 0.5rem 0;
         padding: 0.5rem 0;
         color: var(--gray-500, #68686e);
         font-size: 0.875rem;
+        line-height: 1.4;
     }
 
     .field + .field {
