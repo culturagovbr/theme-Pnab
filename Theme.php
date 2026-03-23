@@ -556,6 +556,22 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
+            foreach ($nav as &$group) {
+                if (isset($group['items'])) {
+                    foreach ($group['items'] as &$item) {
+                        if (isset($item['route'])) {
+                            if (in_array($item['route'], ['panel/submissions', 'panel/registrations', 'submissions', 'registrations'])) {
+                                $item['icon'] = 'registration';
+                            } elseif (in_array($item['route'], ['panel/evaluations', 'evaluations'])) {
+                                $item['icon'] = 'evaluation';
+                            } elseif (in_array($item['route'], ['panel/validations', 'validations'])) {
+                                $item['icon'] = 'validation';
+                            }
+                        }
+                    }
+                }
+            }
+
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
                 return;
@@ -597,7 +613,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     ],
                     [
                         'route' => 'panel/validations',
-                        'icon' => 'opportunity',
+                        'icon' => 'validation',
                         'label' => i::__('Minhas Validações'),
                     ]
                 ],
@@ -626,6 +642,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         // Mapeia o ícone do X (antigo Twitter) para o novo logo do X
         $app->hook('component(mc-icon).iconset', function (&$iconset) {
             $iconset['twitter'] = 'simple-icons:x';
+            $iconset['registration'] = 'material-symbols:description';
+            $iconset['evaluation'] = 'material-symbols:reviews';
+            $iconset['validation'] = 'material-symbols:thumb-up';
         });
 
         /**
