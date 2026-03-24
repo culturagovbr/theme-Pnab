@@ -26,4 +26,7 @@ if (isset($agent_types['metadata']['emailPrivado']['unserialize'])) {
     unset($agent_types['metadata']['emailPrivado']['unserialize']);
 }
 
+// Opção presente no core; no Pnab não deve aparecer no select.
+unset($agent_types['metadata']['orientacaoSexual']['options']['Assexual']);
+
 return $agent_types;
