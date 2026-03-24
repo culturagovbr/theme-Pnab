@@ -11,6 +11,8 @@ use Respect\Validation\Validator;
 use AldirBlanc\Enum\OpportunityStatus;
 use AldirBlanc\Jobs\OportunidadeCultJob;
 use MapasCulturais\Entities\Opportunity;
+use OpportunityWorkplan\Entities\Delivery as WorkplanDelivery;
+use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. * 
@@ -1131,6 +1133,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $theme = $this;
         $app->hook('app.init:after', function() use ($app, $theme) {
+            // Lista base do core (antes do Pnab sobrescrever `segmento` com opções especiais do multiselect).
+            $opportunitySegmentoOptionsForWorkplan = $app->getRegisteredMetadataByMetakey('segmento', Opportunity::class)?->options ?? [];
+
             // Registra metadados multiselect obrigatórios em edit (segmento, pauta, etapa, território)
             $theme->registerMultiselectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
             $theme->registerMultiselectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
@@ -1144,6 +1149,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
             $theme->registerSegmentoOutrosMetadata();
+
+            // Registra metadados de segmento para plano de metas (usando a mesma lista de segmentos da oportunidade).
+            $theme->registerWorkplanSegmentMetadataForPnab($app, $opportunitySegmentoOptionsForWorkplan);
 
             // Metadado: utilização de recursos de outras fontes (objeto; validação via hooks)
             $theme->registerOpportunityMetadata('recursosOutrasFontes', [
@@ -1581,18 +1589,44 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
-     * Obtém as opções de Segmento do OpportunityWorkplan
-     * Ordem: 1) "Edital não se direciona a segmentos específicos", 2) "Todas as opções",
-     * 3) demais opções do Workplan com "Outros" por último.
+     * No Pnab, plano de metas usa a mesma lista de segmentos que a oportunidade (conf/opportunity-types),
+     * sem as chaves sintéticas do multiselect da edição de edital.
+     */
+    private function registerWorkplanSegmentMetadataForPnab(App $app, array $segmentOptionsFromOpportunity): void
+    {
+        if ($segmentOptionsFromOpportunity === []) {
+            return;
+        }
+
+        $workplanSegmentDef = $app->getRegisteredMetadataByMetakey('culturalArtisticSegment', WorkplanEntity::class);
+        $deliverySegmentDef = $app->getRegisteredMetadataByMetakey('segmentDelivery', WorkplanDelivery::class);
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('culturalArtisticSegment', [
+            'label' => $workplanSegmentDef?->label ?? i::__('Segmento artistico-cultural'),
+            'type' => 'select',
+            'options' => $segmentOptionsFromOpportunity,
+        ]), WorkplanEntity::class);
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('segmentDelivery', [
+            'label' => $deliverySegmentDef?->label ?? i::__('Segmento artístico cultural da entrega'),
+            'type' => 'select',
+            'options' => $segmentOptionsFromOpportunity,
+        ]), WorkplanDelivery::class);
+    }
+
+    /**
+     * Opções do multiselect `segmento` na oportunidade (tema PNAB).
+     * Lista base vem do metadata `segmento` já registrado (conf/opportunity-types.php).
+     * Ordem: 1) "Edital não se direciona…", 2) "Todas as opções", 3) segmentos com "Outros (especificar)" por último.
      */
     private function getSegmentoOptions(): array
     {
-        $opcoesWorkplan = $this->getMetadataOptions(
-            'OpportunityWorkplan\Entities\Workplan',
-            'culturalArtisticSegment'
-        );
+        $app = App::i();
+        $definition = $app->getRegisteredMetadataByMetakey('segmento', Opportunity::class);
+        $baseOptions = $definition?->options ?? [];
+
         return $this->enrichMultiselectOptions(
-            $opcoesWorkplan,
+            $baseOptions,
             i::__('Outros'),
             i::__('Outros (especificar)')
         );
