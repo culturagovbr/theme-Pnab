@@ -1164,6 +1164,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Plano de metas (PNAB): mesmas opções que opportunity-types em `segmento` e `etapa` (sem chaves sintéticas do multiselect do edital).
             $theme->registerWorkplanSegmentMetadataForPnab($app, $opportunitySegmentoOptionsForWorkplan);
             $theme->registerWorkplanEtapaMetadataForPnab($app, $opportunityEtapaOptionsForWorkplan);
+            $theme->registerWorkplanTypeDeliveryMetadataForPnab($app);
 
             // Metadado: utilização de recursos de outras fontes (objeto; validação via hooks)
             $theme->registerOpportunityMetadata('recursosOutrasFontes', [
@@ -1642,6 +1643,68 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'type' => 'select',
             'options' => $etapaOptionsFromOpportunity,
         ]), WorkplanGoalEntity::class);
+    }
+
+    /**
+     * PNAB: lista reduzida de `typeDelivery` na entrega do plano de metas (só workplan; core mantém a lista longa).
+     */
+    private function registerWorkplanTypeDeliveryMetadataForPnab(App $app): void
+    {
+        $existingDef = $app->getRegisteredMetadataByMetakey('typeDelivery', WorkplanDelivery::class);
+        $options = [
+            i::__('Álbum musical'),
+            i::__('Aplicativo / Software'),
+            i::__('Apresentação ao vivo / Show'),
+            i::__('Aquisição de acervos e bens culturais'),
+            i::__('Arte gráfica / Desenho / Gravura / Ilustração'),
+            i::__('Artesanato'),
+            i::__('Artigo / Ensaio'),
+            i::__('Audiolivro'),
+            i::__('Aula / Palestra / Conferência'),
+            i::__('Blog / Site'),
+            i::__('Caderno / Cartilha / Apostila'),
+            i::__('Circulação / Turnê'),
+            i::__('Coleção'),
+            i::__('Congresso / Encontro / Seminário / Simpósio'),
+            i::__('Curso / Oficina / Workshop'),
+            i::__('Desfile'),
+            i::__('Digitalização de acervos'),
+            i::__('Ensaio fotográfico'),
+            i::__('Escultura'),
+            i::__('Espetáculo cênico'),
+            i::__('Exibição / Exposição'),
+            i::__('Feira'),
+            i::__('Festa Popular'),
+            i::__('Festival / Mostra'),
+            i::__('Filme de curta-metragem'),
+            i::__('Filme de longa-metragem'),
+            i::__('Filme de média-metragem ou telefilme'),
+            i::__('Grafitti/Mural'),
+            i::__('Instalação artística / videoarte'),
+            i::__('Intercâmbio'),
+            i::__('Jogo eletrônico'),
+            i::__('Licenciamento'),
+            i::__('Livro'),
+            i::__('Livro eletrônico (e-Book)'),
+            i::__('Manutenção de grupos / iniciativas / espaços culturais'),
+            i::__('Melhoria em espaço cultural'),
+            i::__('Pesquisa'),
+            i::__('Plataforma digital'),
+            i::__('Podcast/ Programa de TV ou Rádio'),
+            i::__('Residência Artística'),
+            i::__('Revista / Jornal / Periódico'),
+            i::__('Roteiro de filme ou episódio'),
+            i::__('Sarau / Slam'),
+            i::__('Série / websérie'),
+            i::__('Videoclipe / Album visual'),
+            i::__('Outros (especificar)'),
+        ];
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('typeDelivery', [
+            'label' => $existingDef?->label ?? i::__('Tipo entrega'),
+            'type' => 'select',
+            'options' => $options,
+        ]), WorkplanDelivery::class);
     }
 
     /**
