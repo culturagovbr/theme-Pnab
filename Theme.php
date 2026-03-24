@@ -46,6 +46,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         parent::_init();
         $app = App::i();
 
+        /**
+         * Login (MultipleLocalAuth): repassa auth.config.onlyGovBr para o componente `login` do tema
+         * (e-mail/CPF, captcha e demais provedores ocultos quando true — ver config.php).
+         */
+        $app->hook('GET(auth.index):before', function () use ($app) {
+            if (!isset($app->view->jsObject['login']) || !is_array($app->view->jsObject['login'])) {
+                $app->view->jsObject['login'] = [];
+            }
+            $authConfig = $app->config['auth.config'] ?? [];
+            $app->view->jsObject['login']['onlyGovBr'] = (bool) ($authConfig['onlyGovBr'] ?? false);
+        });
+
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
         $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);

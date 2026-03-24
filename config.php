@@ -251,6 +251,7 @@ return [
     # AUTENTICAÇÃO
     'auth.provider' => '\MultipleLocalAuth\Provider',
     'auth.config' => [
+        'onlyGovBr' => env('PNAB_AUTH_ONLY_GOV_BR', false),
         'salt' => env('AUTH_SALT', 'SECURITY_SALT'),
         'wizard' => env('AUTH_WIZARD_ENABLED', false),
         'timeout' => '24 hours',
