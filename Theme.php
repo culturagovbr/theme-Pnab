@@ -12,6 +12,7 @@ use AldirBlanc\Enum\OpportunityStatus;
 use AldirBlanc\Jobs\OportunidadeCultJob;
 use MapasCulturais\Entities\Opportunity;
 use OpportunityWorkplan\Entities\Delivery as WorkplanDelivery;
+use OpportunityWorkplan\Entities\Goal as WorkplanGoalEntity;
 use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
 
 /**
@@ -1122,7 +1123,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (isset($this->jsObject['Taxonomies']['area'])) {
                 $this->jsObject['Taxonomies']['area']['required'] = false;
             }
-            // Usado no painel para exibir/ocultar o card "Oportunidades" (apenas quem tem canAccess)
             $this->jsObject['canAccessOpportunitiesPanel'] = UserAccessService::canAccess();
         });
 
@@ -1133,12 +1133,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $theme = $this;
         $app->hook('app.init:after', function() use ($app, $theme) {
-            // Lista base do core (antes do Pnab sobrescrever `segmento` com opções especiais do multiselect).
+            // Listas brutas (themes/Pnab/opportunity-types.php → metadata; antes de enriquecer multiselects do edital).
             $opportunitySegmentoOptionsForWorkplan = $app->getRegisteredMetadataByMetakey('segmento', Opportunity::class)?->options ?? [];
+            $opportunityEtapaOptionsForWorkplan = $app->getRegisteredMetadataByMetakey('etapa', Opportunity::class)?->options ?? [];
 
             // Registra metadados multiselect obrigatórios em edit (segmento, pauta, etapa, território)
             $theme->registerMultiselectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
-            $theme->registerMultiselectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
+            $theme->registerMultiselectMetadata(
+                'etapa',
+                i::__('Etapa do fazer cultural'),
+                $theme->enrichMultiselectOptions(
+                    $opportunityEtapaOptionsForWorkplan,
+                    i::__('Outra (especificar)'),
+                    null,
+                    false
+                ),
+                'edit'
+            );
             $theme->registerMultiselectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
             $theme->registerMultiselectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
 
@@ -1150,8 +1161,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
             $theme->registerSegmentoOutrosMetadata();
 
-            // Registra metadados de segmento para plano de metas (usando a mesma lista de segmentos da oportunidade).
+            // Plano de metas (PNAB): mesmas opções que opportunity-types em `segmento` e `etapa` (sem chaves sintéticas do multiselect do edital).
             $theme->registerWorkplanSegmentMetadataForPnab($app, $opportunitySegmentoOptionsForWorkplan);
+            $theme->registerWorkplanEtapaMetadataForPnab($app, $opportunityEtapaOptionsForWorkplan);
 
             // Metadado: utilização de recursos de outras fontes (objeto; validação via hooks)
             $theme->registerOpportunityMetadata('recursosOutrasFontes', [
@@ -1615,6 +1627,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
+     * PNAB: `culturalMakingStage` na meta usa as opções de `etapa` em conf/opportunity-types.php (mesmas chaves persistidas).
+     */
+    private function registerWorkplanEtapaMetadataForPnab(App $app, array $etapaOptionsFromOpportunity): void
+    {
+        if ($etapaOptionsFromOpportunity === []) {
+            return;
+        }
+
+        $goalEtapaDef = $app->getRegisteredMetadataByMetakey('culturalMakingStage', WorkplanGoalEntity::class);
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('culturalMakingStage', [
+            'label' => $goalEtapaDef?->label ?? i::__('Etapa do fazer cultural'),
+            'type' => 'select',
+            'options' => $etapaOptionsFromOpportunity,
+        ]), WorkplanGoalEntity::class);
+    }
+
+    /**
      * Opções do multiselect `segmento` na oportunidade (tema PNAB).
      * Lista base vem do metadata `segmento` já registrado (conf/opportunity-types.php).
      * Ordem: 1) "Edital não se direciona…", 2) "Todas as opções", 3) segmentos com "Outros (especificar)" por último.
@@ -1633,16 +1663,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
-     * Obtém as opções de Etapa do OpportunityWorkplan
-     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
+     * Opções do multiselect `etapa` na oportunidade (PNAB), após app.init:after = metadata já registrado (enriquecido).
+     * Usado em validações/trim; o registro do campo usa a mesma lista que o workplan ($opportunityEtapaOptionsForWorkplan + enrich).
      */
     public function getEtapaOptions(): array
     {
-        $opcoes = $this->getMetadataOptions(
-            'OpportunityWorkplan\Entities\Goal',
-            'culturalMakingStage'
+        $app = App::i();
+        $definition = $app->getRegisteredMetadataByMetakey('etapa', Opportunity::class);
+        if ($definition === null || !is_array($definition->options)) {
+            return [];
+        }
+        if (array_key_exists('__edital_nao_se_direciona__', $definition->options)) {
+            return $definition->options;
+        }
+
+        return $this->enrichMultiselectOptions(
+            $definition->options,
+            i::__('Outra (especificar)'),
+            null,
+            false
         );
-        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**
