@@ -21,7 +21,7 @@ $this->import('
     <div v-if="onlyGovBr && !recoveryRequest && !recoveryMode" class="login__action login__action--govbr-only">
         <div class="login__card login__card--govbr-only">
             <div class="login__card__header login__card__header--govbr-only">
-                <h3 class="login__govbr-only-title"><?= i::__('Boas-vindas!') ?></h3>
+                <h3 class="login__govbr-only-title"><?= i::__('Bem vindo ao CultBR editais') ?></h3>
                 <p class="login__govbr-only-lead"><?= i::__('Para acessar a plataforma, faça login com sua conta gov.br.') ?></p>
             </div>
             <div class="login__card__content login__card__content--govbr-only">
