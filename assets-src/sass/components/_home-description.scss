@@ -1,18 +1,36 @@
-// Imagem de fundo: 1905 x 921 px (proporção 1905/921)
+// Antes: cover com _background.png (1905×921) + aspect-ratio — o bloco de texto ficava
+// verticalmente centrado numa faixa alta, com bastante ar entre header e título. Sem o
+// ratio, só padding vertical comprimia esse espaço; o padding-top maior recupera o ritmo.
 .home-network {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  aspect-ratio: 1905 / 921;
   min-height: 420px;
-  background-color: #FEFAF6;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-origin: padding-box;
-  padding: size(80) size(16);
+  background-color: #ffffed;
+  padding-block-start: clamp(#{size(96)}, calc(#{size(48)} + 7vw), #{size(200)});
+  // Mais ar entre o fim do texto e a arte do canto (antes vinha “empurrado” pelo cover alto).
+  padding-block-end: clamp(#{size(112)}, calc(#{size(80)} + 6vw), #{size(240)});
+  padding-inline: size(16);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    width: min(85vw, 1138px);
+    max-width: 100%;
+    aspect-ratio: 1138 / 519;
+    pointer-events: none;
+    background-image: var(--home-network-decoration, none);
+    background-repeat: no-repeat;
+    background-position: right bottom;
+    background-size: contain;
+  }
 
   &__container {
     display: flex;

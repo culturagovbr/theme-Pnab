@@ -1,3 +1,48 @@
+// parallax.png: 1742×2497 (canvas alto; o cluster útil fica na base esquerda). Ancorado no
+// canto inferior esquerdo do header e deslocado 50% para baixo = centro na junção com
+// .home-network, como no mock único de HMG2.
+.home-header {
+  background: #ffffed;
+  overflow: visible;
+
+  &__background {
+    background-color: #ffffed;
+  }
+
+  &__parallax {
+    position: absolute;
+    // Sass não aceita misturar unidades dentro de clamp()/min() nativos; emitimos CSS literal.
+    left: #{'clamp(#{size(-24)}, -1.5vw, 0px)'};
+    bottom: 0;
+    z-index: 1;
+    width: #{'min(36vw, #{size(420)})'};
+    max-width: 52%;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(0, calc(50% + var(--home-header-parallax-y, 0px)), 0);
+    line-height: 0;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: #{'min(70vh, #{size(640)})'};
+      object-fit: contain;
+      object-position: left bottom;
+    }
+
+    @media (max-width: 768px) {
+      width: #{'min(42vw, #{size(260)})'};
+      max-width: 58%;
+      transform: translate3d(0, calc(45% + var(--home-header-parallax-y, 0px)), 0);
+
+      img {
+        max-height: #{'min(50vh, #{size(420)})'};
+      }
+    }
+  }
+}
+
 .hero-banner {
   background-color: #2F4795;
   color: white;
