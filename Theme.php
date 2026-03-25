@@ -1162,7 +1162,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 ),
                 'edit'
             );
+            $theme->registerWorkplanThematicAgendaOptionsForPnab($app);
             $theme->registerMultiselectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
+            $theme->registerDeliveryPriorityAudienceOptionsForPnab($app);
             $theme->registerMultiselectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
 
             // Registra metadados select obrigatórios em required
@@ -1617,6 +1619,59 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
      * No Pnab, plano de metas usa a mesma lista de segmentos que a oportunidade (conf/opportunity-types),
      * sem as chaves sintéticas do multiselect da edição de edital.
      */
+    /**
+     * PNAB: tira a opção genérica do workplan (sem alterar o módulo para outros temas).
+     */
+    private function registerWorkplanThematicAgendaOptionsForPnab(App $app): void
+    {
+        $def = $app->getRegisteredMetadataByMetakey('thematicAgenda', WorkplanEntity::class);
+        if ($def === null || !is_array($def->options) || $def->options === []) {
+            return;
+        }
+
+        $removeLabel = i::__('Não se relaciona a nenhuma pauta temática');
+        $options = $def->options;
+        foreach ($options as $key => $label) {
+            if ((string) $label === (string) $removeLabel) {
+                unset($options[$key]);
+                break;
+            }
+        }
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('thematicAgenda', [
+            'label' => $def->label ?? i::__('Pauta temática'),
+            'type' => 'select',
+            'options' => $options,
+        ]), WorkplanEntity::class);
+    }
+
+    /**
+     * PNAB: remove «Não se aplica» de Territórios prioritários na entrega (ProjectMonitoring), sem alterar o módulo.
+     */
+    private function registerDeliveryPriorityAudienceOptionsForPnab(App $app): void
+    {
+        $def = $app->getRegisteredMetadataByMetakey('priorityAudience', WorkplanDelivery::class);
+        if ($def === null || !is_array($def->options) || $def->options === []) {
+            return;
+        }
+
+        $removeLabel = i::__('Não se aplica');
+        $options = $def->options;
+        foreach ($options as $key => $label) {
+            if ((string) $label === (string) $removeLabel) {
+                unset($options[$key]);
+                break;
+            }
+        }
+
+        $config = $def->config;
+        $config['label'] = $def->label;
+        $config['type'] = $def->type;
+        $config['options'] = $options;
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('priorityAudience', $config), WorkplanDelivery::class);
+    }
+
     private function registerWorkplanSegmentMetadataForPnab(App $app, array $segmentOptionsFromOpportunity): void
     {
         if ($segmentOptionsFromOpportunity === []) {
