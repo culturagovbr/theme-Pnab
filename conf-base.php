@@ -12,6 +12,8 @@ return [
     // Tela inicial (Banner)
     'text:home-header.title' => '&nbsp;',
     'text:home-header.description' => '&nbsp;',
+    'text:home-header.brandTaglineLine1' => 'Fomento à cultura',
+    'text:home-header.brandTaglineLine2' => 'em cada canto do país',
 
     // Tela inicial (Entidadtes)
     'text:home-entities.title' => 'Aqui você encontra as informações sobre a PNAB.',

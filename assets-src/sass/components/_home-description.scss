@@ -1,18 +1,43 @@
-// Imagem de fundo: 1905 x 921 px (proporção 1905/921)
 .home-network {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  aspect-ratio: 1905 / 921;
   min-height: 420px;
-  background-color: #FEFAF6;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-origin: padding-box;
-  padding: size(80) size(16);
+  background-color: #ffffed;
+  padding-top: size(120);
+  padding-bottom: size(80);
+  padding-left: size(16);
+  padding-right: size(16);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    padding-top: size(80);
+    padding-bottom: size(56);
+  }
+
+  @media (max-width: 767px) {
+    padding-top: size(48);
+    padding-bottom: size(40);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    width: 85%;
+    max-width: 1138px;
+    aspect-ratio: 1138 / 519;
+    pointer-events: none;
+    background-image: var(--home-network-decoration, none);
+    background-repeat: no-repeat;
+    background-position: right bottom;
+    background-size: contain;
+  }
 
   &__container {
     display: flex;
@@ -24,6 +49,15 @@
     width: 100%;
     position: relative;
     z-index: 1;
+
+    @media (min-width: 768px) and (max-width: 1024px) {
+      padding-top: size(48);
+      padding-bottom: size(48);
+    }
+
+    @media (max-width: 767px) {
+      padding-top: 0;
+    }
   }
 
   &__text {
@@ -43,6 +77,18 @@
       font-size: size(20);
       line-height: size(25);
       color: var(--mc-low-800, #101010);
+    }
+
+    &-trail {
+      display: block;
+      line-height: size(6);
+      margin: 0;
+      font-size: 0;
+
+      br {
+        display: block;
+        margin: 0;
+      }
     }
   }
 }

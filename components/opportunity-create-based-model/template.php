@@ -26,9 +26,13 @@ $this->useOpportunityAPI();
     <mc-modal classes="create-modal create-opportunity-modal" title="<?= i::esc_attr__('Configurações da nova oportunidade') ?>" @open="createEntity()">
         <template #default>
             <label class="create-modal__subtitle"><?php i::_e('Crie uma oportunidade para a Política Nacional Aldir Blanc') ?></label>
-            <p class="create-modal__par-intro"><?php i::_e('Para iniciar, selecione dentro de qual meta, ação e atividade do PAR o seu instrumento será cadastrado.') ?></p>
-            <form class="create-modal__fields create-modal__fields--two-cols" @submit.prevent>
-                <div class="create-modal__col create-modal__col--par">
+            <p v-if="!parOptionalOnCreate" class="create-modal__par-intro"><?php i::_e('Para iniciar, selecione dentro de qual meta, ação e atividade do PAR o seu instrumento será cadastrado.') ?></p>
+            <form
+                class="create-modal__fields"
+                :class="parOptionalOnCreate ? 'create-modal__fields--single-col' : 'create-modal__fields--two-cols'"
+                @submit.prevent
+            >
+                <div v-if="!parOptionalOnCreate" class="create-modal__col create-modal__col--par">
                     <div class="create-modal__par create-modal__fields--par">
                         <mc-federative-entity-par
                             ref="parInstrumentoRef"

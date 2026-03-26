@@ -141,6 +141,13 @@
     }
 }
 
+.create-modal__fields--single-col {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    align-items: start;
+}
+
 .create-modal__col {
     min-width: 0;
 

@@ -6,10 +6,19 @@
 
 use MapasCulturais\i;
 
-$bg_url = $app->view->asset('img/home/home-description/background.png', false);
+$decoration_bottom_right_url = $app->view->asset(
+    'img/home/home-description/background-bottom-right.png',
+    false
+);
 ?>
 
-<section class="home-network"<?= $bg_url ? ' style="background-image: url(\'' . addslashes($bg_url) . '\');"' : '' ?>>
+<section
+    class="home-network"
+    <?= $decoration_bottom_right_url
+        ? ' style="--home-network-decoration: url(\'' . addslashes($decoration_bottom_right_url) . '\');"'
+        : ''
+    ?>
+>
     <div class="home-network__container">
         <div class="home-network__text">
             <h2 class="title">A Política Nacional Aldir Blanc</h2>
@@ -24,6 +33,7 @@ $bg_url = $app->view->asset('img/home/home-description/background.png', false);
 
                 <strong>Faça parte!</strong> Experimente a plataforma, crie ou atualize seu perfil, registre seus espaços e iniciativas artísticas e divulgue suas atividades.
             </p>
+            <span class="home-network__text-trail" aria-hidden="true"><br /><br /><br /></span>
         </div>
     </div>
 </section>
