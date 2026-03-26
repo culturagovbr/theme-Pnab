@@ -78,6 +78,13 @@ $home-header-parallax-min-width: 64rem; // 1024px
     }
   }
 
+  // PNAB: título/descrição do header costumam vazios; no mobile só atrapalham o flex (gap).
+  @media (max-width: 767px) {
+    &__main {
+      display: none;
+    }
+  }
+
   &__background {
     background-color: #ffffed;
 
