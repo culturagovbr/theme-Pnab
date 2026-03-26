@@ -68,6 +68,16 @@ $home-header-parallax-min-width: 64rem; // 1024px
     display: inline-block;
   }
 
+  @media (max-width: 425px) {
+    &__brand {
+      padding: #{'clamp(#{size(48)}, min(20dvh, #{size(144)}), #{size(200)})'} #{size(10)} 0;
+    }
+
+    &__brand-tagline {
+      padding-inline: 0;
+    }
+  }
+
   &__background {
     background-color: #ffffed;
 
