@@ -1,3 +1,5 @@
+// home-header2.png: 1905×566 (~3.37:1). Com cover, viewport alta → escala puxada pela altura
+// do header e o enquadramento “piora”; viewport baixa (ex.: console aberto) → mais parecido ao mock.
 // parallax.png: 1742×2497 (canvas alto; o cluster útil fica na base esquerda). Ancorado no
 // canto inferior esquerdo do header e deslocado 50% para baixo = centro na junção com
 // .home-network, como no mock único de HMG2.
@@ -29,8 +31,8 @@ $home-header-parallax-min-width: 64rem; // 1024px
     width: fit-content;
     max-width: min(96vw, #{size(800)});
     margin-inline: auto;
-    // 20dvh ≈ “20% da altura da viewport” (padding % em CSS usa a largura do pai, não serve aqui).
-    padding: clamp(#{size(48)}, 20dvh, #{size(200)}) clamp(#{size(20)}, 5vw, #{size(40)}) 0;
+    // Topo: min(20dvh, 9rem) evita header enorme em monitores altos (piora o cover do fundo largo).
+    padding: #{'clamp(#{size(48)}, min(20dvh, #{size(144)}), #{size(200)})'} clamp(#{size(20)}, 5vw, #{size(40)}) 0;
     color: $black;
     pointer-events: none;
     text-align: left;
@@ -87,7 +89,8 @@ $home-header-parallax-min-width: 64rem; // 1024px
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center center;
+        // Esquerda + viés ao topo: traço azul superior; em viewport alta, center “afunda” o crop vertical.
+        object-position: left 22%;
         min-height: 0;
       }
     }
