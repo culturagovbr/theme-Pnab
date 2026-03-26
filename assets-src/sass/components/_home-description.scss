@@ -7,10 +7,10 @@
   width: 100%;
   min-height: 420px;
   background-color: #ffffed;
-  padding-block-start: clamp(#{size(96)}, calc(#{size(48)} + 7vw), #{size(200)});
-  // Mais ar entre o fim do texto e a arte do canto (antes vinha “empurrado” pelo cover alto).
-  padding-block-end: clamp(#{size(112)}, calc(#{size(80)} + 6vw), #{size(240)});
-  padding-inline: size(16);
+  padding-top: clamp(#{size(96)}, calc(#{size(48)} + 7vw), #{size(200)});
+  padding-bottom: clamp(#{size(160)}, calc(#{size(112)} + 7vw), #{size(320)});
+  padding-left: size(16);
+  padding-right: size(16);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,7 +45,8 @@
 
     // ≤1024: parallax / canto inferior direito sobrepõem o texto — afasta no eixo Y.
     @media (min-width: 768px) and (max-width: 1024px) {
-      padding-block: clamp(#{size(40)}, 6vw, #{size(72)});
+      padding-top: clamp(#{size(40)}, 6vw, #{size(72)});
+      padding-bottom: clamp(#{size(40)}, 6vw, #{size(72)});
     }
 
     @media (max-width: 767px) {
