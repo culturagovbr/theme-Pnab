@@ -33,6 +33,7 @@ $decoration_bottom_right_url = $app->view->asset(
 
                 <strong>Faça parte!</strong> Experimente a plataforma, crie ou atualize seu perfil, registre seus espaços e iniciativas artísticas e divulgue suas atividades.
             </p>
+            <span class="home-network__text-trail" aria-hidden="true"><br /><br /><br /></span>
         </div>
     </div>
 </section>

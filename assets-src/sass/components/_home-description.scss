@@ -5,7 +5,7 @@
   min-height: 420px;
   background-color: #ffffed;
   padding-top: size(120);
-  padding-bottom: size(160);
+  padding-bottom: size(80);
   padding-left: size(16);
   padding-right: size(16);
   display: flex;
@@ -15,12 +15,12 @@
 
   @media (max-width: 1024px) {
     padding-top: size(80);
-    padding-bottom: size(112);
+    padding-bottom: size(56);
   }
 
   @media (max-width: 767px) {
     padding-top: size(48);
-    padding-bottom: size(72);
+    padding-bottom: size(40);
   }
 
   &::after {
@@ -77,6 +77,18 @@
       font-size: size(20);
       line-height: size(25);
       color: var(--mc-low-800, #101010);
+    }
+
+    &-trail {
+      display: block;
+      line-height: size(6);
+      margin: 0;
+      font-size: 0;
+
+      br {
+        display: block;
+        margin: 0;
+      }
     }
   }
 }
