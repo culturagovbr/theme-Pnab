@@ -84,6 +84,10 @@ app.component('create-opportunity', {
                     return 'agent__border--dark';
             }
         },
+
+        parOptionalOnCreate() {
+            return Boolean($MAPAS.config?.parOptionalOnCreate);
+        },
     },
 
     methods: {
@@ -118,6 +122,9 @@ app.component('create-opportunity', {
         },
 
         validatePar() {
+            if (this.parOptionalOnCreate) {
+                return true;
+            }
             const ref = this.$refs.parPar;
             if (!ref || typeof ref.validate !== 'function') {
                 return false;

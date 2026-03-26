@@ -1,5 +1,10 @@
 .home-entities {
   &__content {
+    @media (max-width: 768px) {
+      padding-inline: size(16);
+      box-sizing: border-box;
+    }
+
     &--title {
       // Mantém o título grande como no layout original do PNAB
       font-size: size(70);
@@ -7,6 +12,14 @@
       line-height: size(69);
       font-family: $font-title;
       text-transform: uppercase;
+
+      @media (max-width: 768px) {
+        font-weight: $weight-bold;
+        font-size: clamp(#{size(22)}, 5.5vw, #{size(34)});
+        line-height: 1.22;
+        overflow-wrap: break-word;
+        hyphens: auto;
+      }
     }
 
     &--cards {
@@ -68,27 +81,32 @@
           justify-content: center;
           gap: 0.75rem;
 
+          // ~10% menor que size(20)/25; peso leve (Poppins 300).
           p {
-            font-size: size(14);
-            color: #000000;
-            line-height: 1.4;
+            font-size: size(18);
+            line-height: 1.25;
+            font-weight: 300;
+            color: var(--mc-low-800, #101010);
             margin: 0;
 
-            @media (max-width: 768px) {
-              font-size: size(13);
+            strong {
+              font-weight: $weight-bold;
             }
           }
 
           a {
             font-family: 'League Gothic', sans-serif;
             text-transform: uppercase;
-            font-weight: 700;
-            font-size: size(20);
+            font-weight: 400;
+            font-size: size(19);
+            letter-spacing: 0.07em;
             text-decoration: underline;
+            text-underline-offset: #{size(2)};
             color: black;
 
             @media (max-width: 768px) {
-              font-size: size(18);
+              font-size: size(17);
+              letter-spacing: 0.085em;
             }
           }
 

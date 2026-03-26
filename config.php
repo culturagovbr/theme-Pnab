@@ -8,7 +8,7 @@ return [
 
     ex: `img/meu-mapa-logo.jpg` (pasta assets/img/meu-mapa-logo.jpg do tema)
     */
-    'app.siteName' => 'Cult Editais',
+    'app.siteName' => 'CultBR Editais',
     'app.siteDescription' => 'Aqui você encontra informações de editais e oportunidades do Ministério da Cultura.',
     'logo.image' => './img/logo-site.png',
     'logo.hideLabel' => env('LOGO_HIDELABEL', true),
