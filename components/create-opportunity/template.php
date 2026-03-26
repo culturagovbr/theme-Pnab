@@ -18,9 +18,13 @@ $this->import('
 <mc-modal v-if="canAccess" :title="modalTitle" classes="create-modal create-opportunity-modal" button-label="<?php i::_e('Criar Oportunidade')?>" @open="createEntity()" @close="destroyEntity()">
     <template v-if="entity && !entity.id" #default="modal">
         <label class="create-modal__subtitle"><?php i::_e('Crie uma oportunidade para a Política Nacional Aldir Blanc') ?></label>
-        <p class="create-modal__par-intro"><?php i::_e('Para iniciar, selecione dentro de qual meta, ação e atividade do PAR o seu instrumento será cadastrado.') ?></p>
-        <form @submit.prevent="handleSubmit" class="create-modal__fields create-modal__fields--two-cols">
-            <div class="create-modal__col create-modal__col--par">
+        <p v-if="!parOptionalOnCreate" class="create-modal__par-intro"><?php i::_e('Para iniciar, selecione dentro de qual meta, ação e atividade do PAR o seu instrumento será cadastrado.') ?></p>
+        <form
+            @submit.prevent="handleSubmit"
+            class="create-modal__fields"
+            :class="parOptionalOnCreate ? 'create-modal__fields--single-col' : 'create-modal__fields--two-cols'"
+        >
+            <div v-if="!parOptionalOnCreate" class="create-modal__col create-modal__col--par">
                 <div class="create-modal__par create-modal__fields--par">
                     <mc-federative-entity-par
                         ref="parPar"

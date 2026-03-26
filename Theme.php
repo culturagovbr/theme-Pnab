@@ -58,6 +58,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $app->view->jsObject['login']['onlyGovBr'] = (bool) ($authConfig['onlyGovBr'] ?? false);
         });
 
+        /** PAR opcional na criação para admin (@see UserAccessService::isAdmin). */
+        $app->hook('view.render(<<*>>):before', function () use ($app) {
+            $app->view->jsObject['config']['parOptionalOnCreate'] = UserAccessService::isAdmin();
+        });
+
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
         $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);
