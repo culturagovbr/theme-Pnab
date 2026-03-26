@@ -1,6 +1,5 @@
 <?php
 /**
- * @var MapasCulturais\App $app
  * @var \Pnab\Theme $this
  */
 
@@ -11,10 +10,26 @@ $this->import('
 ');
 
 $parallax_url = $this->asset('img/home/home-header/parallax.png', false);
+$brand_logo_url = $this->asset('img/home/home-header/home-header-logo.png', false);
 ?>
 
 <div :class="['home-header', {'home-header--withBanner' : banner}] ">
     <div class="home-header__content">
+
+        <div class="home-header__brand">
+            <?php if ($brand_logo_url) : ?>
+                <img
+                    class="home-header__brand-logo"
+                    src="<?= htmlspecialchars($brand_logo_url, ENT_QUOTES, 'UTF-8') ?>"
+                    alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
+                    decoding="async"
+                />
+            <?php endif; ?>
+            <p class="home-header__brand-tagline">
+                <span class="home-header__brand-tagline-line"><?= $this->text('brandTaglineLine1', i::__('Fomento à cultura')) ?></span><br aria-hidden="true" />
+                <span class="home-header__brand-tagline-line"><?= $this->text('brandTaglineLine2', i::__('em cada canto do país')) ?></span>
+            </p>
+        </div>
 
         <div class="home-header__main">
             <label class="home-header__title">
