@@ -1,14 +1,11 @@
-// Antes: cover com _background.png (1905×921) + aspect-ratio — o bloco de texto ficava
-// verticalmente centrado numa faixa alta, com bastante ar entre header e título. Sem o
-// ratio, só padding vertical comprimia esse espaço; o padding-top maior recupera o ritmo.
 .home-network {
   position: relative;
   overflow: hidden;
   width: 100%;
   min-height: 420px;
   background-color: #ffffed;
-  padding-top: clamp(#{size(96)}, calc(#{size(48)} + 7vw), #{size(200)});
-  padding-bottom: clamp(#{size(160)}, calc(#{size(112)} + 7vw), #{size(320)});
+  padding-top: size(120);
+  padding-bottom: size(160);
   padding-left: size(16);
   padding-right: size(16);
   display: flex;
@@ -16,14 +13,24 @@
   justify-content: center;
   box-sizing: border-box;
 
+  @media (max-width: 1024px) {
+    padding-top: size(80);
+    padding-bottom: size(112);
+  }
+
+  @media (max-width: 767px) {
+    padding-top: size(48);
+    padding-bottom: size(72);
+  }
+
   &::after {
     content: '';
     position: absolute;
     right: 0;
     bottom: 0;
     z-index: 0;
-    width: min(85vw, 1138px);
-    max-width: 100%;
+    width: 85%;
+    max-width: 1138px;
     aspect-ratio: 1138 / 519;
     pointer-events: none;
     background-image: var(--home-network-decoration, none);
@@ -43,10 +50,9 @@
     position: relative;
     z-index: 1;
 
-    // ≤1024: parallax / canto inferior direito sobrepõem o texto — afasta no eixo Y.
     @media (min-width: 768px) and (max-width: 1024px) {
-      padding-top: clamp(#{size(40)}, 6vw, #{size(72)});
-      padding-bottom: clamp(#{size(40)}, 6vw, #{size(72)});
+      padding-top: size(48);
+      padding-bottom: size(48);
     }
 
     @media (max-width: 767px) {
