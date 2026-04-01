@@ -1,7 +1,6 @@
 /**
  * Modal "Usar modelo" - versão Pnab.
- * Não permite vincular o edital a uma entidade (modelo oficial).
- * Exige seleção PAR quando há exercícios carregados (gestor / ente com dados).
+ * PAR obrigatório quando há exercícios, salvo $MAPAS.config.parOptionalOnCreate (admin).
  */
 app.component('opportunity-create-based-model', {
     template: $TEMPLATES['opportunity-create-based-model'],
@@ -35,6 +34,10 @@ app.component('opportunity-create-based-model', {
     },
 
     computed: {
+        parOptionalOnCreate() {
+            return Boolean($MAPAS.config?.parOptionalOnCreate);
+        },
+
         /** Passos do overlay: chaves alinhadas a `texts.php` (i18n / `text()`). */
         generatingMessages() {
             return [
@@ -76,10 +79,10 @@ app.component('opportunity-create-based-model', {
             return !tituloOk || !descricaoOk || !payloadGenerate.entityId;
         },
 
-        /**
-         * Quando a lista PAR está vazia (ex.: usuário sem ente / sem exercícios), não bloqueia o fluxo.
-         */
         validateParSelectionBeforeGenerate() {
+            if (this.parOptionalOnCreate) {
+                return true;
+            }
             const parComponent = this.$refs.parInstrumentoRef;
             if (!parComponent || typeof parComponent.validate !== 'function') {
                 return true;

@@ -8,7 +8,7 @@ return [
 
     ex: `img/meu-mapa-logo.jpg` (pasta assets/img/meu-mapa-logo.jpg do tema)
     */
-    'app.siteName' => 'Pnab',
+    'app.siteName' => 'CultBR Editais',
     'app.siteDescription' => 'Aqui você encontra informações de editais e oportunidades do Ministério da Cultura.',
     'logo.image' => './img/logo-site.png',
     'logo.hideLabel' => env('LOGO_HIDELABEL', true),
@@ -251,6 +251,7 @@ return [
     # AUTENTICAÇÃO
     'auth.provider' => '\MultipleLocalAuth\Provider',
     'auth.config' => [
+        'onlyGovBr' => env('PNAB_AUTH_ONLY_GOV_BR', false),
         'salt' => env('AUTH_SALT', 'SECURITY_SALT'),
         'wizard' => env('AUTH_WIZARD_ENABLED', false),
         'timeout' => '24 hours',

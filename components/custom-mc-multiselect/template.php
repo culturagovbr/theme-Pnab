@@ -46,6 +46,7 @@ $this->import('
                 placeholder="Digite para buscar"
                 :model="valueArray"
                 :items="optionsForSelect"
+                :preserve-order="true"
                 hide-filter
                 hide-button
                 @selected="onSelected"

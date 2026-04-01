@@ -187,20 +187,26 @@
                 padding: 0;
                 width: 100vw;
                 margin-left: calc(-50vw + 50%);
+                box-sizing: border-box;
 
                 @include mobile {
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     gap: size(24);
-                    padding-left: size(16);
                 }
 
+                // logo-footer.png 1905×216: em telas estreitas não encolher tudo; cortar laterais (arte).
                 .main-footer__logo-item {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     width: 100%;
+
+                    @media (max-width: 64rem) {
+                        overflow: hidden;
+                        height: clamp(#{size(56)}, 17vw, #{size(96)});
+                    }
 
                     img,
                     theme-logo,
@@ -209,6 +215,13 @@
                         height: auto;
                         display: block;
                         object-fit: contain;
+
+                        @media (max-width: 64rem) {
+                            height: 100%;
+                            width: 100%;
+                            object-fit: cover;
+                            object-position: center center;
+                        }
                     }
                 }
             }

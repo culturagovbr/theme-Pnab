@@ -1,0 +1,118 @@
+/* Login somente Gov.br — espelha o botão de referência (primary-main #006fee, px-6 py-2, rounded-md, shadow-lg) */
+
+/* Respiro vertical: poucos elementos no card; margens evitam visual “achatado” */
+.login__action.login__action--govbr-only {
+    margin-top: clamp(5rem, 16vw, 9rem);
+    margin-bottom: clamp(5rem, 16vw, 9rem);
+}
+
+.login__action--govbr-only .login__card--govbr-only {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    padding-top: clamp(2rem, 5vw, 3.25rem);
+    padding-bottom: clamp(2rem, 5vw, 3.25rem);
+}
+
+.login__card__header--govbr-only {
+    gap: 12px;
+}
+
+.login__govbr-only-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--mc-low-700, #1a1a1a);
+    line-height: 1.3;
+}
+
+.login__govbr-only-lead {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.45;
+    color: var(--mc-low-600, #333);
+    font-weight: 400;
+}
+
+.login__card__content--govbr-only {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.login__card__content--govbr-only .login__social-buttons {
+    gap: 0;
+    display: flex;
+    justify-content: center;
+}
+
+/* Equivalente a bg-primary-main + px-6 py-2 + rounded-md + shadow-lg + hover/active opacity (site de referência) */
+.login__card__content--govbr-only .login__social-buttons .social-login--button.govbr.login__govbr-only-cta {
+    --pnab-govbr-login-bg: #006fee;
+
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background-color: var(--pnab-govbr-login-bg) !important;
+    border: 1px solid var(--pnab-govbr-login-bg) !important;
+    color: #fff !important;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1.5rem;
+    margin: 0;
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.25;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        opacity 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.login__card__content--govbr-only .login__social-buttons .social-login--button.govbr.login__govbr-only-cta:hover {
+    opacity: 0.8;
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.login__card__content--govbr-only .login__social-buttons .social-login--button.govbr.login__govbr-only-cta:active {
+    opacity: 0.6;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.login__card__content--govbr-only .login__social-buttons .social-login--button.govbr.login__govbr-only-cta:focus-visible {
+    outline: 2px solid var(--pnab-govbr-login-bg);
+    outline-offset: 2px;
+}
+
+.login__govbr-only-cta-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.login__govbr-only-cta-text {
+    color: inherit;
+    white-space: nowrap;
+}
+
+.login__card__content--govbr-only .login__social-buttons .social-login--button.govbr.login__govbr-only-cta .img {
+    display: flex;
+    align-items: center;
+    line-height: 0;
+}
+
+.login__govbr-only-cta-logo {
+    display: block;
+    width: 6rem;
+    max-width: 96px;
+    height: auto;
+}

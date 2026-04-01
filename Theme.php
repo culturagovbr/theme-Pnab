@@ -11,6 +11,9 @@ use Respect\Validation\Validator;
 use AldirBlanc\Enum\OpportunityStatus;
 use AldirBlanc\Jobs\OportunidadeCultJob;
 use MapasCulturais\Entities\Opportunity;
+use OpportunityWorkplan\Entities\Delivery as WorkplanDelivery;
+use OpportunityWorkplan\Entities\Goal as WorkplanGoalEntity;
+use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. * 
@@ -42,6 +45,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     {
         parent::_init();
         $app = App::i();
+
+        /**
+         * Login (MultipleLocalAuth): repassa auth.config.onlyGovBr para o componente `login` do tema
+         * (e-mail/CPF, captcha e demais provedores ocultos quando true — ver config.php).
+         */
+        $app->hook('GET(auth.index):before', function () use ($app) {
+            if (!isset($app->view->jsObject['login']) || !is_array($app->view->jsObject['login'])) {
+                $app->view->jsObject['login'] = [];
+            }
+            $authConfig = $app->config['auth.config'] ?? [];
+            $app->view->jsObject['login']['onlyGovBr'] = (bool) ($authConfig['onlyGovBr'] ?? false);
+        });
+
+        /** PAR opcional na criação para admin (@see UserAccessService::isAdmin). */
+        $app->hook('view.render(<<*>>):before', function () use ($app) {
+            $app->view->jsObject['config']['parOptionalOnCreate'] = UserAccessService::isAdmin();
+        });
 
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
@@ -1142,7 +1162,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (isset($this->jsObject['Taxonomies']['area'])) {
                 $this->jsObject['Taxonomies']['area']['required'] = false;
             }
-            // Usado no painel para exibir/ocultar o card "Oportunidades" (apenas quem tem canAccess)
             $this->jsObject['canAccessOpportunitiesPanel'] = UserAccessService::canAccess();
         });
 
@@ -1152,11 +1171,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa app.init:after para garantir que os metadados do core já foram registrados
          */
         $theme = $this;
-        $app->hook('app.init:after', function () use ($app, $theme) {
+        $app->hook('app.init:after', function() use ($app, $theme) {
+            // Listas brutas (themes/Pnab/opportunity-types.php → metadata; antes de enriquecer multiselects do edital).
+            $opportunitySegmentoOptionsForWorkplan = $app->getRegisteredMetadataByMetakey('segmento', Opportunity::class)?->options ?? [];
+            $opportunityEtapaOptionsForWorkplan = $app->getRegisteredMetadataByMetakey('etapa', Opportunity::class)?->options ?? [];
+
             // Registra metadados multiselect obrigatórios em edit (segmento, pauta, etapa, território)
             $theme->registerMultiselectMetadata('segmento', i::__('Segmento artistico-cultural'), $theme->getSegmentoOptions(), 'edit');
-            $theme->registerMultiselectMetadata('etapa', i::__('Etapa do fazer cultural'), $theme->getEtapaOptions(), 'edit');
+            $theme->registerMultiselectMetadata(
+                'etapa',
+                i::__('Etapa do fazer cultural'),
+                $theme->enrichMultiselectOptions(
+                    $opportunityEtapaOptionsForWorkplan,
+                    i::__('Outra (especificar)'),
+                    null,
+                    false
+                ),
+                'edit'
+            );
+            $theme->registerWorkplanThematicAgendaOptionsForPnab($app);
             $theme->registerMultiselectMetadata('pauta', i::__('Pauta temática'), $theme->getPautaOptions(), 'edit');
+            $theme->registerDeliveryPriorityAudienceOptionsForPnab($app);
             $theme->registerMultiselectMetadata('territorio', i::__('Território'), $theme->getTerritorioOptions(), 'edit');
 
             // Registra metadados select obrigatórios em required
@@ -1166,6 +1201,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
             $theme->registerSegmentoOutrosMetadata();
+
+            // Plano de metas (PNAB): mesmas opções que opportunity-types em `segmento` e `etapa` (sem chaves sintéticas do multiselect do edital).
+            $theme->registerWorkplanSegmentMetadataForPnab($app, $opportunitySegmentoOptionsForWorkplan);
+            $theme->registerWorkplanEtapaMetadataForPnab($app, $opportunityEtapaOptionsForWorkplan);
+            $theme->registerWorkplanTypeDeliveryMetadataForPnab($app);
 
             // Metadado: utilização de recursos de outras fontes (objeto; validação via hooks)
             $theme->registerOpportunityMetadata('recursosOutrasFontes', [
@@ -1604,34 +1644,203 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
-     * Obtém as opções de Segmento do OpportunityWorkplan
-     * Ordem: 1) "Edital não se direciona a segmentos específicos", 2) "Todas as opções",
-     * 3) demais opções do Workplan com "Outros" por último.
+     * No Pnab, plano de metas usa a mesma lista de segmentos que a oportunidade (conf/opportunity-types),
+     * sem as chaves sintéticas do multiselect da edição de edital.
+     */
+    /**
+     * PNAB: tira a opção genérica do workplan (sem alterar o módulo para outros temas).
+     */
+    private function registerWorkplanThematicAgendaOptionsForPnab(App $app): void
+    {
+        $def = $app->getRegisteredMetadataByMetakey('thematicAgenda', WorkplanEntity::class);
+        if ($def === null || !is_array($def->options) || $def->options === []) {
+            return;
+        }
+
+        $removeLabel = i::__('Não se relaciona a nenhuma pauta temática');
+        $options = $def->options;
+        foreach ($options as $key => $label) {
+            if ((string) $label === (string) $removeLabel) {
+                unset($options[$key]);
+                break;
+            }
+        }
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('thematicAgenda', [
+            'label' => $def->label ?? i::__('Pauta temática'),
+            'type' => 'select',
+            'options' => $options,
+        ]), WorkplanEntity::class);
+    }
+
+    /**
+     * PNAB: remove «Não se aplica» de Territórios prioritários na entrega (ProjectMonitoring), sem alterar o módulo.
+     */
+    private function registerDeliveryPriorityAudienceOptionsForPnab(App $app): void
+    {
+        $def = $app->getRegisteredMetadataByMetakey('priorityAudience', WorkplanDelivery::class);
+        if ($def === null || !is_array($def->options) || $def->options === []) {
+            return;
+        }
+
+        $removeLabel = i::__('Não se aplica');
+        $options = $def->options;
+        foreach ($options as $key => $label) {
+            if ((string) $label === (string) $removeLabel) {
+                unset($options[$key]);
+                break;
+            }
+        }
+
+        $config = $def->config;
+        $config['label'] = $def->label;
+        $config['type'] = $def->type;
+        $config['options'] = $options;
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('priorityAudience', $config), WorkplanDelivery::class);
+    }
+
+    private function registerWorkplanSegmentMetadataForPnab(App $app, array $segmentOptionsFromOpportunity): void
+    {
+        if ($segmentOptionsFromOpportunity === []) {
+            return;
+        }
+
+        $workplanSegmentDef = $app->getRegisteredMetadataByMetakey('culturalArtisticSegment', WorkplanEntity::class);
+        $deliverySegmentDef = $app->getRegisteredMetadataByMetakey('segmentDelivery', WorkplanDelivery::class);
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('culturalArtisticSegment', [
+            'label' => $workplanSegmentDef?->label ?? i::__('Segmento artistico-cultural'),
+            'type' => 'select',
+            'options' => $segmentOptionsFromOpportunity,
+        ]), WorkplanEntity::class);
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('segmentDelivery', [
+            'label' => $deliverySegmentDef?->label ?? i::__('Segmento artístico cultural da entrega'),
+            'type' => 'select',
+            'options' => $segmentOptionsFromOpportunity,
+        ]), WorkplanDelivery::class);
+    }
+
+    /**
+     * PNAB: `culturalMakingStage` na meta usa as opções de `etapa` em conf/opportunity-types.php (mesmas chaves persistidas).
+     */
+    private function registerWorkplanEtapaMetadataForPnab(App $app, array $etapaOptionsFromOpportunity): void
+    {
+        if ($etapaOptionsFromOpportunity === []) {
+            return;
+        }
+
+        $goalEtapaDef = $app->getRegisteredMetadataByMetakey('culturalMakingStage', WorkplanGoalEntity::class);
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('culturalMakingStage', [
+            'label' => $goalEtapaDef?->label ?? i::__('Etapa do fazer cultural'),
+            'type' => 'select',
+            'options' => $etapaOptionsFromOpportunity,
+        ]), WorkplanGoalEntity::class);
+    }
+
+    /**
+     * PNAB: lista reduzida de `typeDelivery` na entrega do plano de metas (só workplan; core mantém a lista longa).
+     */
+    private function registerWorkplanTypeDeliveryMetadataForPnab(App $app): void
+    {
+        $existingDef = $app->getRegisteredMetadataByMetakey('typeDelivery', WorkplanDelivery::class);
+        $options = [
+            i::__('Álbum musical'),
+            i::__('Aplicativo / Software'),
+            i::__('Apresentação ao vivo / Show'),
+            i::__('Aquisição de acervos e bens culturais'),
+            i::__('Arte gráfica / Desenho / Gravura / Ilustração'),
+            i::__('Artesanato'),
+            i::__('Artigo / Ensaio'),
+            i::__('Audiolivro'),
+            i::__('Aula / Palestra / Conferência'),
+            i::__('Blog / Site'),
+            i::__('Caderno / Cartilha / Apostila'),
+            i::__('Circulação / Turnê'),
+            i::__('Coleção'),
+            i::__('Congresso / Encontro / Seminário / Simpósio'),
+            i::__('Curso / Oficina / Workshop'),
+            i::__('Desfile'),
+            i::__('Digitalização de acervos'),
+            i::__('Ensaio fotográfico'),
+            i::__('Escultura'),
+            i::__('Espetáculo cênico'),
+            i::__('Exibição / Exposição'),
+            i::__('Feira'),
+            i::__('Festa Popular'),
+            i::__('Festival / Mostra'),
+            i::__('Filme de curta-metragem'),
+            i::__('Filme de longa-metragem'),
+            i::__('Filme de média-metragem ou telefilme'),
+            i::__('Grafitti/Mural'),
+            i::__('Instalação artística / videoarte'),
+            i::__('Intercâmbio'),
+            i::__('Jogo eletrônico'),
+            i::__('Licenciamento'),
+            i::__('Livro'),
+            i::__('Livro eletrônico (e-Book)'),
+            i::__('Manutenção de grupos / iniciativas / espaços culturais'),
+            i::__('Melhoria em espaço cultural'),
+            i::__('Pesquisa'),
+            i::__('Plataforma digital'),
+            i::__('Podcast/ Programa de TV ou Rádio'),
+            i::__('Residência Artística'),
+            i::__('Revista / Jornal / Periódico'),
+            i::__('Roteiro de filme ou episódio'),
+            i::__('Sarau / Slam'),
+            i::__('Série / websérie'),
+            i::__('Videoclipe / Album visual'),
+            i::__('Outros (especificar)'),
+        ];
+
+        $app->registerMetadata(new \MapasCulturais\Definitions\Metadata('typeDelivery', [
+            'label' => $existingDef?->label ?? i::__('Tipo entrega'),
+            'type' => 'select',
+            'options' => $options,
+        ]), WorkplanDelivery::class);
+    }
+
+    /**
+     * Opções do multiselect `segmento` na oportunidade (tema PNAB).
+     * Lista base vem do metadata `segmento` já registrado (conf/opportunity-types.php).
+     * Ordem: 1) "Edital não se direciona…", 2) "Todas as opções", 3) segmentos com "Outros (especificar)" por último.
      */
     private function getSegmentoOptions(): array
     {
-        $opcoesWorkplan = $this->getMetadataOptions(
-            'OpportunityWorkplan\Entities\Workplan',
-            'culturalArtisticSegment'
-        );
+        $app = App::i();
+        $definition = $app->getRegisteredMetadataByMetakey('segmento', Opportunity::class);
+        $baseOptions = $definition?->options ?? [];
+
         return $this->enrichMultiselectOptions(
-            $opcoesWorkplan,
+            $baseOptions,
             i::__('Outros'),
             i::__('Outros (especificar)')
         );
     }
 
     /**
-     * Obtém as opções de Etapa do OpportunityWorkplan
-     * Com opção "Não se direciona" no início e "Outra (especificar)" por último. Sem "Todas as opções".
+     * Opções do multiselect `etapa` na oportunidade (PNAB), após app.init:after = metadata já registrado (enriquecido).
+     * Usado em validações/trim; o registro do campo usa a mesma lista que o workplan ($opportunityEtapaOptionsForWorkplan + enrich).
      */
     public function getEtapaOptions(): array
     {
-        $opcoes = $this->getMetadataOptions(
-            'OpportunityWorkplan\Entities\Goal',
-            'culturalMakingStage'
+        $app = App::i();
+        $definition = $app->getRegisteredMetadataByMetakey('etapa', Opportunity::class);
+        if ($definition === null || !is_array($definition->options)) {
+            return [];
+        }
+        if (array_key_exists('__edital_nao_se_direciona__', $definition->options)) {
+            return $definition->options;
+        }
+
+        return $this->enrichMultiselectOptions(
+            $definition->options,
+            i::__('Outra (especificar)'),
+            null,
+            false
         );
-        return $this->enrichMultiselectOptions($opcoes, i::__('Outra (especificar)'), null, false);
     }
 
     /**

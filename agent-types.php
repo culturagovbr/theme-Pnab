@@ -2,8 +2,8 @@
 
 $agent_types = include APPLICATION_PATH . '/conf/agent-types.php';
 
-// Remove obrigatoriedade de campos específicos na criação de agente.
-foreach (['raca', 'renda'] as $field_key) {
+// Remove obrigatoriedade de campos específicos na criação de agente (core pode marcar como required).
+foreach (['renda'] as $field_key) {
     if (isset($agent_types['metadata'][$field_key]['validations']['required'])) {
         unset($agent_types['metadata'][$field_key]['validations']['required']);
     }
@@ -25,5 +25,11 @@ $agent_types['metadata']['tipoAgenteColetivo'] = [
 if (isset($agent_types['metadata']['emailPrivado']['unserialize'])) {
     unset($agent_types['metadata']['emailPrivado']['unserialize']);
 }
+
+// Opção presente no core; no Pnab não deve aparecer no select.
+unset($agent_types['metadata']['orientacaoSexual']['options']['Assexual']);
+
+// "Não informado" (chave vazia) no core; no Pnab o select não deve incluir essa opção.
+unset($agent_types['metadata']['raca']['options']['']);
 
 return $agent_types;

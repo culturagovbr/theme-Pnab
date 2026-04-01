@@ -1,3 +1,146 @@
+// home-header2.png: 1905×566 (~3.37:1). Com cover, viewport alta → escala puxada pela altura
+// do header e o enquadramento “piora”; viewport baixa (ex.: console aberto) → mais parecido ao mock.
+// parallax.png: 1742×2497 (canvas alto; o cluster útil fica na base esquerda). Ancorado no
+// canto inferior esquerdo do header e deslocado 50% para baixo = centro na junção com
+// .home-network, como no mock único de HMG2.
+// Parallax só em viewport “laptop+” (≥1024px); tablet/celular ficam só com o fundo home-header2.
+$home-header-parallax-min-width: 64rem; // 1024px
+
+.home-header {
+  background: #ffffed;
+  overflow: visible;
+
+  &__content {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: size(20) size(32);
+  }
+
+  &__brand {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: center;
+    gap: size(20);
+    // Largura encosta no conteúdo (logo + tagline) e centraliza o bloco inteiro no eixo X,
+    // em vez de esticar 100% e só centrar a imagem dentro de uma faixa larga.
+    width: fit-content;
+    max-width: min(96vw, #{size(800)});
+    margin-inline: auto;
+    // Topo: min(20dvh, 9rem) evita header enorme em monitores altos (piora o cover do fundo largo).
+    padding: #{'clamp(#{size(48)}, min(20dvh, #{size(144)}), #{size(200)})'} clamp(#{size(20)}, 5vw, #{size(40)}) 0;
+    color: $black;
+    pointer-events: none;
+    text-align: left;
+  }
+
+  // +10% base, depois +20% visual (616×1.2 ≈ 739); vw limitado para não estourar a tela.
+  &__brand-logo {
+    display: block;
+    max-width: min(90vw, #{size(739)});
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  &__brand-tagline {
+    margin: 0;
+    align-self: stretch;
+    box-sizing: border-box;
+    max-width: size(760);
+    // Ajuste validado no Chrome: entre 2.25rem e 5rem com 4.5vw (clamp(5rem,4.5vw,2.25rem) normaliza para min/max corretos).
+    padding-inline: clamp(#{size(36)}, 4.5vw, #{size(80)});
+    padding-top: size(4);
+    font-family: $font-family-base;
+    font-weight: $weight-medium;
+    // ≥ +50% sobre o clamp anterior (15px / 4.6vw / 26px)
+    font-size: clamp(#{size(23)}, 6.9vw, #{size(39)});
+    line-height: 1.28;
+    text-transform: uppercase;
+    text-align: left;
+  }
+
+  &__brand-tagline-line {
+    display: inline-block;
+  }
+
+  @media (max-width: 425px) {
+    &__brand {
+      padding: #{'clamp(#{size(48)}, min(20dvh, #{size(144)}), #{size(200)})'} #{size(10)} 0;
+    }
+
+    &__brand-tagline {
+      padding-inline: 0;
+    }
+  }
+
+  // PNAB: título/descrição do header costumam vazios; no mobile só atrapalham o flex (gap).
+  @media (max-width: 767px) {
+    &__main {
+      display: none;
+    }
+  }
+
+  &__background {
+    background-color: #ffffed;
+
+    // home-header2.png: preenche a área com proporção fixa e corta bordas (object-fit: cover),
+    // em vez do min-width 1440px + width/height do BaseV2 que achatava em viewports estreitas.
+    .img {
+      position: absolute;
+      inset: 0;
+      display: block;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      align-items: unset;
+      justify-content: unset;
+
+      > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        // Esquerda + viés ao topo: traço azul superior; em viewport alta, center “afunda” o crop vertical.
+        object-position: left 22%;
+        min-height: 0;
+      }
+    }
+  }
+
+  &__parallax {
+    @media (max-width: #{$home-header-parallax-min-width - 0.0625rem}) {
+      display: none;
+    }
+
+    position: absolute;
+    // Sass não aceita misturar unidades dentro de clamp()/min() nativos; emitimos CSS literal.
+    left: #{'clamp(#{size(-24)}, -1.5vw, 0px)'};
+    bottom: 0;
+    z-index: 1;
+    width: #{'min(36vw, #{size(420)})'};
+    max-width: 52%;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(0, calc(50% + var(--home-header-parallax-y, 0px)), 0);
+    line-height: 0;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: #{'min(70vh, #{size(640)})'};
+      object-fit: contain;
+      object-position: left bottom;
+    }
+  }
+}
+
 .hero-banner {
   background-color: #2F4795;
   color: white;
