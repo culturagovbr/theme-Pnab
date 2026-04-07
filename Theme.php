@@ -65,8 +65,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
-        $isOpportunityGeneratedFromModel = fn ($entity) => $this->isOpportunityGeneratedFromModel($entity);
-        $isCultBrCreateNotYetSynced = fn ($entity) => !$this->isOpportunityCultBrCreateSynced($entity);
+        $isOpportunityGeneratedFromModel = fn($entity) => $this->isOpportunityGeneratedFromModel($entity);
+        $isCultBrCreateNotYetSynced = fn($entity) => !$this->isOpportunityCultBrCreateSynced($entity);
 
         /**
          * Controla a renderização do link "Oportunidades" no header baseado no acesso do usuário
@@ -170,7 +170,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             // Rascunho «usar modelo»: um único create até sucesso no Cult; PATCH seguintes não re-enfileiram.
-            if ((int) $this->status === OpportunityStatus::DRAFT->value
+            if (
+                (int) $this->status === OpportunityStatus::DRAFT->value
                 && $isOpportunityGeneratedFromModel($this)
                 && $isCultBrCreateNotYetSynced($this)
             ) {
@@ -243,11 +244,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             // Verifica se é a aba "Com permissão"
-            $isGrantedTab = isset($api_params['@permissions']) && 
-                           $api_params['@permissions'] === '@control' &&
-                           isset($api_params['user']) && 
-                           $api_params['user'] === '!EQ(@me)';
-            
+            $isGrantedTab = isset($api_params['@permissions']) &&
+                $api_params['@permissions'] === '@control' &&
+                isset($api_params['user']) &&
+                $api_params['user'] === '!EQ(@me)';
+
             if ($isGrantedTab) {
                 // Remove federativeEntityId se presente, mas mantém outros filtros
                 unset($api_params['federativeEntityId']);
@@ -256,12 +257,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Verifica se há federativeEntityId nos parâmetros da requisição
             $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
-            
+
             // Se não tiver nos parâmetros, tenta buscar da sessão
             if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
                 $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
                 if ($selectedEntity && isset($selectedEntity['id'])) {
-                    $federativeEntityIdParam = (string)$selectedEntity['id'];
+                    $federativeEntityIdParam = (string) $selectedEntity['id'];
                 }
             }
 
@@ -274,19 +275,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($api_params['user'], $api_params['owner']);
 
             // Extrai o ID do federativeEntityId (remove EQ() se presente)
-            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m) 
-                ? (int)$m[1] 
-                : (int)$federativeEntityIdParam;
+            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m)
+                ? (int) $m[1]
+                : (int) $federativeEntityIdParam;
 
             // Processa o status: remove duplicação de EQ() e extrai operadores
             if (isset($api_params['status'])) {
                 $status = trim($api_params['status']);
-                
+
                 // Remove múltiplas camadas de EQ() - ex: EQ(EQ(0)) -> EQ(0), EQ(EQ(EQ(0))) -> EQ(0)
                 while (preg_match('/^EQ\((EQ\([^)]+\))\)$/', $status, $m)) {
                     $status = $m[1];
                 }
-                
+
                 // Remove EQ() de operadores - ex: EQ(GTE(1)) -> GTE(1)
                 if (preg_match('/^EQ\((GTE|LTE|GT|LT|IN|BETWEEN)\(([^)]+)\)\)$/', $status, $m)) {
                     $status = $m[1] . '(' . $m[2] . ')';
@@ -302,7 +303,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         $status = 'EQ(' . $numMatch[1] . ')';
                     }
                 }
-                
+
                 $api_params['status'] = $status;
             } else {
                 $api_params['status'] = 'GTE(1)';
@@ -312,9 +313,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $conn = $app->em->getConnection();
             $params = [
                 'meta_key' => 'federativeEntityId',
-                'federativeEntityId' => (string)$federativeEntityId
+                'federativeEntityId' => (string) $federativeEntityId
             ];
-            
+
             // Consulta que busca IDs das oportunidades com metadado federativeEntityId
             $sql = "SELECT DISTINCT o.id 
                     FROM opportunity o
@@ -324,11 +325,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                             WHEN o.parent_id IS NOT NULL THEN o.parent_id 
                             ELSE o.id 
                         END";
-            
+
             $opportunityIds = [];
             try {
                 $results = $conn->executeQuery($sql, $params)->fetchAll();
-                $opportunityIds = array_map(fn($r) => (int)$r['id'], $results);
+                $opportunityIds = array_map(fn($r) => (int) $r['id'], $results);
             } catch (\Exception $e) {
                 $opportunityIds = [];
             }
@@ -336,13 +337,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Aba "Meus modelos": incluir também modelos oficiais (isModel=1 com selo verificado),
             // que não possuem federativeEntityId e por isso não entram na lista do ente
             $isModelsTab = isset($api_params['isModel']) &&
-                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string)$api_params['isModel'])) &&
+                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string) $api_params['isModel'])) &&
                 isset($api_params['status']) &&
-                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string)$api_params['status']));
+                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string) $api_params['status']));
             if ($isModelsTab) {
                 $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
                 if (is_numeric($verifiedSealsIds)) {
-                    $verifiedSealsIds = [(int)$verifiedSealsIds];
+                    $verifiedSealsIds = [(int) $verifiedSealsIds];
                 } elseif (!is_array($verifiedSealsIds)) {
                     $verifiedSealsIds = [];
                 }
@@ -355,21 +356,21 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         WHERE sr.seal_id IN ($placeholders)";
                     try {
                         $officialResults = $conn->executeQuery($sqlOfficial, array_values($verifiedSealsIds))->fetchAll();
-                        $officialIds = array_map(fn($r) => (int)$r['id'], $officialResults);
+                        $officialIds = array_map(fn($r) => (int) $r['id'], $officialResults);
                         $opportunityIds = array_values(array_unique(array_merge($opportunityIds, $officialIds)));
                     } catch (\Exception $e) {
                         // mantém apenas os do ente em caso de erro
                     }
                 }
             }
-            
+
             // Aplica filtro: se não houver nenhum ID permitido, retorna filtro que não encontra nada
             if (empty($opportunityIds)) {
                 $api_params['id'] = 'EQ(-1)';
             } else {
                 $api_params['id'] = 'IN(' . implode(',', $opportunityIds) . ')';
             }
-            
+
             unset($api_params['federativeEntityId']);
         });
 
@@ -390,7 +391,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (isset($_SESSION['selectedFederativeEntity'])) {
                 $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
                 if ($selectedEntity && isset($selectedEntity['id'])) {
-                    $federativeEntityId = (int)$selectedEntity['id'];
+                    $federativeEntityId = (int) $selectedEntity['id'];
                 }
             }
 
@@ -409,9 +410,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $conn = $app->em->getConnection();
             $params = [
                 'meta_key' => 'federativeEntityId',
-                'federativeEntityId' => (string)$federativeEntityId
+                'federativeEntityId' => (string) $federativeEntityId
             ];
-            
+
             $sql = "SELECT DISTINCT o.id 
                     FROM opportunity o
                     INNER JOIN opportunity_meta m_model ON m_model.object_id = o.id 
@@ -423,21 +424,21 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                             WHEN o.parent_id IS NOT NULL THEN o.parent_id 
                             ELSE o.id 
                         END";
-            
+
             $allowedModelIds = [];
             try {
                 $results = $conn->executeQuery($sql, $params)->fetchAll();
-                $allowedModelIds = array_map(fn($r) => (int)$r['id'], $results);
+                $allowedModelIds = array_map(fn($r) => (int) $r['id'], $results);
             } catch (\Exception $e) {
                 $allowedModelIds = [];
             }
-            
+
             // Filtra o resultado: mantém modelos do ente OU modelos oficiais (sem federativeEntityId)
             $result = array_filter($result, function ($model) use ($allowedModelIds) {
                 if (!isset($model['id'])) {
                     return false;
                 }
-                $id = (int)$model['id'];
+                $id = (int) $model['id'];
                 $isFromEntity = in_array($id, $allowedModelIds);
                 $isOfficial = !empty($model['modelIsOfficial']);
                 return $isFromEntity || $isOfficial;
@@ -445,7 +446,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $result = array_values($result);
         });
 
-       /**
+        /**
          * Hook na API para listar agentes associados ao ente federado quando há federativeEntityId
          */
         $app->hook('API.find(agent).params', function (&$api_params) use ($app, $canAccess) {
@@ -484,7 +485,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             } else {
                 $api_params['id'] = 'IN(' . implode(',', $agentIds) . ')';
             }
-            
+
             unset($api_params['federativeEntityId']);
         });
 
@@ -496,7 +497,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (UserAccessService::isGestorCultBr() && isset($_SESSION['selectedFederativeEntity'])) {
                 $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
                 if ($selectedEntity && isset($selectedEntity['id'])) {
-                    $entityId = (int)$selectedEntity['id'];
+                    $entityId = (int) $selectedEntity['id'];
 
                     // Verifica se a entidade suporta metadados e se o metadado está registrado
                     if (method_exists($this, 'getRegisteredMetadata')) {
@@ -537,7 +538,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Limpa cache de permissões quando o Ente Federado selecionado muda
          * Isso garante que as permissões sejam recalculadas imediatamente
          */
-        $app->hook('aldirblanc.selectFederativeEntity:after', function() use ($app) {
+        $app->hook('aldirblanc.selectFederativeEntity:after', function () use ($app) {
             $userAgent = $app->user->profile;
             if ($userAgent && method_exists($userAgent, 'clearPermissionCache')) {
                 $userAgent->clearPermissionCache();
@@ -576,6 +577,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
+            foreach ($nav as &$group) {
+                if (isset($group['items'])) {
+                    foreach ($group['items'] as &$item) {
+                        if (isset($item['route'])) {
+                            if (in_array($item['route'], ['panel/submissions', 'panel/registrations', 'submissions', 'registrations'])) {
+                                $item['icon'] = 'registration';
+                            } elseif (in_array($item['route'], ['panel/evaluations', 'evaluations'])) {
+                                $item['icon'] = 'evaluation';
+                            } elseif (in_array($item['route'], ['panel/validations', 'validations'])) {
+                                $item['icon'] = 'validation';
+                            }
+                        }
+                    }
+                    unset($item);
+                }
+            }
+            unset($group);
+
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
                 return;
@@ -599,7 +618,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     }
                 }
             }
-        
+
             // Criando menus específicos para GestorCultBr
             $nav['federativeEntity'] = [
                 'condition' => fn() => true,
@@ -617,7 +636,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     ],
                     [
                         'route' => 'panel/validations',
-                        'icon' => 'opportunity',
+                        'icon' => 'validation',
                         'label' => i::__('Minhas Validações'),
                     ]
                 ],
@@ -646,6 +665,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         // Mapeia o ícone do X (antigo Twitter) para o novo logo do X
         $app->hook('component(mc-icon).iconset', function (&$iconset) {
             $iconset['twitter'] = 'simple-icons:x';
+            $iconset['registration'] = 'material-symbols:description';
+            $iconset['evaluation'] = 'material-symbols:reviews';
+            $iconset['validation'] = 'material-symbols:thumb-up';
         });
 
         /**
@@ -672,11 +694,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($_SESSION['gestor_cult_sync_completed']);
             unset($_SESSION['gestor_cult_sync_error']);
             unset($_SESSION['gestor_cult_sync_error_message']);
-            
+
             // Limpa a seleção de entidade federativa
             unset($_SESSION['selectedFederativeEntity']);
             unset($_SESSION['federative_entity_redirect_uri']);
-            
+
             // Redireciona para a tela de consolidação (que vai disparar o sync)
             $_SESSION['mapasculturais.auth.redirect_path'] = $app->createUrl('aldirblanc', 'consolidatingData');
         });
@@ -818,7 +840,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         // Hook para requisições GET
         $app->hook('GET(<<*>>):before,-GET(<<auth>>.<<*>>):before', $blockAccessOnError);
-        
+
         // Hook para requisições POST
         $app->hook('POST(<<*>>):before,-POST(<<auth>>.<<*>>):before', $blockAccessOnError);
 
@@ -898,7 +920,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Validação adicional: Garante que arrays vazios sejam tratados como inválidos
          */
-        $app->hook('entity(Opportunity).validationErrors', function(&$errors) use ($app) {
+        $app->hook('entity(Opportunity).validationErrors', function (&$errors) use ($app) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
             if (!$this->isNew() && !$this->isLastPhase) {
                 // Validação de Tipos do proponente
@@ -906,7 +928,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (!is_array($proponentTypes) || count($proponentTypes) === 0) {
                     $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
                 }
-                
+
                 // Validação de Regulamento
                 $regulations = $this->getFiles('rules');
                 if (empty($regulations)) {
@@ -991,7 +1013,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     }
                 }
             }
-            
+
             // Garante que TODOS os campos com erro sejam incluídos no postData
             if (!$this->isNew() && !empty($errors)) {
                 $controller = $app->controller('opportunity');
@@ -1012,17 +1034,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa a mesma condição das validações existentes: !$entity->isNew() && !$entity->isLastPhase
          * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
          */
-        $app->hook('PATCH(opportunity.single):data', function(&$data) {
+        $app->hook('PATCH(opportunity.single):data', function (&$data) {
             /** @var \MapasCulturais\Controllers\Opportunity $this */
             $entity = $this->requestedEntity;
             if ($entity && !$entity->isNew() && !$entity->isLastPhase) {
                 if (!isset($data['registrationProponentTypes']) && !isset($this->postData['registrationProponentTypes'])) {
-                    $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes) 
-                        ? $entity->registrationProponentTypes 
+                    $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes)
+                        ? $entity->registrationProponentTypes
                         : [];
                     $this->postData['registrationProponentTypes'] = $data['registrationProponentTypes'];
                 }
-                
+
                 // Garante que o erro de arquivo seja retornado mesmo quando não está no POST
                 if (!isset($this->postData['rules'])) {
                     $this->postData['rules'] = null;
@@ -1127,7 +1149,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $app->hook('app.register:after', function () use ($app) {
             $taxonomies = $app->getRegisteredTaxonomies('MapasCulturais\Entities\Opportunity');
-            
+
             if (isset($taxonomies['area'])) {
                 $taxonomies['area']->required = false;
             }
@@ -1174,7 +1196,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Registra metadados select obrigatórios em required
             $theme->registerSelectMetadata('tipoDeEdital', i::__('Tipo de Edital'), $theme->getTipoDeEditalOptions(), 'required');
-            
+
             // Registra campos "Outros" para especificar quando "Outra" for selecionada
             $theme->registerOutrosMetadata('etapaOutros', i::__('Especificar etapa do fazer cultural'), 'etapa', 'etapaOutros');
             $theme->registerOutrosMetadata('pautaOutros', i::__('Especificar pauta temática'), 'pauta', 'pautaOutros');
@@ -1211,11 +1233,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Registra metadados de agente
             $theme->registerAgentMetadataByType(
-                'acessouFomentoCultural', 
-                i::__('Acessou Recursos Públicos de Fomento à Cultura nos Últimos 5 (Cinco) Anos?'), 
-                'select', 
-                null, 
-                $theme->getAcessoFomentoCulturalOptions(), 
+                'acessouFomentoCultural',
+                i::__('Acessou Recursos Públicos de Fomento à Cultura nos Últimos 5 (Cinco) Anos?'),
+                'select',
+                null,
+                $theme->getAcessoFomentoCulturalOptions(),
                 []
             );
 
@@ -1406,7 +1428,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
      */
     private function registerSelectMetadata(string $key, string $label, array $options, string $operationType): void
     {
-        $metadataValues =  [
+        $metadataValues = [
             'label' => $label,
             'type' => 'select',
             'options' => $options,
@@ -1417,7 +1439,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 'required' => i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.'),
             ];
         } else {
-            $metadataValues['should_validate'] = function($entity) use ($label, $operationType) {
+            $metadataValues['should_validate'] = function ($entity) use ($label, $operationType) {
                 return $this->redefineRuleValidate($operationType, $entity, $label);
             };
         }
@@ -1433,7 +1455,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
      * @param string $label Label do campo (já traduzido)
      * @return string|false Retorna mensagem de erro se inválido, false se não precisa validar
      */
-    private function redefineRuleValidate($operationType, $entity, $label) {
+    private function redefineRuleValidate($operationType, $entity, $label)
+    {
         if ($operationType === 'edit') {
             if (!empty($entity->id)) {
                 return i::__('O campo ') . strtolower($label) . i::__(' é obrigatório.');
@@ -1493,7 +1516,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $this->registerOpportunityMetadata($key, [
             'label' => $label,
             'type' => 'string',
-            'should_validate' => function($entity, $value) use ($theme, $campoPrincipal, $campoOutros, $label) {
+            'should_validate' => function ($entity, $value) use ($theme, $campoPrincipal, $campoOutros, $label) {
                 return $theme->validateOutrosField(
                     $entity,
                     $value,
@@ -1578,14 +1601,14 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         if (!class_exists($className)) {
             return [];
         }
-        
+
         $app = App::i();
         $allMetadata = $app->getRegisteredMetadata($className);
-        
+
         if (isset($allMetadata[$metadataKey]) && isset($allMetadata[$metadataKey]->options)) {
             return $allMetadata[$metadataKey]->options;
         }
-        
+
         return [];
     }
 
@@ -2151,7 +2174,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $isGeneratedFromModel = $this->isOpportunityGeneratedFromModel($entity);
 
         // Se federativeEntityId não estiver definido, não disparar o job
-        if ($federativeEntityId === null
+        if (
+            $federativeEntityId === null
             || $federativeEntityId === ''
             || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
         ) {
