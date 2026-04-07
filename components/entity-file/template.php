@@ -86,6 +86,11 @@ $this->import('
                             <label><?php i::_e('Descreva abaixo os motivos do recurso') ?></label>
                             <textarea v-model="formData.description"></textarea>
                         </div>
+                        <div v-if="hasErrors && getErrors.length > 0" class="col-12 field" style="margin-top: 10px;">
+                            <div style="border: 1px solid var(--danger, #d32f2f); border-radius: 6px; background-color: var(--danger-light, #ffebee); padding: 12px; color: var(--danger, #d32f2f); text-align: center; font-weight: 400;">
+                                {{getErrors.join(' ')}}
+                            </div>
+                        </div>
                     </slot>
                 </div>
             </form>
