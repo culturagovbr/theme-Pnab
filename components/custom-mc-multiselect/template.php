@@ -54,7 +54,7 @@ $this->import('
             <mc-tag-list
                 :tags="tagsForDisplay"
                 :labels="description.options"
-                classes="opportunity__background"
+                classes="custom-mc-multiselect__tags"
                 editable
                 @remove="onRemove"
             ></mc-tag-list>
