@@ -41,19 +41,23 @@ $this->import('
             <h3><?= i::__("Informações obrigatórias") ?></h3>
         </template>
         <template #content>
-            <?php $this->applyTemplateHook('opportunity-basic-info','before')?>
+            <?php $this->applyTemplateHook('opportunity-basic-info', 'before') ?>
             <div class="grid-12">
-                <?php $this->applyTemplateHook('opportunity-basic-info','begin')?>
+                <?php $this->applyTemplateHook('opportunity-basic-info', 'begin') ?>
                 <entity-field :entity="entity" prop="registrationFrom" classes="col-6 sm:col-12"></entity-field>
-                <entity-field v-if="!entity.isContinuousFlow || entity.hasEndDate" :entity="entity" prop="registrationTo" classes="col-6 sm:col-12"></entity-field>
+                <entity-field v-if="!entity.isContinuousFlow || entity.hasEndDate" :entity="entity"
+                    prop="registrationTo" classes="col-6 sm:col-12"></entity-field>
 
-                <entity-field v-if="lastPhase && entity.isContinuousFlow && entity.hasEndDate" :entity="lastPhase" prop="publishTimestamp" label="<?php i::esc_attr_e("Publicação final de resultados (data e hora)") ?>" classes="col-6 sm:col-12"></entity-field>
-                
-                
-                
-                <?php $this->applyTemplateHook('opportunity-basic-info','afeter')?>
+                <entity-field v-if="lastPhase && entity.isContinuousFlow && entity.hasEndDate" :entity="lastPhase"
+                    prop="publishTimestamp"
+                    label="<?php i::esc_attr_e("Publicação final de resultados (data e hora)") ?>"
+                    classes="col-6 sm:col-12"></entity-field>
+
+
+
+                <?php $this->applyTemplateHook('opportunity-basic-info', 'afeter') ?>
             </div>
-            <?php $this->applyTemplateHook('opportunity-basic-info','end')?>
+            <?php $this->applyTemplateHook('opportunity-basic-info', 'end') ?>
         </template>
     </mc-card>
 </div>
@@ -69,19 +73,20 @@ $this->import('
                         <entity-profile :entity="entity"></entity-profile>
                     </div>
                     <div class="header-opp__field grid-12 col-9 sm:col-12">
-                        <entity-field :entity="entity" prop="name" classes="header-opp__field--name col-12"></entity-field>
-                        <entity-field :entity="entity" prop="tipoDeEdital" classes="header-opp__field--name col-12"></entity-field>
+                        <entity-field :entity="entity" prop="name"
+                            classes="header-opp__field--name col-12"></entity-field>
+                        <entity-field :entity="entity" prop="tipoDeEdital"
+                            classes="header-opp__field--name col-12"></entity-field>
                     </div>
-                    <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription" :max-length="400"></entity-field>
-                    <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="longDescription"></entity-field>
+                    <entity-field :entity="entity" classes="header-opp__field--name col-12" prop="shortDescription"
+                        :max-length="400"></entity-field>
+                    <entity-field :entity="entity" classes="header-opp__field--name col-12"
+                        prop="longDescription"></entity-field>
 
                     <mc-federative-entity-par
                         v-if="entity.parExercicioId || entity.parMetaId || entity.parAcaoId || entity.parAtividadeId"
-                        class="header-opp__field header-opp__field--par-readonly grid-12 col-12"
-                        readonly
-                        load-par-exercicios
-                        :model-value="parSelecoesParaExibicao"
-                    ></mc-federative-entity-par>
+                        class="header-opp__field header-opp__field--par-readonly grid-12 col-12" readonly
+                        load-par-exercicios :model-value="parSelecoesParaExibicao"></mc-federative-entity-par>
                 </div>
             </template>
         </mc-card>
@@ -91,7 +96,8 @@ $this->import('
             <template #content>
                 <div class="grid-12">
                     <div class="col-12 sm:col-12">
-                        <custom-mc-multiselect :entity="entity" prop="segmento" outros-prop="segmentoOutros" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a segmentos específicos')) ?>'>
+                        <custom-mc-multiselect :entity="entity" prop="segmento" outros-prop="segmentoOutros"
+                            :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a segmentos específicos')) ?>'>
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
@@ -99,7 +105,9 @@ $this->import('
                     </div>
 
                     <div class="col-12 sm:col-12">
-                        <custom-mc-multiselect :entity="entity" prop="pauta" outros-prop="pautaOutros" :show-all-options="false" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a pautas específicas')) ?>'>
+                        <custom-mc-multiselect :entity="entity" prop="pauta" outros-prop="pautaOutros"
+                            :show-all-options="false"
+                            :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a pautas específicas')) ?>'>
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
@@ -107,7 +115,9 @@ $this->import('
                     </div>
 
                     <div class="col-12 sm:col-12">
-                        <custom-mc-multiselect :entity="entity" prop="etapa" outros-prop="etapaOutros" :show-all-options="false" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a etapa específica')) ?>'>
+                        <custom-mc-multiselect :entity="entity" prop="etapa" outros-prop="etapaOutros"
+                            :show-all-options="false"
+                            :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a etapa específica')) ?>'>
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
@@ -115,7 +125,8 @@ $this->import('
                     </div>
 
                     <div class="col-12 sm:col-12">
-                        <custom-mc-multiselect :entity="entity" prop="territorio" :show-all-options="false" :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a territórios específicos')) ?>'>
+                        <custom-mc-multiselect :entity="entity" prop="territorio" :show-all-options="false"
+                            :not-applicable-label='<?= json_encode(i::__('Edital não se direciona a territórios específicos')) ?>'>
                             <template #info>
                                 <span class="required">*<?php i::_e('obrigatório') ?></span>
                             </template>
@@ -131,24 +142,29 @@ $this->import('
                 <div class="grid-12">
                     <div class="col-12 divider"></div>
 
-                    <opportunity-recursos-outras-fontes :entity="entity" class="col-12"></opportunity-recursos-outras-fontes>
+                    <opportunity-recursos-outras-fontes :entity="entity"
+                        class="col-12"></opportunity-recursos-outras-fontes>
 
                     <div class="col-12 divider"></div>
 
                     <div class="opportunity-basic-info__formas-inscricao col-12">
-                        <opportunity-formas-inscricao-edital :entity="entity" class="col-12"></opportunity-formas-inscricao-edital>
+                        <opportunity-formas-inscricao-edital :entity="entity"
+                            class="col-12"></opportunity-formas-inscricao-edital>
                     </div>
 
                     <div class="col-12 divider"></div>
 
                     <div class="opportunity-basic-info__outras-modalidades col-12">
-                        <opportunity-outras-modalidades-acoes-afirmativas :entity="entity" class="col-12"></opportunity-outras-modalidades-acoes-afirmativas>
+                        <opportunity-outras-modalidades-acoes-afirmativas :entity="entity"
+                            class="col-12"></opportunity-outras-modalidades-acoes-afirmativas>
                     </div>
 
                     <div class="col-12 divider"></div>
 
-                    <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads" title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
-                    <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>" editable></entity-links>
+                    <entity-files-list :entity="entity" classes="content-fileList col-12" group="downloads"
+                        title="<?php i::esc_attr_e('Adicionar arquivos'); ?>" editable></entity-files-list>
+                    <entity-links :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Adicionar links'); ?>"
+                        editable></entity-links>
                     <entity-gallery-video :entity="entity" classes="col-12" editable></entity-gallery-video>
                     <entity-gallery :entity="entity" classes="col-12" editable></entity-gallery>
                 </div>
@@ -159,12 +175,16 @@ $this->import('
         <mc-card>
             <div class="grid-12">
                 <link-opportunity :entity="entity" editable class="col-12"></link-opportunity>
-                <entity-file :entity="entity" titleModal="<?php i::_e('Adicionar regulamento') ?>" groupName="rules" classes="col-12" title="<?php i::esc_attr_e('Adicionar regulamento'); ?>" :required="true" editable></entity-file>
+                <entity-file :entity="entity" titleModal="<?php i::_e('Adicionar regulamento') ?>" groupName="rules"
+                    classes="col-12" title="<?php i::esc_attr_e('Adicionar regulamento'); ?>" :required="true"
+                    editable></entity-file>
                 <entity-admins :entity="entity" classes="col-12" editable></entity-admins>
                 <!-- <entity-related-agents :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Agentes Relacionados'); ?>" editable></entity-related-agents> -->
                 <entity-social-media :entity="entity" classes="col-12" editable></entity-social-media>
-                <entity-seals :entity="entity" :editable="entity.currentUserPermissions?.createSealRelation" classes="col-12" title="<?php i::esc_attr_e('Verificações'); ?>"></entity-seals>
-                <entity-terms :entity="entity" classes="col-12" taxonomy="tag" title="<?php i::_e('Tags') ?>" editable></entity-terms>
+                <entity-seals :entity="entity" :editable="entity.currentUserPermissions?.createSealRelation"
+                    classes="col-12" title="<?php i::esc_attr_e('Verificações'); ?>"></entity-seals>
+                <entity-terms :entity="entity" classes="col-12" taxonomy="tag" title="<?php i::_e('Tags') ?>"
+                    editable></entity-terms>
                 <entity-owner :entity="entity" classes="col-12" title="Publicado por" editable></entity-owner>
             </div>
         </mc-card>
