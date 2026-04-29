@@ -895,16 +895,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         /**
          * Validação de oportunidade:
-         * - Torna o campo "Descrição curta" obrigatório em qualquer fase
+         * - Torna o campo "Descrição curta" obrigatório apenas para oportunidade raiz
          * - Torna o campo "Tipos do proponente" obrigatório nas fases de edição (não novas e não últimas fases)
          */
         $app->hook('entity(Opportunity).validations', function (&$validations) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
 
-            // Descrição curta obrigatória (inclui criação via modal)
-            $validations['shortDescription'] = [
-                'required' => i::__('O campo "Descrição curta" é obrigatório.')
-            ];
+            // Descrição curta obrigatória apenas na oportunidade raiz (pai)
+            if (!$this->parent) {
+                $validations['shortDescription'] = [
+                    'required' => i::__('O campo "Descrição curta" é obrigatório.')
+                ];
+            }
 
             // Tipos do proponente obrigatórios apenas em edição, como já era feito antes
             if (!$this->isNew() && !$this->isLastPhase) {
@@ -922,6 +924,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $app->hook('entity(Opportunity).validationErrors', function (&$errors) use ($app) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
+            if ($this->parent) {
+                // Em fases (oportunidades filhas), não valida os campos "Descrição curta" e "Tipo de Edital"
+                unset($errors['shortDescription'], $errors['tipoDeEdital']);
+            }
+
             if (!$this->isNew() && !$this->isLastPhase) {
                 // Validação de Tipos do proponente
                 $proponentTypes = $this->registrationProponentTypes;
