@@ -288,23 +288,4 @@ return [
             'links' => []
         ]
     ],
-
-    # CAPTCHA
-    'captcha' => [
-        'provider' => env('PNAB_CAPTCHA_PROVIDER', env('CAPTCHA_PROVIDER', 'google')),
-        'providers' => [
-            'google' => [
-                'url' => 'https://www.google.com/recaptcha/api.js?onload=vueRecaptchaApiLoaded&render=explicit',
-                'verify' => 'https://www.google.com/recaptcha/api/siteverify',
-                'key' => env('PNAB_CAPTCHA_SITEKEY', env('CAPTCHA_SITEKEY', null)),
-                'secret' => env('PNAB_CAPTCHA_SECRET', env('CAPTCHA_SECRET', null))
-            ],
-            'cloudflare' => [
-                'url' => 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
-                'verify' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                'key' => env('PNAB_CAPTCHA_SITEKEY', env('CAPTCHA_SITEKEY', null)),
-                'secret' => env('PNAB_CAPTCHA_SECRET', env('CAPTCHA_SECRET', null))
-            ]
-        ]
-    ]
 ];
