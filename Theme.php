@@ -46,6 +46,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         parent::_init();
         $app = App::i();
 
+        $app->hook('template(<<*>>.<<*>>.body):begin', function () {
+            if (UserAccessService::isGestorCultBr()) {
+                $this->import('tawk-to-chat');
+                echo '<tawk-to-chat></tawk-to-chat>';
+            }
+        });
+
         /**
          * Login (MultipleLocalAuth): repassa auth.config.onlyGovBr para o componente `login` do tema
          * (e-mail/CPF, captcha e demais provedores ocultos quando true — ver config.php).
