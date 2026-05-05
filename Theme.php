@@ -19,8 +19,7 @@ use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
  * @method void import(string $components) Importa lista de componentes Vue. * 
  */
 // Alteração necessária para rodar o theme-Pnab como submodule do culturagovbr/mapadacultura
-// class Theme extends \BaseTheme\Theme
-class Theme extends \MapasCulturais\Themes\BaseV2\Theme
+class Theme extends \BaseTheme\Theme
 {
     private const METADATA_RANGE_SUM_KEYS = [
         'vacancies' => 'limit',
