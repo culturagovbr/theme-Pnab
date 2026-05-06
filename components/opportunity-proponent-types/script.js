@@ -58,6 +58,18 @@ app.component('opportunity-proponent-types', {
     },
 
     methods: {
+        usesCollectiveAgentRelation(optionValue) {
+            return optionValue === 'Coletivo' || optionValue === 'Pessoa Jurídica';
+        },
+
+        sanitizeProponentAgentRelation() {
+            for (const optionValue of Object.keys(this.proponentAgentRelation)) {
+                if (!this.usesCollectiveAgentRelation(optionValue)) {
+                    this.proponentAgentRelation[optionValue] = false;
+                }
+            }
+        },
+
         ensureFieldInSave() {
             // Garante que o campo seja sempre incluído no save, mesmo quando vazio
             const currentValue = Array.isArray(this.entity.registrationProponentTypes) 
@@ -84,7 +96,9 @@ app.component('opportunity-proponent-types', {
 
             if (index === -1) {
                 this.value.push(optionValue);
-                this.proponentAgentRelation[optionValue] = true;
+                if (this.usesCollectiveAgentRelation(optionValue)) {
+                    this.proponentAgentRelation[optionValue] = true;
+                }
             } else {
                 this.value.splice(index, 1);
                 this.proponentAgentRelation[optionValue] = false;
@@ -95,6 +109,7 @@ app.component('opportunity-proponent-types', {
         },
 
         updateProponentAgentRelation() {
+            this.sanitizeProponentAgentRelation();
             const anyAgentRelationChecked = Object.values(this.proponentAgentRelation).includes(true);
             this.entity.useAgentRelationColetivo = anyAgentRelationChecked ? 'required' : 'dontUse';
             this.entity.proponentAgentRelation = this.proponentAgentRelation;
