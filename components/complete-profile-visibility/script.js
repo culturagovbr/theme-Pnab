@@ -40,6 +40,16 @@ app.component('complete-profile-visibility', {
                 this.initVisibility();
             },
             immediate: true
+        },
+        'entity.__pnabValidationErrorFields': {
+            handler(fields) {
+                const list = Array.isArray(fields) ? fields : [];
+                if (!list.length) {
+                    return;
+                }
+                this.revealFieldsWithErrors(list);
+            },
+            deep: false
         }
     },
 
@@ -117,6 +127,47 @@ app.component('complete-profile-visibility', {
                 set.has('comunidadesTradicional');
 
             this.initialized = true;
+        },
+
+        revealFieldsWithErrors(fields) {
+            const set = new Set(this.visibleFieldsSet);
+            fields.forEach((field) => set.add(field));
+            this.visibleFieldsSet = set;
+
+            const addressProps = ['En_Nome_Logradouro', 'En_Num', 'En_Bairro', 'En_Municipio', 'En_Estado', 'En_CEP'];
+            if (fields.some((field) => addressProps.includes(field))) {
+                this.addressVisible = true;
+            }
+
+            if (fields.some((field) => ['name', 'terms.area', 'shortDescription'].includes(field))) {
+                this.showCardApresentacao = true;
+            }
+
+            if (fields.some((field) => [
+                'nomeCompleto',
+                'type',
+                'cpf',
+                'emailPrivado',
+                'telefonePublico',
+                'acessouFomentoCultural',
+                'anosExperienciaAreaCultural',
+                'eMestreCulturasTradicionais'
+            ].includes(field)) || this.addressVisible) {
+                this.showCardPessoais = true;
+            }
+
+            if (fields.some((field) => [
+                'dataDeNascimento',
+                'genero',
+                'orientacaoSexual',
+                'raca',
+                'renda',
+                'escolaridade',
+                'pessoaDeficiente',
+                'comunidadesTradicional'
+            ].includes(field))) {
+                this.showCardSensiveis = true;
+            }
         }
     }
 });

@@ -1144,6 +1144,29 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          */
         $app->hook('entity(Agent).validationErrors', function (array &$errors) use ($app) {
             /** @var \MapasCulturais\Entities\Agent $this */
+            $referer = $_SERVER['HTTP_REFERER'] ?? '';
+            $isCompleteProfileContext = is_string($referer) && stripos($referer, '/aldirblanc/completeProfile') !== false;
+
+            if ($isCompleteProfileContext && !empty($errors)) {
+                $theme = $app->view;
+                $typeId = is_object($this->type) ? ($this->type->id ?? null) : $this->type;
+                $typeId = $typeId === null ? null : (int) $typeId;
+
+                $requiredKeys = [];
+                if ($typeId === self::AGENT_COLETIVO_TYPE_ID && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
+                    $requiredKeys = $theme->getRequeredsAgentColetivoMetadata();
+                } elseif (($typeId === self::AGENT_INDIVIDUAL_TYPE_ID || $typeId === null) && method_exists($theme, 'getRequeredsAgentIndividualMetadata')) {
+                    $requiredKeys = $theme->getRequeredsAgentIndividualMetadata();
+                }
+
+                foreach (array_keys($errors) as $field) {
+                    if (!in_array($field, $requiredKeys, true)) {
+                        unset($errors[$field]);
+                    }
+                }
+
+            }
+
             if (!empty($errors)) {
                 $controller = $app->controller('agent');
                 if ($controller && isset($controller->postData)) {
@@ -1368,6 +1391,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         }
                         return false;
                     };
+                }
+
+                // PNAB (individual): desativa validação de campos fora do formulário.
+                $individualHiddenFieldsWithoutForm = ['telefone2', 'telefone1', 'emailPublico', 'cnpj'];
+                foreach ($individualHiddenFieldsWithoutForm as $metaKey) {
+                    if (!isset($definitionsIndividual[$metaKey])) {
+                        continue;
+                    }
+
+                    $metaDef = $definitionsIndividual[$metaKey];
+                    $metaConfig = array_merge([], $metaDef->config);
+                    $metaConfig['validations'] = [];
+                    $metaConfig['should_validate'] = function () {
+                        return false;
+                    };
+
+                    $app->registerMetadata(
+                        new \MapasCulturais\Definitions\Metadata($metaKey, $metaConfig),
+                        $agentClass,
+                        $tipoIndividualId
+                    );
                 }
             }
         });
