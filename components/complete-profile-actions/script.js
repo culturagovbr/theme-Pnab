@@ -25,6 +25,8 @@ app.component('complete-profile-actions', {
 
             this.loading = true
             try {
+                this.entity.__pnabValidationErrorFields = []
+
                 // 1) Persiste o formulário (PATCH agent/single)
                 await this.entity.save()
 
@@ -41,6 +43,11 @@ app.component('complete-profile-actions', {
                 const redirectUri = data?.redirectUri || $MAPAS?.completeProfile?.redirectUri || '/painel'
                 window.location.href = redirectUri
             } catch (error) {
+                const backendErrors = error?.data || {}
+                const fieldsWithErrors = Object.keys(backendErrors)
+                if (fieldsWithErrors.length) {
+                    this.entity.__pnabValidationErrorFields = fieldsWithErrors
+                }
                 console.error('Complete profile:', error)
             } finally {
                 this.loading = false
