@@ -5,7 +5,10 @@
  * Garante `etapa` (e a lista usada no workplan via Theme.php) a partir desta definição
  * quando o tema ativo é o Pnab.
  */
-$opportunity_types = include APPLICATION_PATH . '/conf/opportunity-types.php';
+$sniic_file = APPLICATION_PATH . 'plugins/SNIICDataStandard/opportunity-types.php';
+$opportunity_types = file_exists($sniic_file)
+    ? include $sniic_file
+    : include APPLICATION_PATH . '/conf/opportunity-types.php';
 
 $opportunity_types['metadata']['etapa'] = [
     'label' => \MapasCulturais\i::__('Etapa do fazer cultural'),
