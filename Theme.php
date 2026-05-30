@@ -45,6 +45,25 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         parent::_init();
         $app = App::i();
 
+        $app->hook('template(<<*>>.<<*>>.body):begin', function () {
+            if (UserAccessService::isGestorCultBr()) {
+                $this->import('tawk-to-chat');
+                echo '<tawk-to-chat></tawk-to-chat>';
+            }
+        });
+
+        /**
+         * Login (MultipleLocalAuth): repassa auth.config.onlyGovBr para o componente `login` do tema
+         * (e-mail/CPF, captcha e demais provedores ocultos quando true — ver config.php).
+         */
+        $app->hook('GET(auth.index):before', function () use ($app) {
+            if (!isset($app->view->jsObject['login']) || !is_array($app->view->jsObject['login'])) {
+                $app->view->jsObject['login'] = [];
+            }
+            $authConfig = $app->config['auth.config'] ?? [];
+            $app->view->jsObject['login']['onlyGovBr'] = (bool) ($authConfig['onlyGovBr'] ?? false);
+        });
+
         /** PAR opcional na criação para admin (@see UserAccessService::isAdmin). */
         $app->hook('view.render(<<*>>):before', function () use ($app) {
             $app->view->jsObject['config']['parOptionalOnCreate'] = UserAccessService::isAdmin();
