@@ -205,6 +205,7 @@ $gray-700: #19191c !default;
 @import './components/home-entities';
 @import './components/home-header';
 @import './components/home-description';
+@import './components/mc-breadcrumb';
 @import './components/federative-entity-selector';
 @import './components/federative-entity-banner';
 @import './components/consolidating-data';
@@ -824,4 +825,3 @@ body {
 .entity-card__footer--action .button {
     max-width: 272px;
 }
-

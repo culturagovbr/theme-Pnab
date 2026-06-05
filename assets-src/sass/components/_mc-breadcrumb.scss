@@ -1,0 +1,12 @@
+.federative-entity-single {
+    .mc-breadcrumb {
+        color: var(--mc-low-500);
+
+        @media (min-width: 50.0625rem) {
+            li::before {
+                content: none;
+                display: none;
+            }
+        }
+    }
+}
