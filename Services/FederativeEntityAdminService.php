@@ -33,6 +33,31 @@ class FederativeEntityAdminService
         return $this->app->repo(FederativeEntity::class)->find($id);
     }
 
+    public function getAgentFederativeEntitiesData(Agent $agent): array
+    {
+        $relations = $this->app->repo(FederativeEntityAgentRelation::class)->findBy([
+            'agent' => $agent,
+            'status' => AgentRelation::STATUS_ENABLED,
+        ]);
+
+        $entities = [];
+        foreach ($relations as $relation) {
+            $entity = $relation->owner;
+            if ($entity instanceof FederativeEntity) {
+                $entities[(int) $entity->id] = [
+                    'id' => (int) $entity->id,
+                    'name' => (string) $entity->name,
+                    'document' => $this->formatCnpj($entity->document),
+                    'singleUrl' => $this->app->createUrl('panel', 'federativeEntitySingle', [$entity->id]),
+                ];
+            }
+        }
+
+        usort($entities, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+        return array_values($entities);
+    }
+
     public function getRequestedEntityData(FederativeEntity $entity): array
     {
         return [
