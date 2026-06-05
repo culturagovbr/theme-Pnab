@@ -30,14 +30,17 @@ $formatDate = function ($date): string {
     }
 };
 
-$viewEntities = array_map(function (array $entity) use ($formatCnpj, $formatDate) {
+$viewEntities = array_map(function (array $entity) use ($app, $formatCnpj, $formatDate) {
+    $id = (int) ($entity['id'] ?? 0);
+
     return [
-        'id' => (int) ($entity['id'] ?? 0),
+        'id' => $id,
         'name' => (string) ($entity['name'] ?? ''),
         'document' => $formatCnpj($entity['document'] ?? ''),
         'managersCount' => (int) ($entity['managers_count'] ?? 0),
         'updatedAt' => $formatDate($entity['update_timestamp'] ?? null),
         'updatedAtOrder' => $entity['update_timestamp'] ? strtotime((string) $entity['update_timestamp']) : 0,
+        'singleUrl' => $app->createUrl('panel', 'federativeEntitySingle', [$id]),
     ];
 }, $entities);
 ?>

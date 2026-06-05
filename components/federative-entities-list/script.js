@@ -55,7 +55,8 @@ app.component('federative-entities-list', {
                 entity.document = item.document;
                 entity.managersCount = item.managersCount;
                 entity.updatedAt = item.updatedAt;
-                entity.singleUrl = '#';
+                entity.federativeEntityUrl = item.singleUrl || '#';
+                entity.singleUrl = item.singleUrl || '#';
                 entity.editUrl = '#';
 
                 return entity;

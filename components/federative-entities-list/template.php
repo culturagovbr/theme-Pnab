@@ -2,8 +2,10 @@
 use MapasCulturais\i;
 
 $this->import('
+    mc-icon
     mc-tab
     mc-tabs
+    mc-title
     panel--entity-card
 ');
 ?>
@@ -27,6 +29,14 @@ $this->import('
 
         <template v-if="cardEntities.length">
             <panel--entity-card v-for="entity in cardEntities" :key="entity.id" :entity="entity">
+                <template #title="{ entity }">
+                    <a :href="entity.federativeEntityUrl" class="panel-entity-card__header--info-link">
+                        <mc-title tag="h2" :shortLength="100" :longLength="110">
+                            {{ entity.name || entity.id }}
+                        </mc-title>
+                    </a>
+                </template>
+
                 <template #subtitle="{ entity }">
                     {{ entity.document }}
                 </template>
@@ -44,7 +54,9 @@ $this->import('
 
                 <template #entity-actions-left></template>
                 <template #entity-actions-center></template>
-                <template #entity-actions-right></template>
+                <template #entity-actions-right>
+                    <a :href="entity.federativeEntityUrl" class="button button--primary-outline button--icon button-action"><?= i::_e('Acessar') ?> <mc-icon name="arrowPoint-right"></mc-icon></a>
+                </template>
             </panel--entity-card>
         </template>
 
