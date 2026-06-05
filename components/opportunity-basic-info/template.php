@@ -8,7 +8,9 @@ use MapasCulturais\i;
 
 $this->import('
     confirm-before-exit
+    custom-http-multiselect
     mc-federative-entity-par
+    mc-alert
     entity-admins
     entity-cover
     entity-field
@@ -35,6 +37,26 @@ $this->import('
 ?>
 <div class="opportunity-basic-info__container">
     <entity-status v-if="!entity.isModel" :entity="entity"></entity-status>
+
+    <mc-card v-if="isOfficialModelAdmin">
+        <template #content>
+            <div v-if="!parActionsLoading" class="opportunity-basic-info__official-model-alert">
+                <mc-alert type="warning">
+                    <strong><?php i::_e('Atenção') ?></strong><br>
+                    <?php i::_e('Ao associar este modelo oficial a ações do PAR, ele será exibido apenas nas ações definidas.') ?>
+                </mc-alert>
+            </div>
+
+            <custom-http-multiselect
+                :entity="entity"
+                prop="parActions"
+                label="<?php i::esc_attr_e('Ações do PAR') ?>"
+                endpoint="parAcoes"
+                classes="col-12"
+                @loading="parActionsLoading = $event"
+            ></custom-http-multiselect>
+        </template>
+    </mc-card>
 
     <mc-card>
         <template #title>

@@ -2,12 +2,14 @@
 
 use Pnab\Enum\OtherValues;
 use Pnab\Theme;
+use AldirBlanc\Services\UserAccessService;
 
 $this->useOpportunityAPI();
 $entity = $this->controller->requestedEntity;
 
 $this->jsObject['config']['opportunityBasicInfo'] = [
     'date' => $entity::CONTINUOUS_FLOW_DATE,
+    'isSaasSuperAdmin' => UserAccessService::isSaasSuperAdmin(),
 ];
 
 $this->jsObject['config']['opportunityOtherOptions'] = [

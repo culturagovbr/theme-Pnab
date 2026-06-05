@@ -29,6 +29,7 @@ app.component('opportunity-basic-info' , {
             requiredFields: ['segmento', 'etapa', 'pauta', 'territorio'],
             etapaOutrosField: 'etapaOutros',
             pautaOutrosField: 'pautaOutros',
+            parActionsLoading: false,
         };
     },
 
@@ -71,7 +72,16 @@ app.component('opportunity-basic-info' , {
             const phase = this.phases.find(item => item.isLastPhase);
             return phase;
         },
-        
+
+        isOfficialModelAdmin() {
+            const config = $MAPAS.config?.opportunityBasicInfo || {};
+            const isModel = String(this.entity?.isModel || '') === '1';
+            const seals = this.entity?.seals || [];
+            const hasVerificationSeal = seals.some((seal) => Boolean(seal.isVerificationSeal));
+
+            return Boolean(config.isSaasSuperAdmin && isModel && hasVerificationSeal);
+        },
+
         isEtapaOutra() {
             const val = this.entity.etapa;
             const outra = $MAPAS.config.opportunityOtherOptions.etapa;
