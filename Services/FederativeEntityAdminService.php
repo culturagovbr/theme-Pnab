@@ -3,41 +3,28 @@
 namespace Pnab\Services;
 
 use AldirBlanc\Entities\FederativeEntity;
+use AldirBlanc\Entities\FederativeEntityAgentRelation;
 use MapasCulturais\App;
+use MapasCulturais\Entities\Agent;
+use MapasCulturais\Entities\AgentRelation;
 
 class FederativeEntityAdminService
 {
-    private const OBJECT_TYPE = 'AldirBlanc\\Entities\\FederativeEntity';
-
     public function __construct(private App $app)
     {
     }
 
     public function getViewData(): array
     {
-        $conn = $this->app->em->getConnection();
-
-        $sql = "
-            SELECT
-                fe.id,
-                fe.name,
-                fe.document,
-                fe.exercices,
-                fe.update_timestamp,
-                COUNT(DISTINCT ar.agent_id) AS managers_count
-            FROM federative_entity fe
-            LEFT JOIN agent_relation ar ON ar.object_id = fe.id
-                AND ar.object_type = :objectType
-            GROUP BY fe.id, fe.name, fe.document, fe.exercices, fe.update_timestamp
-            ORDER BY LOWER(fe.name) ASC, fe.id ASC
-        ";
-
-        $result = $conn->executeQuery($sql, [
-            'objectType' => self::OBJECT_TYPE,
-        ]);
+        $entities = $this->app->repo(FederativeEntity::class)
+            ->createQueryBuilder('entity')
+            ->orderBy('LOWER(entity.name)', 'ASC')
+            ->addOrderBy('entity.id', 'ASC')
+            ->getQuery()
+            ->getResult();
 
         return [
-            'entities' => $this->fetchAll($result),
+            'entities' => array_map([$this, 'getListEntityData'], $entities),
         ];
     }
 
@@ -77,36 +64,45 @@ class FederativeEntityAdminService
 
     private function getAssociatedAgentIds(FederativeEntity $entity): array
     {
-        $conn = $this->app->em->getConnection();
+        $agentIds = [];
+        foreach ($this->getEnabledRelations($entity) as $relation) {
+            $agent = $relation->agent;
+            if ($agent && $agent->status === Agent::STATUS_ENABLED) {
+                $agentIds[] = (int) $agent->id;
+            }
+        }
 
-        $sql = "
-            SELECT DISTINCT a.id
-            FROM agent_relation ar
-            INNER JOIN agent a ON a.id = ar.agent_id
-            WHERE ar.object_type = :objectType
-                AND ar.object_id = :objectId
-                AND a.status = 1
-            ORDER BY a.id ASC
-        ";
-
-        $result = $conn->executeQuery($sql, [
-            'objectType' => self::OBJECT_TYPE,
-            'objectId' => $entity->id,
-        ]);
+        sort($agentIds);
 
         return array_map(
             fn($id) => ['id' => (int) $id],
-            array_column($this->fetchAll($result), 'id')
+            array_values(array_unique($agentIds))
         );
     }
 
-    private function fetchAll($result): array
+    private function getListEntityData(FederativeEntity $entity): array
     {
-        if (method_exists($result, 'fetchAllAssociative')) {
-            return $result->fetchAllAssociative();
-        }
+        return [
+            'id' => (int) $entity->id,
+            'name' => (string) $entity->name,
+            'document' => (string) $entity->document,
+            'exercices' => $entity->exercices,
+            'update_timestamp' => $this->formatDateTime($entity->updateTimestamp),
+            'managers_count' => count($this->getEnabledRelations($entity)),
+        ];
+    }
 
-        return $result->fetchAll();
+    private function getEnabledRelations(FederativeEntity $entity): array
+    {
+        return $this->app->repo(FederativeEntityAgentRelation::class)->findBy([
+            'owner' => $entity,
+            'status' => AgentRelation::STATUS_ENABLED,
+        ]);
+    }
+
+    private function formatDateTime(?\DateTimeInterface $date): ?string
+    {
+        return $date?->format('Y-m-d H:i:s');
     }
 
     private function formatCnpj(?string $document): string
