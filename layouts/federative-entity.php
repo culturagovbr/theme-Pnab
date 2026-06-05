@@ -1,6 +1,7 @@
 <?php
 $this->bodyClasses[] = 'agent-2';
 $this->bodyClasses[] = 'layout-entity';
+$this->bodyClasses[] = 'action-single';
 ?>
 <?php $this->part('header', $render_data) ?>
 <?php $this->part('main-header', $render_data) ?>
