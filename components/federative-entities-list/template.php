@@ -10,6 +10,21 @@ $this->import('
 
 <mc-tabs class="entity-tabs models" sync-hash>
     <mc-tab label="<?= i::esc_attr__('Entes') ?>" slug="entities">
+        <form class="entity-tabs__filters panel__row" @submit="$event.preventDefault();">
+            <input type="search" class="entity-tabs__search-input"
+                aria-label="<?= i::__('Palavras-chave') ?>"
+                placeholder="<?= i::__('Buscar por palavras-chave') ?>"
+                v-model="keyword">
+
+            <label> <?= i::__("Ordernar por:") ?>
+                <select class="entity-tabs__search-select primary__border--solid" v-model="order">
+                    <option value="name ASC"><?= i::__('Ordem alfabética') ?></option>
+                    <option value="updateTimestamp DESC"><?= i::__('Modificadas recentemente') ?></option>
+                    <option value="updateTimestamp ASC"><?= i::__('Modificadas há mais tempo') ?></option>
+                </select>
+            </label>
+        </form>
+
         <template v-if="cardEntities.length">
             <panel--entity-card v-for="entity in cardEntities" :key="entity.id" :entity="entity">
                 <template #subtitle="{ entity }">
