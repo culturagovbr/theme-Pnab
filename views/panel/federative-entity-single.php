@@ -7,7 +7,6 @@ $this->layout = 'federative-entity';
 $this->import('
     agent-data-2
     country-address-view
-    complaint-suggestion
     entity-actions
     entity-admins
     entity-files-list
@@ -53,7 +52,6 @@ $this->breadcrumb = [
                             <entity-links :entity="entity" classes="col-12" title="<?php i::_e('Links'); ?>"></entity-links>
                             <entity-gallery-video :entity="entity" classes="col-12"></entity-gallery-video>
                             <entity-gallery :entity="entity" classes="col-12"></entity-gallery>
-                            <complaint-suggestion :entity="entity" classes="col-12"></complaint-suggestion>
                         </div>
                     </main>
                     <aside>
