@@ -819,7 +819,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -832,7 +832,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -1321,6 +1321,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Metadado: formas de inscrição previstas no edital
             $theme->registerOpportunityMetadata('formasInscricaoEdital', [
                 'label' => i::__('Formas de inscrição previstas no edital'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: ações do PAR associadas a modelos oficiais
+            $theme->registerOpportunityMetadata('parActions', [
+                'label' => i::__('Ações do PAR'),
                 'type' => 'json',
             ]);
 
