@@ -14,6 +14,7 @@ use MapasCulturais\Entities\Opportunity;
 use OpportunityWorkplan\Entities\Delivery as WorkplanDelivery;
 use OpportunityWorkplan\Entities\Goal as WorkplanGoalEntity;
 use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
+use Pnab\Services\FederativeEntityAdminService;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. * 
@@ -129,6 +130,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             $this->render('federative-entity-agents');
+        });
+
+        /**
+         * Implementa a action administrativa para listagem dos Entes Federados.
+         */
+        $app->hook('GET(panel.federativeEntities)', function () use ($app) {
+            $this->requireAuthentication();
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $app->pass();
+            }
+
+            $service = new FederativeEntityAdminService($app);
+            $this->render('federative-entities', $service->getViewData());
         });
 
         /**
@@ -580,6 +594,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // "Meus aplicativos" visível apenas para saasSuperAdmin
             $nav['more']['condition'] = fn() => UserAccessService::isSaasSuperAdmin();
 
+            if (isset($nav['admin']['items'])) {
+                $adminCondition = $nav['admin']['condition'] ?? fn() => true;
+                $nav['admin']['condition'] = function () use ($adminCondition) {
+                    if (UserAccessService::isSaasSuperAdmin()) {
+                        return true;
+                    }
+
+                    return is_callable($adminCondition) ? $adminCondition() : (bool) $adminCondition;
+                };
+
+                $nav['admin']['items'][] = [
+                    'route' => 'panel/federativeEntities',
+                    'icon' => 'agent',
+                    'label' => i::__('Entes Federados'),
+                    'condition' => fn() => UserAccessService::isSaasSuperAdmin(),
+                ];
+            }
+
             // Usuário sem canAccess não vê "Minhas Oportunidades" (apenas GestorCultBr pode criar/acessar a página)
             if (!$canAccess && isset($nav['opportunities']['items'])) {
                 foreach ($nav['opportunities']['items'] as $key => $item) {
@@ -609,6 +641,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
+                return;
+            }
+
+            if (UserAccessService::isSaasSuperAdmin()) {
                 return;
             }
 
