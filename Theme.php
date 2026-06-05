@@ -146,6 +146,27 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Implementa a action administrativa para visualizar um Ente Federado.
+         */
+        $app->hook('GET(panel.federativeEntitySingle)', function () use ($app) {
+            $this->requireAuthentication();
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $app->pass();
+            }
+
+            $id = (int) ($this->data['id'] ?? $this->data[0] ?? 0);
+            $service = new FederativeEntityAdminService($app);
+            $entity = $service->find($id);
+
+            if (!$entity) {
+                $app->pass();
+            }
+
+            $app->view->jsObject['requestedEntity'] = $service->getRequestedEntityData($entity);
+            $this->render('federative-entity-single', ['entity' => $entity]);
+        });
+
+        /**
          * Verifica se o usuário tem permissão para criar uma oportunidade
          */
         $app->hook('POST(opportunity.index):before', function () use ($canAccess) {

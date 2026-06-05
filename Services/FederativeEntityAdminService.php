@@ -2,6 +2,7 @@
 
 namespace Pnab\Services;
 
+use AldirBlanc\Entities\FederativeEntity;
 use MapasCulturais\App;
 
 class FederativeEntityAdminService
@@ -40,6 +41,39 @@ class FederativeEntityAdminService
         ];
     }
 
+    public function find(int $id): ?FederativeEntity
+    {
+        return $this->app->repo(FederativeEntity::class)->find($id);
+    }
+
+    public function getRequestedEntityData(FederativeEntity $entity): array
+    {
+        return [
+            '@entityType' => 'agent',
+            'id' => (int) $entity->id,
+            'name' => (string) $entity->name,
+            'shortDescription' => '',
+            'longDescription' => '',
+            'cnpj' => $this->formatCnpj($entity->document),
+            'status' => 1,
+            'type' => [
+                'id' => 2,
+                'name' => 'Ente Federado',
+            ],
+            'files' => [],
+            'terms' => [],
+            'seals' => [],
+            'relatedAgents' => [],
+            'agentRelations' => [],
+            'currentUserPermissions' => [
+                'viewPrivateData' => true,
+            ],
+            'publicLocation' => false,
+            'singleUrl' => $this->app->createUrl('panel', 'federativeEntitySingle', [$entity->id]),
+            'editUrl' => '#',
+        ];
+    }
+
     private function fetchAll($result): array
     {
         if (method_exists($result, 'fetchAllAssociative')) {
@@ -47,5 +81,15 @@ class FederativeEntityAdminService
         }
 
         return $result->fetchAll();
+    }
+
+    private function formatCnpj(?string $document): string
+    {
+        $numbers = preg_replace('/[^0-9]/', '', (string) $document);
+        if (strlen($numbers) !== 14) {
+            return (string) $document;
+        }
+
+        return preg_replace('/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $numbers);
     }
 }
