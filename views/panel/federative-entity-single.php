@@ -7,7 +7,6 @@ $this->layout = 'federative-entity';
 $this->import('
     agent-data-2
     country-address-view
-    entity-actions
     entity-admins
     entity-files-list
     entity-gallery
@@ -88,5 +87,4 @@ $this->breadcrumb = [
             </div>
         </mc-tab>
     </mc-tabs>
-    <entity-actions :entity="entity"></entity-actions>
 </div>
