@@ -285,11 +285,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa API.find(opportunity).params para processar os parâmetros antes do MapasCulturais
          */
         $app->hook('API.find(opportunity).params', function (&$api_params) use ($app) {
-            // Se não for gestor CultBR, para aqui
-            if (!UserAccessService::isGestorCultBr()) {
-                return;
-            }
-
             // Verifica se é a aba "Com permissão"
             $isGrantedTab = isset($api_params['@permissions']) &&
                 $api_params['@permissions'] === '@control' &&
@@ -301,30 +296,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 unset($api_params['federativeEntityId']);
                 return;
             }
-
-            // Verifica se há federativeEntityId nos parâmetros da requisição
-            $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
-
-            // Se não tiver nos parâmetros, tenta buscar da sessão
-            if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
-                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
-                if ($selectedEntity && isset($selectedEntity['id'])) {
-                    $federativeEntityIdParam = (string) $selectedEntity['id'];
-                }
-            }
-
-            // Se ainda não tiver federativeEntityId, para aqui
-            if (!$federativeEntityIdParam) {
-                return;
-            }
-
-            // Remove filtros de user/owner para mostrar todas as oportunidades do ente federado
-            unset($api_params['user'], $api_params['owner']);
-
-            // Extrai o ID do federativeEntityId (remove EQ() se presente)
-            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m)
-                ? (int) $m[1]
-                : (int) $federativeEntityIdParam;
 
             // Processa o status: remove duplicação de EQ() e extrai operadores
             if (isset($api_params['status'])) {
@@ -356,6 +327,104 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $api_params['status'] = 'GTE(1)';
             }
 
+            $isGestorCultBr = UserAccessService::isGestorCultBr();
+
+            // Aba "Meus modelos": para GestorCultBr, só lista modelos oficiais públicos vinculados à ação PAR selecionada.
+            $isModelsTab = $isGestorCultBr &&
+                isset($api_params['isModel']) &&
+                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string) $api_params['isModel'])) &&
+                isset($api_params['status']) &&
+                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string) $api_params['status']));
+
+            if ($isModelsTab) {
+                $parAction = trim((string) ($api_params['parAction'] ?? ''));
+                unset($api_params['parAction'], $api_params['federativeEntityId']);
+
+                if ($parAction === '') {
+                    $api_params['id'] = 'EQ(-1)';
+                    return;
+                }
+
+                $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
+                if (empty($verifiedSealsIds) && $subsite = $app->getCurrentSubsite()) {
+                    $verifiedSealsIds = $subsite->verifiedSeals ?? [];
+                }
+
+                if (is_string($verifiedSealsIds) && !is_numeric($verifiedSealsIds)) {
+                    $decodedVerifiedSealsIds = json_decode($verifiedSealsIds, true);
+                    $verifiedSealsIds = is_array($decodedVerifiedSealsIds) ? $decodedVerifiedSealsIds : [];
+                }
+
+                if (is_numeric($verifiedSealsIds)) {
+                    $verifiedSealsIds = [(int) $verifiedSealsIds];
+                } elseif (!is_array($verifiedSealsIds)) {
+                    $verifiedSealsIds = [];
+                }
+
+                if (empty($verifiedSealsIds)) {
+                    $api_params['id'] = 'EQ(-1)';
+                    return;
+                }
+
+                $conn = $app->em->getConnection();
+                $params = ['parAction' => $parAction];
+                $sealPlaceholders = [];
+                foreach (array_values($verifiedSealsIds) as $index => $sealId) {
+                    $paramName = "sealId{$index}";
+                    $sealPlaceholders[] = ":{$paramName}";
+                    $params[$paramName] = (int) $sealId;
+                }
+
+                $sqlOfficial = "SELECT DISTINCT o.id
+                    FROM opportunity o
+                    INNER JOIN opportunity_meta m_model ON m_model.object_id = o.id AND m_model.key = 'isModel' AND m_model.value = '1'
+                    INNER JOIN opportunity_meta m_public ON m_public.object_id = o.id AND m_public.key = 'isModelPublic' AND m_public.value = '1'
+                    INNER JOIN opportunity_meta m_par ON m_par.object_id = o.id AND m_par.key = 'parActions' AND jsonb_exists(m_par.value::jsonb, :parAction)
+                    INNER JOIN seal_relation sr ON sr.object_id = o.id AND sr.object_type = 'MapasCulturais\\Entities\\Opportunity'
+                    WHERE sr.seal_id IN (" . implode(',', $sealPlaceholders) . ")";
+
+                try {
+                    $opportunityIds = array_map('intval', $conn->fetchFirstColumn($sqlOfficial, $params));
+                } catch (\Exception $e) {
+                    $opportunityIds = [];
+                }
+
+                $api_params['id'] = empty($opportunityIds)
+                    ? 'EQ(-1)'
+                    : 'IN(' . implode(',', array_values(array_unique($opportunityIds))) . ')';
+
+                return;
+            }
+
+            // Se não for gestor CultBR, para aqui
+            if (!$isGestorCultBr) {
+                return;
+            }
+
+            // Verifica se há federativeEntityId nos parâmetros da requisição
+            $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
+
+            // Se não tiver nos parâmetros, tenta buscar da sessão
+            if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $federativeEntityIdParam = (string) $selectedEntity['id'];
+                }
+            }
+
+            // Se ainda não tiver federativeEntityId, para aqui
+            if (!$federativeEntityIdParam) {
+                return;
+            }
+
+            // Remove filtros de user/owner para mostrar todas as oportunidades do ente federado
+            unset($api_params['user'], $api_params['owner']);
+
+            // Extrai o ID do federativeEntityId (remove EQ() se presente)
+            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m)
+                ? (int) $m[1]
+                : (int) $federativeEntityIdParam;
+
             // Busca IDs das oportunidades com metadado federativeEntityId
             $conn = $app->em->getConnection();
             $params = [
@@ -379,36 +448,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $opportunityIds = array_map(fn($r) => (int) $r['id'], $results);
             } catch (\Exception $e) {
                 $opportunityIds = [];
-            }
-
-            // Aba "Meus modelos": incluir também modelos oficiais (isModel=1 com selo verificado),
-            // que não possuem federativeEntityId e por isso não entram na lista do ente
-            $isModelsTab = isset($api_params['isModel']) &&
-                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string) $api_params['isModel'])) &&
-                isset($api_params['status']) &&
-                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string) $api_params['status']));
-            if ($isModelsTab) {
-                $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
-                if (is_numeric($verifiedSealsIds)) {
-                    $verifiedSealsIds = [(int) $verifiedSealsIds];
-                } elseif (!is_array($verifiedSealsIds)) {
-                    $verifiedSealsIds = [];
-                }
-                if (!empty($verifiedSealsIds)) {
-                    $placeholders = implode(',', array_fill(0, count($verifiedSealsIds), '?'));
-                    $sqlOfficial = "SELECT DISTINCT o.id 
-                        FROM opportunity o
-                        INNER JOIN opportunity_meta m ON m.object_id = o.id AND m.key = 'isModel' AND m.value = '1'
-                        INNER JOIN seal_relation sr ON sr.object_id = o.id AND sr.object_type = 'MapasCulturais\\Entities\\Opportunity'
-                        WHERE sr.seal_id IN ($placeholders)";
-                    try {
-                        $officialResults = $conn->executeQuery($sqlOfficial, array_values($verifiedSealsIds))->fetchAll();
-                        $officialIds = array_map(fn($r) => (int) $r['id'], $officialResults);
-                        $opportunityIds = array_values(array_unique(array_merge($opportunityIds, $officialIds)));
-                    } catch (\Exception $e) {
-                        // mantém apenas os do ente em caso de erro
-                    }
-                }
             }
 
             // Aplica filtro: se não houver nenhum ID permitido, retorna filtro que não encontra nada
