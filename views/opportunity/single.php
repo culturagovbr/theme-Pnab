@@ -5,6 +5,7 @@
  * @var MapasCulturais\Entities\Opportunity $entity
  */
 
+use AldirBlanc\Services\UserAccessService;
 use MapasCulturais\i;
 
 $this->layout = 'entity';
@@ -33,8 +34,10 @@ $this->import('
     mc-card
     mc-container
     mc-share-links
+    mc-tag-list
     mc-tab
     mc-tabs
+    mc-title
     opportunity-evaluations-tab
     opportunity-phase-evaluation
     opportunity-phases-timeline
@@ -121,6 +124,14 @@ $this->breadcrumb = [
                     </div>
                     <div class="flex-container">
                         <entity-terms :entity="entity" hide-required title="<?php i::_e('Área de Interesse') ?>" taxonomy="area"></entity-terms>
+                        <?php if (UserAccessService::isSaasSuperAdmin()): ?>
+                            <div class="entity-terms col-12" v-if="String(entity.isModel || '') === '1' && entity.seals?.some(function(seal) { return Boolean(seal.isVerificationSeal); }) && entity.parActions && (!Array.isArray(entity.parActions) || entity.parActions.length)">
+                                <div class="entity-terms__header">
+                                    <mc-title tag="h4" :short-length="0" size="medium" class="bold"><?php i::_e('Ações do PAR') ?></mc-title>
+                                </div>
+                                <mc-tag-list classes="opportunity__background" :tags="Array.isArray(entity.parActions) ? entity.parActions : [entity.parActions]"></mc-tag-list>
+                            </div>
+                        <?php endif; ?>
                         <entity-social-media :entity="entity" classes="col-12"></entity-social-media>
                         <entity-seals :entity="entity" :editable="entity.currentUserPermissions?.createSealRelation" classes="col-12" title="<?php i::esc_attr_e('Verificações');?>"></entity-seals>
                         <entity-terms :entity="entity" classes="col-12" taxonomy="tag" title="<?php i::esc_attr_e('Tags');?>"></entity-terms>
