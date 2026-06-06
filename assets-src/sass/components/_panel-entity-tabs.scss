@@ -1,0 +1,95 @@
+.panel-entity-tabs {
+    &__par-action-warning {
+        width: 100%;
+    }
+
+    &__models-search {
+        align-items: flex-start;
+        background-color: var(--mc-high-500);
+        margin-top: 32px;
+
+        .search-list__filter {
+            background-color: var(--mc-high-500);
+            grid-column-start: 10;
+            justify-content: flex-end;
+        }
+
+        .search-list__filter--filter,
+        .search-filter,
+        .search-filter__filter,
+        .search-filter__filter-content,
+        .form,
+        .field,
+        input,
+        select {
+            width: 100%;
+        }
+
+        .search-list__cards {
+            background-color: var(--mc-gray-100);
+            grid-column-start: 1;
+            grid-row-start: 1;
+            min-height: 440px;
+            padding: 32px;
+        }
+
+        .panel__row {
+            margin-top: 0;
+        }
+
+        &--empty-filter {
+            background-color: var(--mc-high-500);
+
+            .search-list__filter {
+                background-color: var(--mc-high-500);
+                grid-column-start: 4;
+                grid-column-end: span 6;
+                justify-self: center;
+                max-width: 560px;
+                width: 100%;
+            }
+        }
+    }
+}
+
+.entity-tabs.models {
+    .tabs-component__panels:has(.panel-entity-tabs__models-search) {
+        background-color: var(--mc-high-500);
+    }
+}
+
+@media (max-width: 900px) {
+    .panel-entity-tabs {
+        &__models-search {
+            .col-9 {
+                grid-column-end: span 12;
+            }
+
+            .col-3 {
+                grid-column-start: 1;
+                grid-column-end: 13;
+            }
+
+            &--empty-filter {
+                .search-list__filter {
+                    grid-column-start: 3;
+                    grid-column-end: span 8;
+                    max-width: 520px;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .panel-entity-tabs {
+        &__models-search {
+            &--empty-filter {
+                .search-list__filter {
+                    grid-column-start: 1;
+                    grid-column-end: 13;
+                }
+            }
+        }
+    }
+}
