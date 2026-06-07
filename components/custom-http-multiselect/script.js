@@ -32,6 +32,7 @@ app.component('custom-http-multiselect', {
             loading: false,
             initializedSelection: false,
             hasLoadError: false,
+            loadErrorMessage: '',
             items: [],
             selectedValues: [],
             selectedLabels: {},
@@ -82,6 +83,10 @@ app.component('custom-http-multiselect', {
         hasPagination() {
             return this.pagination.previous !== null || this.pagination.next !== null
         },
+
+        hasNoItems() {
+            return !this.loading && !this.hasLoadError && this.items.length === 0
+        },
     },
 
     methods: {
@@ -89,6 +94,7 @@ app.component('custom-http-multiselect', {
             this.loading = true
             this.$emit('loading', this.loading)
             this.hasLoadError = false
+            this.loadErrorMessage = ''
             this.skip = skip ?? this.defaultSkip
             const loadingStartedAt = Date.now()
 
@@ -102,7 +108,7 @@ app.component('custom-http-multiselect', {
                 const response = await api.GET(url)
 
                 if (!response.ok) {
-                    throw new Error('load failed')
+                    throw new Error(await this.getResponseErrorMessage(response))
                 }
                 const payload = await response.json()
 
@@ -125,6 +131,7 @@ app.component('custom-http-multiselect', {
                 }
             } catch (error) {
                 this.hasLoadError = true
+                this.loadErrorMessage = error?.message || this.text('Não foi possível carregar as ações do PAR.')
                 this.items = []
             } finally {
                 await this.waitMinimumLoadingTime(loadingStartedAt)
@@ -137,6 +144,30 @@ app.component('custom-http-multiselect', {
             const elapsedTime = Date.now() - startedAt
             const remainingTime = Math.max(0, this.$options.minimumLoadingTime - elapsedTime)
             return new Promise((resolve) => setTimeout(resolve, remainingTime))
+        },
+
+        async getResponseErrorMessage(response) {
+            if (response.status === 502) {
+                return this.text('Não recebemos dados pela API CultBr')
+            }
+
+            if (response.status === 504) {
+                return this.text('Não conseguimos estabelecer conexão com a API CultBr')
+            }
+
+            try {
+                const text = await response.text()
+                const payload = text ? JSON.parse(text) : null
+                const message = payload?.error || payload?.message || payload?.detail
+
+                if (typeof message === 'string' && message.trim() !== '') {
+                    return message
+                }
+            } catch (error) {
+                // mantém mensagem padrão
+            }
+
+            return this.text('Não foi possível carregar as ações do PAR.')
         },
 
         initializeSelectionFromCurrentPage() {

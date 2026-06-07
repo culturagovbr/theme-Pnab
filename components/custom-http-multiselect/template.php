@@ -21,7 +21,12 @@ $this->import('
 
     <div v-else-if="hasLoadError" class="custom-http-multiselect__status custom-http-multiselect__status--error">
         <mc-icon name="alert-circle" class="custom-http-multiselect__status-icon"></mc-icon>
-        <p><?php i::_e('Não foi possível carregar as ações do PAR.') ?></p>
+        <p>{{ loadErrorMessage || text('Não foi possível carregar as ações do PAR.') }}</p>
+    </div>
+
+    <div v-else-if="hasNoItems" class="custom-http-multiselect__status custom-http-multiselect__status--error">
+        <mc-icon name="alert-circle" class="custom-http-multiselect__status-icon"></mc-icon>
+        <p><?php i::_e('Não recebemos dados pela API CultBr') ?></p>
     </div>
 
     <div v-else class="field" :data-field="prop">
