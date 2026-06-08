@@ -33,6 +33,13 @@ app.component('panel--entity-tabs', {
             queryGetModel.parAction = '';
         }
 
+        if (this.type == 'opportunity') {
+            const api = new API('opportunity');
+            api.GET('/opportunity/findOpportunitiesModels').then((r) => r.json().then((data) => {
+                this.opportunitiesModels = data;
+            }));
+        }
+
         if (this.user) {
             query.user = `EQ(${this.user})`
             // queryGetModel.user = `EQ(${this.user})`
@@ -63,6 +70,7 @@ app.component('panel--entity-tabs', {
                 archived: { status: 'EQ(-2)', ...query },
             },
             showPrivateKey: false,
+            opportunitiesModels: [],
             parActionFilterEnabled,
             parActionOptions,
         }
