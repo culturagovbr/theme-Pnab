@@ -21,6 +21,10 @@ app.component('mc-alert', {
             type: Boolean,
             default: false,
         },
+        large: {
+            type: Boolean,
+            default: false,
+        },
     },
     
     setup(props, { slots }) {
