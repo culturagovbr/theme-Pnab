@@ -104,6 +104,7 @@ app.component('opportunity-create-based-model', {
             const aldirBlancApiClient = new API('aldirblanc');
             const savePostGenerateRequestPayload = {
                 opportunityId: newOpportunityId,
+                modelId: this.entitydefault.id,
                 shortDescription: String(this.formData.shortDescription).trim(),
             };
             const parInstrumentSelection = this.parSelectionModel;
@@ -235,11 +236,12 @@ app.component('opportunity-create-based-model', {
                     );
                 } catch (postGenerateFieldsPersistError) {
                     console.error(postGenerateFieldsPersistError);
-                    this.messages.error(
-                        this.text(
-                            'Não foi possível salvar descrição curta ou dados do PAR na nova oportunidade.'
-                        )
-                    );
+                    const postGenerateUserMessage =
+                        postGenerateFieldsPersistError.message &&
+                        postGenerateFieldsPersistError.message !== 'save failed'
+                            ? postGenerateFieldsPersistError.message
+                            : this.text('Não foi possível salvar descrição curta ou dados do PAR na nova oportunidade.');
+                    this.messages.error(postGenerateUserMessage);
                     this.generating = false;
                     return;
                 }
