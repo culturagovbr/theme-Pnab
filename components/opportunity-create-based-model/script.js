@@ -177,6 +177,10 @@ app.component('opportunity-create-based-model', {
                 entityId: this.entitydefault.id,
             };
 
+            if (this.parSelectionModel.parAcaoId) {
+                generateFromModelRequestPayload.parAcaoId = this.parSelectionModel.parAcaoId;
+            }
+
             if (this.validateGeneratePayload(generateFromModelRequestPayload)) {
                 this.messages.error(this.text('Todos os campos são obrigatórios.'));
                 return;
