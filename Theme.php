@@ -3,6 +3,7 @@
 namespace Pnab;
 
 use AldirBlanc\Services\UserAccessService;
+use AldirBlanc\Services\FederativeEntityService;
 use AldirBlanc\Services\InMincQuotasService;
 use MapasCulturais\i;
 use MapasCulturais\App;
