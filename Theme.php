@@ -2418,6 +2418,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return false;
         }
 
+        // Clone recém-criado via generateopportunity: isGeneratedFromModel ainda não foi gravado.
+        // Aguardar saveOpportunityPostGenerate; o update:finish enfileira após os dados estarem completos.
+        if (!empty($federativeEntityId) && !$isGeneratedFromModel) {
+            return false;
+        }
+
         // Se subsiteId não estiver definido, não disparar o job
         if ($subsiteId < 1) {
             return false;
