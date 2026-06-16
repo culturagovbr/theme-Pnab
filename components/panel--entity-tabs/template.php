@@ -79,7 +79,7 @@ $this->applyComponentHook('.sortOptions', [&$tabs]);
             <template #default="{entities}">
                 <div
                     v-if="'<?=$status?>' === 'mymodels' && type === 'opportunity' && parActionFilterEnabled"
-                    :class="['grid-12 search-list panel-entity-tabs__models-search', {'panel-entity-tabs__models-search--empty-filter': !queries['<?=$status?>'].parAction}]">
+                    class="grid-12 search-list panel-entity-tabs__models-search">
                     <div class="col-3 search-list__filter">
                         <div class="search-list__filter--filter">
                             <div class="search-filter search-filter--list">
@@ -202,7 +202,7 @@ $this->applyComponentHook('.sortOptions', [&$tabs]);
             <template #empty="{entities}">
                 <div
                     v-if="'<?=$status?>' === 'mymodels' && type === 'opportunity' && parActionFilterEnabled"
-                    :class="['grid-12 search-list panel-entity-tabs__models-search', {'panel-entity-tabs__models-search--empty-filter': !queries['<?=$status?>'].parAction}]">
+                    class="grid-12 search-list panel-entity-tabs__models-search">
                     <div class="col-3 search-list__filter">
                         <div class="search-list__filter--filter">
                             <div class="search-filter search-filter--list">
@@ -241,9 +241,19 @@ $this->applyComponentHook('.sortOptions', [&$tabs]);
                             </div>
                         </div>
                     </div>
-                    <div v-if="queries['<?=$status?>'].parAction" class="col-9 search-list__cards">
-                        <div class="panel__row noEntity">
-                            <p><?= i::__('Nenhuma entidade encontrada') ?></p>
+                    <div class="col-9 search-list__cards">
+                        <div class="panel__row noEntity panel-entity-tabs__no-models-for-action">
+                            <ul>
+                                <li><strong><?= i::__('Ação 1.1 - Fomento Cultural -') ?></strong> <?= i::__('Termo de Execução Cultural (Lei nº 14.903/2024)') ?>;</li>
+                                <li><strong><?= i::__('Ação 1.1 - Fomento Cultural -') ?></strong> <?= i::__('Prêmio (Lei nº 14.903/2024)') ?>;</li>
+                                <li><strong><?= i::__('Ação 1.1 - Fomento Cultural -') ?></strong> <?= i::__('Bolsa Cultural (Lei nº 14.903/2024)') ?>;</li>
+                                <li><strong><?= i::__('Ação 1.1 - Fomento Cultural -') ?></strong> <?= i::__('Termo de Fomento (Lei nº 13.019/2014)') ?>;</li>
+                                <li><strong><?= i::__('Ação 2.1 - Fomento a projetos de Pontos de Cultura -') ?></strong> <?= i::__('Termo de Compromisso Cultural (TCC) para projetos de Pontos de Cultura') ?>;</li>
+                                <li><strong><?= i::__('Ação 2.2 - Fomento a projetos de Pontões de Cultura -') ?></strong> <?= i::__('Termo de Compromisso Cultural (TCC) para projetos de Pontões de Cultura') ?>;</li>
+                                <li><strong><?= i::__('Ação 2.3 - Fomento a projetos de Pontões de Cultura -') ?></strong> <?= i::__('Premiação Cultura Viva') ?>;</li>
+                                <li><strong><?= i::__('Ação 2.3 - Prêmio Cultura Viva de Pontos e Pontões de Cultura -') ?></strong> <?= i::__('Termo de Premiação Cultura Viva para Pontos e Pontões de Cultura') ?>;</li>
+                                <li><strong><?= i::__('Ação 2.4 - Bolsas Cultura Viva -') ?></strong> <?= i::__('Concessão de Bolsas para Mestres e Mestras das Culturas Tradicionais e Populares - Termo de Concessão de Bolsa Cultura Viva para Mestras e Mestres das Culturas Tradicionais e Populares') ?>;</li>
+                            </ul>
                         </div>
                     </div>
                 </div>

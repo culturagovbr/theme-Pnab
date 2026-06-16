@@ -37,18 +37,6 @@
             margin-top: 0;
         }
 
-        &--empty-filter {
-            background-color: var(--mc-high-500);
-
-            .search-list__filter {
-                background-color: var(--mc-high-500);
-                grid-column-start: 4;
-                grid-column-end: span 6;
-                justify-self: center;
-                max-width: 560px;
-                width: 100%;
-            }
-        }
     }
 }
 
@@ -68,27 +56,6 @@
             .col-3 {
                 grid-column-start: 1;
                 grid-column-end: 13;
-            }
-
-            &--empty-filter {
-                .search-list__filter {
-                    grid-column-start: 3;
-                    grid-column-end: span 8;
-                    max-width: 520px;
-                }
-            }
-        }
-    }
-}
-
-@media (max-width: 640px) {
-    .panel-entity-tabs {
-        &__models-search {
-            &--empty-filter {
-                .search-list__filter {
-                    grid-column-start: 1;
-                    grid-column-end: 13;
-                }
             }
         }
     }
