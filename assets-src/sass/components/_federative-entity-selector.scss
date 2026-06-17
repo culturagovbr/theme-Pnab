@@ -92,6 +92,34 @@
         }
     }
 
+    &__filters {
+        align-items: center;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: size(16);
+        margin-bottom: size(24);
+
+        > * {
+            margin: 0;
+        }
+
+        .entity-tabs__search-input {
+            flex: 1 1 auto;
+            max-width: size(380);
+            min-width: 0;
+            width: auto;
+        }
+
+        label {
+            align-items: center;
+            display: flex;
+            flex: 0 0 auto;
+            gap: size(8);
+            margin: 0;
+            white-space: nowrap;
+        }
+    }
+
     &__list {
         display: flex;
         flex-direction: column;
@@ -259,6 +287,18 @@
     .federative-entity-selector {
         padding: size(24);
 
+        &__filters {
+            align-items: flex-start;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: size(16);
+
+            .entity-tabs__search-input {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
         &__item {
             padding: size(20);
             gap: size(12);
@@ -323,4 +363,3 @@
         }
     }
 }
-

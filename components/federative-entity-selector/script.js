@@ -10,6 +10,8 @@ app.component('federative-entity-selector', {
         return {
             federativeEntities: [],
             selectedEntity: null,
+            keyword: '',
+            order: 'name ASC',
             loading: false,
         }
     },
@@ -17,6 +19,31 @@ app.component('federative-entity-selector', {
     async created() {
         this.api = new API('aldirblanc')
         await this.loadFederativeEntities()
+    },
+
+    computed: {
+        filteredFederativeEntities() {
+            const keyword = this.keyword.trim().toLowerCase()
+
+            return this.federativeEntities
+                .filter((entity) => {
+                    if (!keyword) {
+                        return true
+                    }
+
+                    const name = (entity.name || '').toLowerCase()
+                    const document = (entity.document || '').toLowerCase()
+
+                    return name.includes(keyword) || document.includes(keyword)
+                })
+                .sort((entityA, entityB) => {
+                    if (this.order === 'name DESC') {
+                        return this.compareName(entityB, entityA)
+                    }
+
+                    return this.compareName(entityA, entityB)
+                })
+        }
     },
 
     methods: {
@@ -65,7 +92,10 @@ app.component('federative-entity-selector', {
 
         resetSelection() {
             this.selectedEntity = null
+        },
+
+        compareName(entityA, entityB) {
+            return (entityA.name || '').localeCompare(entityB.name || '', 'pt-BR')
         }
     }
 })
-

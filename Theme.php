@@ -3,6 +3,7 @@
 namespace Pnab;
 
 use AldirBlanc\Services\UserAccessService;
+use AldirBlanc\Services\FederativeEntityService;
 use AldirBlanc\Services\InMincQuotasService;
 use MapasCulturais\i;
 use MapasCulturais\App;
@@ -14,6 +15,7 @@ use MapasCulturais\Entities\Opportunity;
 use OpportunityWorkplan\Entities\Delivery as WorkplanDelivery;
 use OpportunityWorkplan\Entities\Goal as WorkplanGoalEntity;
 use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
+use Pnab\Services\FederativeEntityAdminService;
 
 /**
  * @method void import(string $components) Importa lista de componentes Vue. *
@@ -71,8 +73,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $canAccess = UserAccessService::canAccess();
         $theme = $this;
-        $isOpportunityGeneratedFromModel = fn($entity) => $this->isOpportunityGeneratedFromModel($entity);
-        $isCultBrCreateNotYetSynced = fn($entity) => !$this->isOpportunityCultBrCreateSynced($entity);
 
         $app->hook('entity(Opportunity).jsonSerialize', function (&$result) use ($theme) {
             $theme->sanitizeProponentAgentRelationPayload($result);
@@ -130,11 +130,84 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Implementa a action administrativa para listagem dos Entes Federados.
+         */
+        $app->hook('GET(panel.federativeEntities)', function () use ($app) {
+            $this->requireAuthentication();
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $app->pass();
+            }
+
+            $service = new FederativeEntityAdminService($app);
+            $this->render('federative-entities', $service->getViewData());
+        });
+
+        /**
+         * Implementa a action administrativa para visualizar um Ente Federado.
+         */
+        $app->hook('GET(panel.federativeEntitySingle)', function () use ($app) {
+            $this->requireAuthentication();
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $app->pass();
+            }
+
+            $id = (int) ($this->data['id'] ?? $this->data[0] ?? 0);
+            $service = new FederativeEntityAdminService($app);
+            $entity = $service->find($id);
+
+            if (!$entity) {
+                $app->pass();
+            }
+
+            $app->view->jsObject['requestedEntity'] = $service->getRequestedEntityData($entity);
+            $this->render('federative-entity-single', ['entity' => $entity]);
+        });
+
+        /**
          * Verifica se o usuário tem permissão para criar uma oportunidade
          */
         $app->hook('POST(opportunity.index):before', function () use ($canAccess) {
             if (!$canAccess) {
                 $this->errorJson(\MapasCulturais\i::__('Criação não permitida'), 403);
+            }
+            if (UserAccessService::isGestorCultBr()) {
+                $this->errorJson(\MapasCulturais\i::__('Criação não permitida'), 403);
+            }
+        });
+
+        /**
+         * Valida compatibilidade da ação PAR antes de o core clonar o modelo.
+         * Roda antes de qualquer persistência — se inválido, nada é criado.
+         */
+        $app->hook('POST(opportunity.generateopportunity):before', function () {
+            if (!UserAccessService::isGestorCultBr()) {
+                return;
+            }
+
+            $model = $this->requestedEntity;
+            if (!$model) {
+                return;
+            }
+
+            $parAcaoId = (string) ($this->data['parAcaoId'] ?? '');
+            if ($parAcaoId === '') {
+                return;
+            }
+
+            $parActionsRaw = $model->getMetadata('parActions');
+            if (is_string($parActionsRaw)) {
+                $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
+            }
+            $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
+
+            if (empty($parActions)) {
+                return;
+            }
+
+            $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
+            if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
+                $this->errorJson(['parAcaoId' => [i::__('A ação selecionada não é compatível com este modelo.')]], 422);
+                return;
             }
         });
 
@@ -156,10 +229,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Job CultBR no update: Ativado → update (PUT); rascunho com isGeneratedFromModel → create (POST),
-         * após validateIntegrationJob (clone «usar modelo» não passa por insert:finish).
+         * Job CultBR no update: Ativado → enfileira update (PUT).
+         * O create (POST) do fluxo «usar modelo» é enfileirado explicitamente por saveOpportunityPostGenerate,
+         * garantindo que os dados PAR já estejam salvos antes do envio.
          */
-        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme, $isOpportunityGeneratedFromModel, $isCultBrCreateNotYetSynced) {
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
             if (!$theme->validateIntegrationJob($this)) {
                 return;
             }
@@ -177,21 +251,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     $start_string
                 );
                 return;
-            }
-
-            // Rascunho «usar modelo»: um único create até sucesso no Cult; PATCH seguintes não re-enfileiram.
-            if (
-                (int) $this->status === OpportunityStatus::DRAFT->value
-                && $isOpportunityGeneratedFromModel($this)
-                && $isCultBrCreateNotYetSynced($this)
-            ) {
-                $app->enqueueOrReplaceJob(
-                    OportunidadeCultJob::SLUG,
-                    [
-                        'action' => 'create',
-                        'opportunity' => $this,
-                    ],
-                );
             }
         });
 
@@ -248,11 +307,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa API.find(opportunity).params para processar os parâmetros antes do MapasCulturais
          */
         $app->hook('API.find(opportunity).params', function (&$api_params) use ($app) {
-            // Se não for gestor CultBR, para aqui
-            if (!UserAccessService::isGestorCultBr()) {
-                return;
-            }
-
             // Verifica se é a aba "Com permissão"
             $isGrantedTab = isset($api_params['@permissions']) &&
                 $api_params['@permissions'] === '@control' &&
@@ -264,30 +318,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 unset($api_params['federativeEntityId']);
                 return;
             }
-
-            // Verifica se há federativeEntityId nos parâmetros da requisição
-            $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
-
-            // Se não tiver nos parâmetros, tenta buscar da sessão
-            if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
-                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
-                if ($selectedEntity && isset($selectedEntity['id'])) {
-                    $federativeEntityIdParam = (string) $selectedEntity['id'];
-                }
-            }
-
-            // Se ainda não tiver federativeEntityId, para aqui
-            if (!$federativeEntityIdParam) {
-                return;
-            }
-
-            // Remove filtros de user/owner para mostrar todas as oportunidades do ente federado
-            unset($api_params['user'], $api_params['owner']);
-
-            // Extrai o ID do federativeEntityId (remove EQ() se presente)
-            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m)
-                ? (int) $m[1]
-                : (int) $federativeEntityIdParam;
 
             // Processa o status: remove duplicação de EQ() e extrai operadores
             if (isset($api_params['status'])) {
@@ -319,6 +349,104 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $api_params['status'] = 'GTE(1)';
             }
 
+            $isGestorCultBr = UserAccessService::isGestorCultBr();
+
+            // Aba "Meus modelos": para GestorCultBr, só lista modelos oficiais públicos vinculados à ação PAR selecionada.
+            $isModelsTab = $isGestorCultBr &&
+                isset($api_params['isModel']) &&
+                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string) $api_params['isModel'])) &&
+                isset($api_params['status']) &&
+                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string) $api_params['status']));
+
+            if ($isModelsTab) {
+                $parAction = trim((string) ($api_params['parAction'] ?? ''));
+                unset($api_params['parAction'], $api_params['federativeEntityId']);
+
+                if ($parAction === '') {
+                    $api_params['id'] = 'EQ(-1)';
+                    return;
+                }
+
+                $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
+                if (empty($verifiedSealsIds) && $subsite = $app->getCurrentSubsite()) {
+                    $verifiedSealsIds = $subsite->verifiedSeals ?? [];
+                }
+
+                if (is_string($verifiedSealsIds) && !is_numeric($verifiedSealsIds)) {
+                    $decodedVerifiedSealsIds = json_decode($verifiedSealsIds, true);
+                    $verifiedSealsIds = is_array($decodedVerifiedSealsIds) ? $decodedVerifiedSealsIds : [];
+                }
+
+                if (is_numeric($verifiedSealsIds)) {
+                    $verifiedSealsIds = [(int) $verifiedSealsIds];
+                } elseif (!is_array($verifiedSealsIds)) {
+                    $verifiedSealsIds = [];
+                }
+
+                if (empty($verifiedSealsIds)) {
+                    $api_params['id'] = 'EQ(-1)';
+                    return;
+                }
+
+                $conn = $app->em->getConnection();
+                $params = ['parAction' => $parAction];
+                $sealPlaceholders = [];
+                foreach (array_values($verifiedSealsIds) as $index => $sealId) {
+                    $paramName = "sealId{$index}";
+                    $sealPlaceholders[] = ":{$paramName}";
+                    $params[$paramName] = (int) $sealId;
+                }
+
+                $sqlOfficial = "SELECT DISTINCT o.id
+                    FROM opportunity o
+                    INNER JOIN opportunity_meta m_model ON m_model.object_id = o.id AND m_model.key = 'isModel' AND m_model.value = '1'
+                    INNER JOIN opportunity_meta m_public ON m_public.object_id = o.id AND m_public.key = 'isModelPublic' AND m_public.value = '1'
+                    INNER JOIN opportunity_meta m_par ON m_par.object_id = o.id AND m_par.key = 'parActions' AND jsonb_exists(m_par.value::jsonb, :parAction)
+                    INNER JOIN seal_relation sr ON sr.object_id = o.id AND sr.object_type = 'MapasCulturais\\Entities\\Opportunity'
+                    WHERE sr.seal_id IN (" . implode(',', $sealPlaceholders) . ")";
+
+                try {
+                    $opportunityIds = array_map('intval', $conn->fetchFirstColumn($sqlOfficial, $params));
+                } catch (\Exception $e) {
+                    $opportunityIds = [];
+                }
+
+                $api_params['id'] = empty($opportunityIds)
+                    ? 'EQ(-1)'
+                    : 'IN(' . implode(',', array_values(array_unique($opportunityIds))) . ')';
+
+                return;
+            }
+
+            // Se não for gestor CultBR, para aqui
+            if (!$isGestorCultBr) {
+                return;
+            }
+
+            // Verifica se há federativeEntityId nos parâmetros da requisição
+            $federativeEntityIdParam = $api_params['federativeEntityId'] ?? null;
+
+            // Se não tiver nos parâmetros, tenta buscar da sessão
+            if (!$federativeEntityIdParam && isset($_SESSION['selectedFederativeEntity'])) {
+                $selectedEntity = json_decode($_SESSION['selectedFederativeEntity'], true);
+                if ($selectedEntity && isset($selectedEntity['id'])) {
+                    $federativeEntityIdParam = (string) $selectedEntity['id'];
+                }
+            }
+
+            // Se ainda não tiver federativeEntityId, para aqui
+            if (!$federativeEntityIdParam) {
+                return;
+            }
+
+            // Remove filtros de user/owner para mostrar todas as oportunidades do ente federado
+            unset($api_params['user'], $api_params['owner']);
+
+            // Extrai o ID do federativeEntityId (remove EQ() se presente)
+            $federativeEntityId = preg_match('/^EQ\((\d+)\)$/', $federativeEntityIdParam, $m)
+                ? (int) $m[1]
+                : (int) $federativeEntityIdParam;
+
             // Busca IDs das oportunidades com metadado federativeEntityId
             $conn = $app->em->getConnection();
             $params = [
@@ -342,36 +470,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $opportunityIds = array_map(fn($r) => (int) $r['id'], $results);
             } catch (\Exception $e) {
                 $opportunityIds = [];
-            }
-
-            // Aba "Meus modelos": incluir também modelos oficiais (isModel=1 com selo verificado),
-            // que não possuem federativeEntityId e por isso não entram na lista do ente
-            $isModelsTab = isset($api_params['isModel']) &&
-                preg_match('/^EQ\(\s*1\s*\)$/i', trim((string) $api_params['isModel'])) &&
-                isset($api_params['status']) &&
-                preg_match('/^EQ\(\s*-1\s*\)$/i', trim((string) $api_params['status']));
-            if ($isModelsTab) {
-                $verifiedSealsIds = $app->config['app.verifiedSealsIds'] ?? [];
-                if (is_numeric($verifiedSealsIds)) {
-                    $verifiedSealsIds = [(int) $verifiedSealsIds];
-                } elseif (!is_array($verifiedSealsIds)) {
-                    $verifiedSealsIds = [];
-                }
-                if (!empty($verifiedSealsIds)) {
-                    $placeholders = implode(',', array_fill(0, count($verifiedSealsIds), '?'));
-                    $sqlOfficial = "SELECT DISTINCT o.id 
-                        FROM opportunity o
-                        INNER JOIN opportunity_meta m ON m.object_id = o.id AND m.key = 'isModel' AND m.value = '1'
-                        INNER JOIN seal_relation sr ON sr.object_id = o.id AND sr.object_type = 'MapasCulturais\\Entities\\Opportunity'
-                        WHERE sr.seal_id IN ($placeholders)";
-                    try {
-                        $officialResults = $conn->executeQuery($sqlOfficial, array_values($verifiedSealsIds))->fetchAll();
-                        $officialIds = array_map(fn($r) => (int) $r['id'], $officialResults);
-                        $opportunityIds = array_values(array_unique(array_merge($opportunityIds, $officialIds)));
-                    } catch (\Exception $e) {
-                        // mantém apenas os do ente em caso de erro
-                    }
-                }
             }
 
             // Aplica filtro: se não houver nenhum ID permitido, retorna filtro que não encontra nada
@@ -578,6 +676,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // "Meus aplicativos" visível apenas para saasSuperAdmin
             $nav['more']['condition'] = fn() => UserAccessService::isSaasSuperAdmin();
 
+            if (isset($nav['admin']['items'])) {
+                $adminCondition = $nav['admin']['condition'] ?? fn() => true;
+                $nav['admin']['condition'] = function () use ($adminCondition) {
+                    if (UserAccessService::isSaasSuperAdmin()) {
+                        return true;
+                    }
+
+                    return is_callable($adminCondition) ? $adminCondition() : (bool) $adminCondition;
+                };
+
+                $nav['admin']['items'][] = [
+                    'route' => 'panel/federativeEntities',
+                    'icon' => 'agent',
+                    'label' => i::__('Entes Federados'),
+                    'condition' => fn() => UserAccessService::isSaasSuperAdmin(),
+                ];
+            }
+
             // Usuário sem canAccess não vê "Minhas Oportunidades" (apenas GestorCultBr pode criar/acessar a página)
             if (!$canAccess && isset($nav['opportunities']['items'])) {
                 foreach ($nav['opportunities']['items'] as $key => $item) {
@@ -607,6 +723,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Só manipula os menus para GestorCultBr, se não for, parar aqui
             if (!UserAccessService::isGestorCultBr()) {
+                return;
+            }
+
+            if (UserAccessService::isSaasSuperAdmin()) {
                 return;
             }
 
@@ -760,7 +880,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -773,7 +893,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -787,6 +907,14 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $_SESSION['gestor_cult_sync_error'] !== '';
 
             if (!$profile || !$profile->getMetadata('isNotGestorCultBr')) {
+                if (!$syncStarted && !$syncCompleted) {
+                    if (!$app->request->isAjax()) {
+                        $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
+                    }
+                    $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
+                    return;
+                }
+
                 // Se há erro de sync, bloqueia e redireciona para consolidação
                 if ($syncCompleted && $hasError) {
                     if ($app->request->isAjax()) {
@@ -889,6 +1017,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Validação de oportunidade: Exige arquivo de regulamento para validar
          */
         $app->hook('opportunity.canValidate', function (&$errors) {
+            if (UserAccessService::canAssociatePARAction()) {
+                return;
+            }
+
             $opportunity = $this;
 
             $regulations = $opportunity->getFiles('rules');
@@ -919,7 +1051,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             // Tipos do proponente obrigatórios apenas em edição, como já era feito antes
-            if (!$this->isNew() && !$this->isLastPhase) {
+            if (!$this->isNew() && !$this->isLastPhase && !UserAccessService::isSaasSuperAdmin()) {
                 if (!is_array($this->registrationProponentTypes)) {
                     $this->registrationProponentTypes = [];
                 }
@@ -940,16 +1072,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             if (!$this->isNew() && !$this->isLastPhase) {
-                // Validação de Tipos do proponente
-                $proponentTypes = $this->registrationProponentTypes;
-                if (!is_array($proponentTypes) || count($proponentTypes) === 0) {
-                    $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
-                }
+                if (!UserAccessService::isSaasSuperAdmin()) {
+                    // Validação de Tipos do proponente
+                    $proponentTypes = $this->registrationProponentTypes;
+                    if (!is_array($proponentTypes) || count($proponentTypes) === 0) {
+                        $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
+                    }
 
-                // Validação de Regulamento
-                $regulations = $this->getFiles('rules');
-                if (empty($regulations)) {
-                    $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
+                    // Validação de Regulamento
+                    $regulations = $this->getFiles('rules');
+                    if (empty($regulations)) {
+                        $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
+                    }
                 }
 
                 // Validação: Utilização de recursos de outras fontes
@@ -1262,6 +1396,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Metadado: formas de inscrição previstas no edital
             $theme->registerOpportunityMetadata('formasInscricaoEdital', [
                 'label' => i::__('Formas de inscrição previstas no edital'),
+                'type' => 'json',
+            ]);
+
+            // Metadado: ações do PAR associadas a modelos oficiais
+            $theme->registerOpportunityMetadata('parActions', [
+                'label' => i::__('Ações do PAR'),
                 'type' => 'json',
             ]);
 
@@ -2268,6 +2408,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             || $federativeEntityId === ''
             || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
         ) {
+            return false;
+        }
+
+        // Clone recém-criado via generateopportunity: isGeneratedFromModel ainda não foi gravado.
+        // O create job é enfileirado explicitamente por saveOpportunityPostGenerate, após os dados PAR estarem salvos.
+        if (!empty($federativeEntityId) && !$isGeneratedFromModel) {
             return false;
         }
 
