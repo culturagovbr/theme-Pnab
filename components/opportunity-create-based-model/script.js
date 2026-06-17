@@ -104,6 +104,7 @@ app.component('opportunity-create-based-model', {
             const aldirBlancApiClient = new API('aldirblanc');
             const savePostGenerateRequestPayload = {
                 opportunityId: newOpportunityId,
+                modelId: this.entitydefault.id,
                 shortDescription: String(this.formData.shortDescription).trim(),
             };
             const parInstrumentSelection = this.parSelectionModel;
@@ -176,6 +177,10 @@ app.component('opportunity-create-based-model', {
                 entityId: this.entitydefault.id,
             };
 
+            if (this.parSelectionModel.parAcaoId) {
+                generateFromModelRequestPayload.parAcaoId = this.parSelectionModel.parAcaoId;
+            }
+
             if (this.validateGeneratePayload(generateFromModelRequestPayload)) {
                 this.messages.error(this.text('Todos os campos são obrigatórios.'));
                 return;
@@ -195,6 +200,7 @@ app.component('opportunity-create-based-model', {
                 );
 
                 if (!generateOpportunityHttpResponse.ok) {
+                    const isValidationError = generateOpportunityHttpResponse.status === 422;
                     let errorMessageForUser = this.text(
                         'Não foi possível gerar a oportunidade. Tente novamente.'
                     );
@@ -203,18 +209,22 @@ app.component('opportunity-create-based-model', {
                             await generateOpportunityHttpResponse.json();
                         if (generateErrorResponseBody?.message) {
                             errorMessageForUser = generateErrorResponseBody.message;
-                        } else if (generateErrorResponseBody?.error) {
-                            errorMessageForUser =
-                                typeof generateErrorResponseBody.error === 'string'
-                                    ? generateErrorResponseBody.error
-                                    : errorMessageForUser;
+                        } else if (typeof generateErrorResponseBody?.error === 'string') {
+                            errorMessageForUser = generateErrorResponseBody.error;
+                        } else if (generateErrorResponseBody?.data && typeof generateErrorResponseBody.data === 'object') {
+                            const firstEntry = Object.values(generateErrorResponseBody.data)[0];
+                            errorMessageForUser = Array.isArray(firstEntry)
+                                ? firstEntry[0]
+                                : String(firstEntry ?? errorMessageForUser);
                         }
                     } catch {
                         /* mantém mensagem genérica */
                     }
                     this.messages.error(errorMessageForUser);
                     this.generating = false;
-                    modal.close();
+                    if (!isValidationError) {
+                        modal.close();
+                    }
                     return;
                 }
 
@@ -235,11 +245,12 @@ app.component('opportunity-create-based-model', {
                     );
                 } catch (postGenerateFieldsPersistError) {
                     console.error(postGenerateFieldsPersistError);
-                    this.messages.error(
-                        this.text(
-                            'Não foi possível salvar descrição curta ou dados do PAR na nova oportunidade.'
-                        )
-                    );
+                    const postGenerateUserMessage =
+                        postGenerateFieldsPersistError.message &&
+                        postGenerateFieldsPersistError.message !== 'save failed'
+                            ? postGenerateFieldsPersistError.message
+                            : this.text('Não foi possível salvar descrição curta ou dados do PAR na nova oportunidade.');
+                    this.messages.error(postGenerateUserMessage);
                     this.generating = false;
                     return;
                 }

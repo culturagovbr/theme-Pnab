@@ -14,8 +14,7 @@ if (isset($_SESSION['selectedFederativeEntity'])) {
 }
 
 $this->import('
-    create-opportunity 
-    search 
+    search
     search-filter-opportunity
     search-list
     mc-tabs
@@ -25,15 +24,6 @@ $this->import('
 
 <?php if ($federativeEntityId): ?>
     <search page-title="<?= htmlspecialchars(i::__('Oportunidades do Ente Federado')) ?>" entity-type="opportunity" :initial-pseudo-query="{type:[],'term:area':[], federativeEntityId: <?= $federativeEntityId ?>}">
-        <template v-if="global.auth.isLoggedIn" #create-button>
-            <create-opportunity :editable="true" #default="{modal}">
-                <button @click="modal.open()" class="button button--primary button--icon">
-                    <mc-icon name="add"></mc-icon>
-                    <span><?= i::__('Criar Oportunidade') ?></span>
-                </button>
-            </create-opportunity>
-        </template>
-
         <template #default="{pseudoQuery, entity}">
             <mc-tabs class="search__tabs" sync-hash>
                 <?php $this->applyTemplateHook('search-tabs', 'before'); ?>

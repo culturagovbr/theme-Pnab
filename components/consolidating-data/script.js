@@ -39,7 +39,7 @@ app.component('consolidating-data', {
                     if (data.error) {
                         // Se há mensagem de erro específica, mostra
                         this.hasError = true
-                        this.errorMessage = data.error || 'Não foi possível consolidar seus dados, tente novamente mais tarde'
+                        this.errorMessage = data.errorMessage || 'Não conseguimos estabelecer conexão com a API CultBr. Tente novamente mais tarde.'
                         this.syncStarted = false
                     } else {
                         // Tenta novamente após 3 segundos

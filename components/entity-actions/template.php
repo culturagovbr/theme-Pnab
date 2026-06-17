@@ -111,10 +111,13 @@ $this->import('
 
             <div v-if="!editable" class="entity-actions__content--groupBtn" ref="buttons2">
                 <?php $this->applyTemplateHook('entity-actions--secondary', 'begin') ?>
+                <a v-if="entity.type?.name == 'Ente Federado'" href="#" @click.prevent class="button button button--md publish">
+                    <?php i::_e('Sincronizar dados do PAR') ?>
+                </a>
                 <a v-if="entity.currentUserPermissions?.modify && entity.__objectType=='opportunity'" :href="entity.editUrl" class="button button button--md publish">
                     <?php i::_e('Gerenciar') ?> {{entityType}}
                 </a>
-                <a v-if="entity.currentUserPermissions?.modify && entity.__objectType!='opportunity'" :href="entity.editUrl" class="button button button--md publish">
+                <a v-if="entity.type?.name != 'Ente Federado' && entity.currentUserPermissions?.modify && entity.__objectType!='opportunity'" :href="entity.editUrl" class="button button button--md publish">
                     <?php i::_e('Editar') ?> {{entityType}}
                 </a>
                 <?php $this->applyTemplateHook('entity-actions--secondary', 'end') ?>

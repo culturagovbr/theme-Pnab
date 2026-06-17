@@ -205,12 +205,15 @@ $gray-700: #19191c !default;
 @import './components/home-entities';
 @import './components/home-header';
 @import './components/home-description';
+@import './components/mc-breadcrumb';
 @import './components/federative-entity-selector';
 @import './components/federative-entity-banner';
 @import './components/consolidating-data';
 @import './components/mc-teleport-multiple';
 @import './components/opportunity-create-based-model';
 @import './components/custom-mc-multiselect';
+@import './components/custom-http-multiselect';
+@import './components/panel-entity-tabs';
 @import './components/opportunity-recursos-outras-fontes';
 @import './components/opportunity-formas-inscricao-edital';
 @import './components/opportunity-outras-modalidades-acoes-afirmativas';
@@ -824,4 +827,3 @@ body {
 .entity-card__footer--action .button {
     max-width: 272px;
 }
-
