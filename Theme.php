@@ -2218,12 +2218,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         foreach ($this->getRequeredsAgentIndividualMetadata() as $key) {
             // Acessa via getMetadata para garantir que __metadata seja carregado (evita null quando relação lazy não foi inicializada)
             $value = $agent->getMetadata($key);
-            if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+            if ($this->isAgentFieldValueEmpty($value)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Considera vazio: null, string vazia, array PHP vazio, e também '[]'/'{}' — campos
+     * multiselect/select persistem ausência de seleção como esse JSON serializado em string,
+     * não como null nem array PHP vazio (ver achado em analysis.md § completeProfile).
+     */
+    private function isAgentFieldValueEmpty($value): bool
+    {
+        if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+            return true;
+        }
+
+        return is_string($value) && in_array(trim($value), ['[]', '{}'], true);
     }
 
     /**
