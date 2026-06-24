@@ -11,7 +11,8 @@ app.component('consolidating-data', {
             syncStarted: false,
             checkingStatus: false,
             hasError: false,
-            errorMessage: ''
+            errorMessage: '',
+            startSyncAttempts: 0
         }
     },
 
@@ -26,12 +27,15 @@ app.component('consolidating-data', {
                 return
             }
 
+            const MAX_START_SYNC_ATTEMPTS = 5
+
             try {
                 this.syncStarted = true
                 const response = await this.api.POST('startSync')
                 const data = await response.json()
 
                 if (data.started) {
+                    this.startSyncAttempts = 0
                     // Sync iniciado, começa a verificar o status
                     this.checkSyncStatus()
                 } else {
@@ -42,17 +46,27 @@ app.component('consolidating-data', {
                         this.errorMessage = data.errorMessage || 'Não conseguimos estabelecer conexão com a API CultBr. Tente novamente mais tarde.'
                         this.syncStarted = false
                     } else {
-                        // Tenta novamente após 3 segundos
-                        this.syncStarted = false
-                        setTimeout(() => this.startSync(), 3000)
+                        this.retryStartSync(MAX_START_SYNC_ATTEMPTS)
                     }
                 }
             } catch (error) {
                 console.error('Erro ao iniciar sincronização:', error)
-                // Em caso de erro, tenta novamente após 3 segundos
-                this.syncStarted = false
-                setTimeout(() => this.startSync(), 3000)
+                this.retryStartSync(MAX_START_SYNC_ATTEMPTS)
             }
+        },
+
+        retryStartSync(maxAttempts) {
+            this.syncStarted = false
+            this.startSyncAttempts++
+
+            if (this.startSyncAttempts >= maxAttempts) {
+                this.hasError = true
+                this.errorMessage = 'Não conseguimos estabelecer conexão com a API CultBr. Tente novamente mais tarde.'
+                return
+            }
+
+            // Tenta novamente após 3 segundos
+            setTimeout(() => this.startSync(), 3000)
         },
 
         async checkSyncStatus() {
