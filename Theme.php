@@ -2454,8 +2454,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return false;
         }
 
-        // Subsite da entidade ≠ ALDIRBLANC_SUBSITE_ID: bloqueia, exceto «usar modelo» (já garantido themePnabSubsiteId > 0 acima).
-        if (!$isGeneratedFromModel && $subsiteId !== $themePnabSubsiteId) {
+        // Subsite da entidade precisa ser o subsite do Pnab (ALDIRBLANC_SUBSITE_ID, já garantido > 0 acima).
+        if ($subsiteId !== $themePnabSubsiteId) {
             return false;
         }
 
