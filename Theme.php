@@ -251,6 +251,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Quando a oportunidade for ativada, disparar o job de update
             if ((int) $this->status === OpportunityStatus::ENABLED->value) {
+                // Não enfileirar update se o create ainda não foi sincronizado:
+                // o PUT chegaria ao CultBr antes do POST e resultaria em 404.
+                if (!$theme->isOpportunityCultBrCreateSynced($this)) {
+                    return;
+                }
+
                 $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
 
                 $app->enqueueOrReplaceJob(
