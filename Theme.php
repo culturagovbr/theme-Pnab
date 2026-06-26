@@ -181,7 +181,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Valida compatibilidade da ação PAR antes de o core clonar o modelo.
          * Roda antes de qualquer persistência — se inválido, nada é criado.
          */
-        $app->hook('POST(opportunity.generateopportunity):before', function () {
+        $app->hook('POST(opportunity.generateopportunity):before', function () use ($app) {
             if (!UserAccessService::isGestorCultBr()) {
                 return;
             }
@@ -196,17 +196,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            $parActionsRaw = $model->getMetadata('parActions');
-            if (is_string($parActionsRaw)) {
-                $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
-            }
-            $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
+            try {
+                $parActionsRaw = $model->getMetadata('parActions');
+                if (is_string($parActionsRaw)) {
+                    $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
+                }
+                $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
 
-            if (empty($parActions)) {
+                if (empty($parActions)) {
+                    return;
+                }
+
+                $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
+            } catch (\Throwable $parValidationFailure) {
+                $app->log->error(
+                    '[Pnab] generateopportunity (validação PAR): ' . $parValidationFailure->getMessage()
+                );
+                $this->errorJson(i::__('Não foi possível validar a ação do PAR. Tente novamente.'), 500);
                 return;
             }
 
-            $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
             if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
                 $this->errorJson(['parAcaoId' => [i::__('A ação selecionada não é compatível com este modelo.')]], 422);
                 return;
@@ -242,6 +251,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Quando a oportunidade for ativada, disparar o job de update
             if ((int) $this->status === OpportunityStatus::ENABLED->value) {
+                // Não enfileirar update se o create ainda não foi sincronizado:
+                // o PUT chegaria ao CultBr antes do POST e resultaria em 404.
+                if (!$theme->isOpportunityCultBrCreateSynced($this)) {
+                    return;
+                }
+
                 $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
 
                 $app->enqueueOrReplaceJob(
@@ -2445,8 +2460,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return false;
         }
 
-        // Subsite da entidade ≠ ALDIRBLANC_SUBSITE_ID: bloqueia, exceto «usar modelo» (já garantido themePnabSubsiteId > 0 acima).
-        if (!$isGeneratedFromModel && $subsiteId !== $themePnabSubsiteId) {
+        // Subsite da entidade precisa ser o subsite do Pnab (ALDIRBLANC_SUBSITE_ID, já garantido > 0 acima).
+        if ($subsiteId !== $themePnabSubsiteId) {
             return false;
         }
 
