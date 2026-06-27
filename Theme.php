@@ -179,7 +179,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Valida compatibilidade da ação PAR antes de o core clonar o modelo.
          * Roda antes de qualquer persistência — se inválido, nada é criado.
          */
-        $app->hook('POST(opportunity.generateopportunity):before', function () {
+        $app->hook('POST(opportunity.generateopportunity):before', function () use ($app) {
             if (!UserAccessService::isGestorCultBr()) {
                 return;
             }
@@ -194,17 +194,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            $parActionsRaw = $model->getMetadata('parActions');
-            if (is_string($parActionsRaw)) {
-                $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
-            }
-            $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
+            try {
+                $parActionsRaw = $model->getMetadata('parActions');
+                if (is_string($parActionsRaw)) {
+                    $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
+                }
+                $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
 
-            if (empty($parActions)) {
+                if (empty($parActions)) {
+                    return;
+                }
+
+                $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
+            } catch (\Throwable $parValidationFailure) {
+                $app->log->error(
+                    '[Pnab] generateopportunity (validação PAR): ' . $parValidationFailure->getMessage()
+                );
+                $this->errorJson(i::__('Não foi possível validar a ação do PAR. Tente novamente.'), 500);
                 return;
             }
 
-            $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
             if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
                 $this->errorJson(['parAcaoId' => [i::__('A ação selecionada não é compatível com este modelo.')]], 422);
                 return;
@@ -240,6 +249,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             // Quando a oportunidade for ativada, disparar o job de update
             if ((int) $this->status === OpportunityStatus::ENABLED->value) {
+                // Não enfileirar update se o create ainda não foi sincronizado:
+                // o PUT chegaria ao CultBr antes do POST e resultaria em 404.
+                if (!$theme->isOpportunityCultBrCreateSynced($this)) {
+                    return;
+                }
+
                 $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
 
                 $app->enqueueOrReplaceJob(
@@ -573,6 +588,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
+            // Apenas admins podem consultar a equipe de qualquer Ente Federado via query direta;
+            // GestorCultBr só pode consultar o(s) ente(s) com que tem vínculo real (mesma validação
+            // de ownership aplicada em Controller::POST_selectFederativeEntity).
+            if (!UserAccessService::canViewFederativeEntityTeam((int) $federativeEntityId)) {
+                $api_params['id'] = 'EQ(-1)';
+                unset($api_params['federativeEntityId']);
+                return;
+            }
+
             $federativeEntityRef = $app->em->getReference('AldirBlanc\Entities\FederativeEntity', $federativeEntityId);
             $relations = $app->repo('AldirBlanc\Entities\FederativeEntityAgentRelation')->findBy([
                 'owner' => $federativeEntityRef,
@@ -819,6 +843,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // Limpa flags de sincronização anteriores (incluindo erros)
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
+            unset($_SESSION['gestor_cult_sync_started_at']);
             unset($_SESSION['gestor_cult_sync_error']);
             unset($_SESSION['gestor_cult_sync_error_message']);
 
@@ -840,6 +865,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($_SESSION['federative_entity_redirect_uri']);
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
+            unset($_SESSION['gestor_cult_sync_started_at']);
             unset($_SESSION['gestor_cult_sync_error']);
             unset($_SESSION['gestor_cult_sync_error_message']);
         });
@@ -2215,12 +2241,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         foreach ($this->getRequeredsAgentIndividualMetadata() as $key) {
             // Acessa via getMetadata para garantir que __metadata seja carregado (evita null quando relação lazy não foi inicializada)
             $value = $agent->getMetadata($key);
-            if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+            if ($this->isAgentFieldValueEmpty($value)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Considera vazio: null, string vazia, array PHP vazio, e também '[]'/'{}' — campos
+     * multiselect/select persistem ausência de seleção como esse JSON serializado em string,
+     * não como null nem array PHP vazio (ver achado em analysis.md § completeProfile).
+     */
+    private function isAgentFieldValueEmpty($value): bool
+    {
+        if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+            return true;
+        }
+
+        return is_string($value) && in_array(trim($value), ['[]', '{}'], true);
     }
 
     /**
@@ -2428,8 +2468,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return false;
         }
 
-        // Subsite da entidade ≠ ALDIRBLANC_SUBSITE_ID: bloqueia, exceto «usar modelo» (já garantido themePnabSubsiteId > 0 acima).
-        if (!$isGeneratedFromModel && $subsiteId !== $themePnabSubsiteId) {
+        // Subsite da entidade precisa ser o subsite do Pnab (ALDIRBLANC_SUBSITE_ID, já garantido > 0 acima).
+        if ($subsiteId !== $themePnabSubsiteId) {
             return false;
         }
 

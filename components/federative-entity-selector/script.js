@@ -79,9 +79,14 @@ app.component('federative-entity-selector', {
                     entityName: this.selectedEntity.name,
                     entityDocument: this.selectedEntity.document
                 })
+                const data = await response.json()
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.data || data.message || 'Erro ao salvar seleção.')
+                }
 
                 // Redireciona para a URI salva ou para o painel
-                const redirectUri = response?.redirectUri || '/painel'
+                const redirectUri = data.redirectUri || Utils.createUrl('panel', 'index')
                 window.location.href = redirectUri
             } catch (error) {
                 console.error('Erro ao salvar seleção:', error)

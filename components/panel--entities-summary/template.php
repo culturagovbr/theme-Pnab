@@ -11,7 +11,6 @@ use AldirBlanc\Services\UserAccessService;
 $this->import('
     create-agent
     create-event
-    create-opportunity
     create-project
     create-space
     mc-link
@@ -52,9 +51,7 @@ $canAccessOpportunitiesPanel = UserAccessService::canAccess();
             </div>
         </mc-link>
         <div class="panel--entities-summary__card--create">
-            <create-opportunity #default="{modal}">
-                <button @click="modal.open()" class="button button--large button--primary-outline button--icon"> <mc-icon name="add"></mc-icon> <?= i::_e('Criar') ?> </button>
-            </create-opportunity>
+            <mc-link route="panel/opportunities" class="button button--large button--primary-outline button--icon"> <mc-icon name="access"></mc-icon> <?= i::_e('Acessar') ?> </mc-link>
         </div>
     </div>
     <?php endif; ?>
