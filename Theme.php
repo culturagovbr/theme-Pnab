@@ -18,10 +18,8 @@ use OpportunityWorkplan\Entities\Workplan as WorkplanEntity;
 use Pnab\Services\FederativeEntityAdminService;
 
 /**
- * @method void import(string $components) Importa lista de componentes Vue. * 
+ * @method void import(string $components) Importa lista de componentes Vue. *
  */
-// Alteração necessária para rodar o theme-Pnab como submodule do culturagovbr/mapadacultura
-// class Theme extends \BaseTheme\Theme
 class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 {
     private const METADATA_RANGE_SUM_KEYS = [
@@ -2087,7 +2085,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
-     * Obtém as opções de Território. Apenas "Edital não se direciona" no início; sem "Todas as opções" e sem "Outros (especificar)".
+     * Obtém as opções de Território. Apenas "Edital não se direciona" no início; sem "Todas as opções",
+     * sem variantes de "Outros" e sem "Não se aplica". Ordenadas alfabeticamente (acentos normalizados).
      */
     private function getTerritorioOptions(): array
     {
@@ -2095,15 +2094,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             'OpportunityWorkplan\Entities\Delivery',
             'priorityAudience'
         );
-        $outra = i::__('Outra (especificar)');
-        $outros = i::__('Outros (especificar)');
+        $excluir = [
+            i::__('Outra (especificar)'),
+            i::__('Outros (especificar)'),
+            i::__('Outros'),
+            i::__('Não se aplica'),
+        ];
         $filtered = [];
         foreach ($opcoes as $k => $v) {
-            if ((string) $v === $outra || (string) $v === $outros) {
+            if (in_array((string) $v, $excluir, true)) {
                 continue;
             }
             $filtered[$k] = $v;
         }
+        $norm = fn($s) => strtr(mb_strtolower((string) $s, 'UTF-8'), [
+            'á'=>'a','à'=>'a','â'=>'a','ã'=>'a','é'=>'e','ê'=>'e',
+            'í'=>'i','ó'=>'o','ô'=>'o','õ'=>'o','ú'=>'u','ç'=>'c',
+        ]);
+        uasort($filtered, fn($a, $b) => strcmp($norm($a), $norm($b)));
         return $this->enrichMultiselectOptions($filtered, null, null, false);
     }
 

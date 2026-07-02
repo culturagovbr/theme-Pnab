@@ -1,6 +1,9 @@
 <?php
 
-$agent_types = include APPLICATION_PATH . '/conf/agent-types.php';
+$sniic_file = APPLICATION_PATH . 'plugins/SNIICDataStandard/agent-types.php';
+$agent_types = file_exists($sniic_file)
+    ? include $sniic_file
+    : include APPLICATION_PATH . '/conf/agent-types.php';
 
 // Remove obrigatoriedade de campos específicos na criação de agente (core pode marcar como required).
 foreach (['renda'] as $field_key) {

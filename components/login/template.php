@@ -3,22 +3,19 @@
 /**
  * @var \MapasCulturais\Themes\BaseV2\Theme $this
  * @var \MapasCulturais\App $app
- * 
+ *
  */
 
 use MapasCulturais\i;
 
-$this->import('
-    mc-card
-    password-strongness
-    mc-captcha
-');
+$onlyGovBr = (bool) ($app->config['auth.config']['onlyGovBr'] ?? false);
 ?>
 
 <div class="login">
 
-    <!-- Login somente Gov.br (PNAB_AUTH_ONLY_GOV_BR — layout alinhado ao rascunho PNAB) -->
-    <div v-if="onlyGovBr && !recoveryRequest && !recoveryMode" class="login__action login__action--govbr-only">
+<?php if ($onlyGovBr): ?>
+
+    <div class="login__action login__action--govbr-only">
         <div class="login__card login__card--govbr-only">
             <div class="login__card__header login__card__header--govbr-only">
                 <h3 class="login__govbr-only-title"><?= i::__('Bem vindo ao CultBR editais') ?></h3>
@@ -51,8 +48,16 @@ $this->import('
         </div>
     </div>
 
-    <!-- Login action (fluxo original plugin MultipleLocalAuth) -->
-    <div v-else-if="!recoveryRequest && !recoveryMode" class="login__action">
+<?php else: ?>
+
+    <?php $this->import('
+        mc-card
+        password-strongness
+        mc-captcha
+    '); ?>
+
+    <!-- Login action -->
+    <div v-if="!recoveryRequest && !recoveryMode" class="login__action">
         <div class="login__card">
             <div class="login__card__header">
                 <span v-if="wizard">
@@ -89,11 +94,8 @@ $this->import('
                                 <a id="multiple-login-recover" class="login__recover-link" @click="recoveryRequest = true"> <?= i::__('Esqueci minha senha') ?> </a>
                                 <div class="seePassword" @click="togglePassword('password', $event)"></div>
                             </div>
-
-
                         </div>
 
-                        <!-- Componente responsável por renderizar o CAPTCHA -->
                         <mc-captcha @captcha-verified="verifyCaptcha" @captcha-expired="expiredCaptcha" :error="error"></mc-captcha>
 
                         <div class="login__buttons">
@@ -102,7 +104,6 @@ $this->import('
                             <button v-if="passwordResetRequired" class="button button--primary button--large button--md" @click="recoveryRequest = true"> <?= i::__('Gerar nova senha') ?> </button>
                             <button v-if="passwordResetRequired || showPassword" class="button button--secondary button--large button--md" @click="resetLoginState"> <?= i::__('Voltar') ?> </button>
                         </div>
-
 
                         <div v-if="userNotFound" class="create">
                             <a class="button button--primary button--large button--md" href="<?php echo $app->createUrl('auth', 'register') ?>">
@@ -114,7 +115,6 @@ $this->import('
                 </span>
                 <span v-else>
                     <form class="login__form" @submit.prevent="doLogin();">
-                        <!-- Campos de login -->
                         <div class="login__fields">
                             <div class="field">
                                 <label for="email"> <?= i::__('E-mail ou CPF') ?> </label>
@@ -129,10 +129,8 @@ $this->import('
                             </div>
                         </div>
 
-                        <!-- Componente responsável por renderizar o CAPTCHA -->
                         <mc-captcha @captcha-verified="verifyCaptcha" @captcha-expired="expiredCaptcha" :error="error"></mc-captcha>
 
-                        <!-- Botões de login [Login social e botão de login] -->
                         <div class="login__buttons">
                             <button class=" button button--primary button--large button--md" type="submit"> <?= i::__('Entrar') ?> </button>
                         </div>
@@ -182,7 +180,7 @@ $this->import('
                         <label for="email"> <?= i::__('E-mail') ?> </label>
                         <input type="email" name="email" id="email" v-model="email" autocomplete="off" />
                     </div>
-                    <VueRecaptcha v-if="configs['google-recaptcha-sitekey']" :sitekey="configs['google-recaptcha-sitekey']" @verify="verifyCaptcha" @expired="expiredCaptcha" @render="expiredCaptcha" class="g-recaptcha col-12"></VueRecaptcha>
+                    <mc-captcha @captcha-verified="verifyCaptcha" @captcha-expired="expiredCaptcha" :error="error" class="col-12"></mc-captcha>
                     <button class="col-12 button button--primary button--large button--md" type="submit"> <?= i::__('Alterar senha') ?> </button>
                     <a @click="recoveryRequest = false" class="col-12 button button--secondarylight button--large button--md"> <?= i::__('Voltar') ?> </a>
                 </form>
@@ -220,7 +218,6 @@ $this->import('
                     <div class="field col-12 password">
                         <label for="pwd"> <?= i::__('Senha'); ?> </label>
                         <input autocomplete="off" id="pwd" type="password" name="password" v-model="password" />
-
                     </div>
 
                     <div class="field col-12 password">
@@ -237,4 +234,7 @@ $this->import('
             </div>
         </div>
     </div>
+
+<?php endif; ?>
+
 </div>
