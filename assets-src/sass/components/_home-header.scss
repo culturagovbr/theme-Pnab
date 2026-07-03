@@ -45,6 +45,9 @@ $home-header-parallax-min-width: 64rem; // 1024px
     width: auto;
     height: auto;
     object-fit: contain;
+    // Correção óptica: o "C" arredondado do logo provisório parece recuado em relação
+    // à borda reta da tagline abaixo; puxa um pouco para a esquerda para compensar.
+    margin-left: #{size(-8)};
   }
 
   &__brand-tagline {

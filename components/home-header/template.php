@@ -10,7 +10,8 @@ $this->import('
 ');
 
 // Período eleitoral: fundo ilustrado e parallax suprimidos — fica só o fundo claro.
-$brand_logo_url = $this->asset('img/home/home-header/home-header-logo.png', false);
+// Logo provisória enquanto durar o período de defeso eleitoral.
+$brand_logo_url = $this->asset('img/home/home-header/home-header-logo-defeso-eleitoral.png', false);
 ?>
 
 <div :class="['home-header', {'home-header--withBanner' : banner}] ">
