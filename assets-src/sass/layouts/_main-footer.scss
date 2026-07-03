@@ -188,6 +188,9 @@
                 width: 100vw;
                 margin-left: calc(-50vw + 50%);
                 box-sizing: border-box;
+                // Divisória entre a barra de logos e o restante do footer
+                // (contraparte da linha de sombra que já existe acima da barra).
+                border-bottom: 1px solid #dee2e6;
 
                 @include mobile {
                     flex-direction: column;
