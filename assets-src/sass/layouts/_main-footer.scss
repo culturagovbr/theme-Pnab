@@ -196,17 +196,13 @@
                     gap: size(24);
                 }
 
-                // logo-footer.png 1905×216: em telas estreitas não encolher tudo; cortar laterais (arte).
+                // aldir_horizontal_color.png 1920×273: as bordas têm logos (SNC/bandeira),
+                // então nada de corte lateral — a barra escala inteira em qualquer largura.
                 .main-footer__logo-item {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     width: 100%;
-
-                    @media (max-width: 64rem) {
-                        overflow: hidden;
-                        height: clamp(#{size(56)}, 17vw, #{size(96)});
-                    }
 
                     img,
                     theme-logo,
@@ -215,13 +211,6 @@
                         height: auto;
                         display: block;
                         object-fit: contain;
-
-                        @media (max-width: 64rem) {
-                            height: 100%;
-                            width: 100%;
-                            object-fit: cover;
-                            object-position: center center;
-                        }
                     }
                 }
             }
