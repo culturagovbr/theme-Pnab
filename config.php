@@ -17,7 +17,8 @@ return [
     Define o nome do asset da imagem do background no header da home - Substitui o background padrão do módulo
     ex: `img/home/home-header/home-header2.png` (pasta assets/img/home/home-header/home-header2.png do tema)
     */
-    'homeHeader.background' => 'img/home/home-header/home-header2.png',
+    // Período eleitoral: fundo ilustrado do header suprimido (original: img/home/home-header/home-header2.png).
+    'homeHeader.background' => '',
 
     // entidades habilitadas
     'app.enabled.agents'        => true,

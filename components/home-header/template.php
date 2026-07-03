@@ -9,7 +9,7 @@ $this->import('
     home-search
 ');
 
-$parallax_url = $this->asset('img/home/home-header/parallax.png', false);
+// Período eleitoral: fundo ilustrado e parallax suprimidos — fica só o fundo claro.
 $brand_logo_url = $this->asset('img/home/home-header/home-header-logo.png', false);
 ?>
 
@@ -64,15 +64,5 @@ $brand_logo_url = $this->asset('img/home/home-header/home-header-logo.png', fals
         </div>
 
     </div>
-    <div class="home-header__background">
-        <div class="img">
-            <img :src="background" />
-        </div>
-    </div>
-    <?php if ($parallax_url) : ?>
-        <div class="home-header__parallax" aria-hidden="true">
-            <img src="<?= htmlspecialchars($parallax_url, ENT_QUOTES, 'UTF-8') ?>" alt="" width="1742" height="2497" decoding="async" />
-        </div>
-    <?php endif; ?>
     <!-- <home-search></home-search> -->
 </div>

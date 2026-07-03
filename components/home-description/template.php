@@ -6,19 +6,10 @@
 
 use MapasCulturais\i;
 
-$decoration_bottom_right_url = $app->view->asset(
-    'img/home/home-description/background-bottom-right.png',
-    false
-);
+// Período eleitoral: decoração do canto inferior direito suprimida — fica só o fundo claro.
 ?>
 
-<section
-    class="home-network"
-    <?= $decoration_bottom_right_url
-        ? ' style="--home-network-decoration: url(\'' . addslashes($decoration_bottom_right_url) . '\');"'
-        : ''
-    ?>
->
+<section class="home-network">
     <div class="home-network__container">
         <div class="home-network__text">
             <h2 class="title">A Política Nacional Aldir Blanc</h2>
