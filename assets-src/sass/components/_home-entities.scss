@@ -35,6 +35,15 @@
           margin-bottom: size(32);
         }
 
+        // Período eleitoral: artes ocultadas — fundo sólido no lugar da imagem.
+        &.card--opportunities .card__image {
+          background-color: #32529f;
+        }
+
+        &.card--signup .card__image {
+          background-color: #ffcf00;
+        }
+
         &.card--signup .card__image h3 {
           color: black;
         }
@@ -49,14 +58,16 @@
           background-color: #fff;
           display: flex;
           align-items: center;
-          justify-content: flex-start;
+          justify-content: center;
           padding: 0 1.5rem;
           overflow: hidden;
 
+          // Lettering das artes originais: Poppins bold caixa-alta com altura de
+          // caixa-alta ≈ 17% da área (nas artes 1905×337 com cover, ≈ 50px em 585×221).
           h3 {
-            font-family: 'League Gothic', sans-serif;
-            font-size: size(24);
-            font-weight: regular;
+            font-family: $font-family-base;
+            font-size: size(50);
+            font-weight: 700;
             color: white;
             text-transform: uppercase;
             margin: 0;
@@ -68,7 +79,7 @@
             border-radius: 16px 16px 0 0;
 
             h3 {
-              font-size: size(18);
+              font-size: size(32);
             }
           }
         }
