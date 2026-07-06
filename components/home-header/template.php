@@ -12,6 +12,7 @@ $this->import('
 // Período eleitoral: fundo ilustrado e parallax suprimidos — fica só o fundo claro.
 // Logo provisória enquanto durar o período de defeso eleitoral.
 $brand_logo_url = $this->asset('img/home/home-header/home-header-logo-defeso-eleitoral.png', false);
+$brand_logo_mobile_url = $this->asset('img/logo-site-vertical.png', false);
 ?>
 
 <div :class="['home-header', {'home-header--withBanner' : banner}] ">
@@ -20,11 +21,19 @@ $brand_logo_url = $this->asset('img/home/home-header/home-header-logo-defeso-ele
         <div class="home-header__brand">
             <?php if ($brand_logo_url) : ?>
                 <img
-                    class="home-header__brand-logo"
+                    class="home-header__brand-logo home-header__brand-logo--desktop"
                     src="<?= htmlspecialchars($brand_logo_url, ENT_QUOTES, 'UTF-8') ?>"
                     alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
                     decoding="async"
                 />
+                <?php if ($brand_logo_mobile_url) : ?>
+                    <img
+                        class="home-header__brand-logo home-header__brand-logo--mobile"
+                        src="<?= htmlspecialchars($brand_logo_mobile_url, ENT_QUOTES, 'UTF-8') ?>"
+                        alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR Editais — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
+                        decoding="async"
+                    />
+                <?php endif; ?>
             <?php endif; ?>
             <p class="home-header__brand-tagline">
                 <span class="home-header__brand-tagline-line"><?= $this->text('brandTaglineLine1', i::__('Fomento à cultura')) ?></span><br aria-hidden="true" />

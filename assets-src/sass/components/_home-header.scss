@@ -50,6 +50,10 @@ $home-header-parallax-min-width: 64rem; // 1024px
     margin-left: #{size(-8)};
   }
 
+  &__brand-logo--mobile {
+    display: none;
+  }
+
   &__brand-tagline {
     margin: 0;
     align-self: stretch;
@@ -91,9 +95,17 @@ $home-header-parallax-min-width: 64rem; // 1024px
     }
 
     &__brand-logo {
-      width: min(78vw, #{size(300)});
+      width: min(82vw, #{size(360)});
       max-width: 100%;
-      margin-left: #{size(-8)};
+      margin-left: 0;
+    }
+
+    &__brand-logo--desktop {
+      display: none;
+    }
+
+    &__brand-logo--mobile {
+      display: block;
     }
 
     &__main {
