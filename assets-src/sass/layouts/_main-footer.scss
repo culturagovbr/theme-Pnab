@@ -210,10 +210,18 @@
                     img,
                     theme-logo,
                     theme-logo img {
-                        width: 100%;
+                        width: 50%;
                         height: auto;
                         display: block;
                         object-fit: contain;
+                    }
+
+                    @include mobile {
+                        img,
+                        theme-logo,
+                        theme-logo img {
+                            width: 100%;
+                        }
                     }
                 }
             }
