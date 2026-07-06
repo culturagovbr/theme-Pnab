@@ -22,7 +22,7 @@ $entities = [
         'title' => 'Cadastre-se',
         'route' => 'autenticacao',
         'viewAll' => 'Fazer Cadastro',
-        'description' => 'O <strong>Cult.br Editais</strong> é uma plataforma gratuita. Gestores culturais divulgam editais da <strong>Política Nacional Aldir Blanc</strong> e agentes culturais submetem suas propostas. Aqui você pode realizar a inscrição, seleção, monitoramento e prestação de informações sobre projetos. Acesse e faça parte da <strong>maior política pública de fomento cultural da história!</strong>',
+        'description' => 'O <strong>Cult.br Editais</strong> é uma plataforma gratuita. Gestores culturais divulgam editais da <strong>Política Nacional Aldir Blanc</strong> e agentes culturais submetem suas propostas. Aqui você pode realizar a inscrição, seleção, monitoramento e prestação de informações sobre projetos.',
     ],
 ];
 ?>
