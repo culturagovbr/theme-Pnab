@@ -6,8 +6,8 @@ return [
     'logo.hideLabel' => true,
 
     // Atualizando o favicon para PNG (BaseV2/header usa estas chaves; PNG no lugar do SVG padrão)
-    'favicon.svg' => 'img/favicon.png',
-    'favicon.180' => 'img/favicon.png',
+    //'favicon.svg' => 'img/favicon.png',
+    //'favicon.180' => 'img/favicon.png',
 
     // Tela inicial (Banner)
     'text:home-header.title' => '&nbsp;',
