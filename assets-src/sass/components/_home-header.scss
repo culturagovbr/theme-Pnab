@@ -50,6 +50,10 @@ $home-header-parallax-min-width: 64rem; // 1024px
     margin-left: #{size(-8)};
   }
 
+  &__brand-logo--mobile {
+    display: none;
+  }
+
   &__brand-tagline {
     margin: 0;
     align-self: stretch;
@@ -83,6 +87,27 @@ $home-header-parallax-min-width: 64rem; // 1024px
 
   // PNAB: título/descrição do header costumam vazios; no mobile só atrapalham o flex (gap).
   @media (max-width: 767px) {
+    &__brand {
+      align-items: center;
+      box-sizing: border-box;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    &__brand-logo {
+      width: min(82vw, #{size(360)});
+      max-width: 100%;
+      margin-left: 0;
+    }
+
+    &__brand-logo--desktop {
+      display: none;
+    }
+
+    &__brand-logo--mobile {
+      display: block;
+    }
+
     &__main {
       display: none;
     }

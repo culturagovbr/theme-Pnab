@@ -2,12 +2,12 @@
 return [
     // 'logo.title' => 'MAPA DA',
     // 'logo.subtitle' => 'CULTURA',	
-    'logo.image' => 'img/main-logo.svg',
+    'logo.image' => 'img/logo-site-vertical.png',
     'logo.hideLabel' => true,
 
     // Atualizando o favicon para PNG (BaseV2/header usa estas chaves; PNG no lugar do SVG padrão)
-    'favicon.svg' => 'img/favicon.png',
-    'favicon.180' => 'img/favicon.png',
+    //'favicon.svg' => 'img/favicon.png',
+    //'favicon.180' => 'img/favicon.png',
 
     // Tela inicial (Banner)
     'text:home-header.title' => '&nbsp;',
@@ -30,7 +30,7 @@ return [
 
     // Tela inicial (área de cadastro) 
     'text:home-register.title' => 'Faça seu cadastro e participe <br> da Política Nacional Aldir Blanc',
-    'text:home-register.description' => 'O <strong>Cult.br Editais</strong> é uma plataforma gratuita. Gestores culturais divulgam editais da <strong>Política Nacional Aldir Blanc</strong> e agentes culturais submetem suas propostas. Aqui você pode realizar a inscrição, seleção, monitoramento e prestação de informações sobre projetos. Acesse e faça parte da <strong>maior política pública de fomento cultural da história!</strong>',
+    'text:home-register.description' => 'O <strong>Cult.br Editais</strong> é uma plataforma gratuita. Gestores culturais divulgam editais da <strong>Política Nacional Aldir Blanc</strong> e agentes culturais submetem suas propostas. Aqui você pode realizar a inscrição, seleção, monitoramento e prestação de informações sobre projetos.',
 
     // Texto que será exibido nas buscas do Google
     'text:search-map.agentText' => 'Neste espaço, é possível buscar e conhecer os agentes culturais cadastrados no Mapa da Cultura. Explore a diversidade de artistas, produtores, grupos, coletivos, bandas, instituições, que fazem parte da cultura! Participe e seja protagonista da cultura brasileira!',

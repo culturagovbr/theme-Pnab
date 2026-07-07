@@ -43,7 +43,6 @@ $this->import('
     opportunity-phases-timeline
     opportunity-subscription
     opportunity-subscription-list
-    opportunity-owner-type
     v1-embed-tool
 ');
 
@@ -66,10 +65,6 @@ $this->breadcrumb = [
         <dl v-if="entity.type">
             <dt><?= i::__('Tipo')?></dt>
             <dd :class="[entity.__objectType+'__color', 'type']"> {{entity.type.name}} </dd>
-        </dl>
-        <dl v-if="entity.ownerEntity" class="single-opportunity__owner">
-            <dt><?= i::__('Vinculado com ') ?><opportunity-owner-type :entity="entity"></opportunity-owner-type></dt>
-            <dd><mc-link :entity="entity.ownerEntity"></mc-link></dd>
         </dl>
     </template>
   </entity-header>
