@@ -6,12 +6,15 @@
 
 use MapasCulturais\i;
 
+$showAdminActions = $app->user->is('admin');
+
 $this->import('
     mc-confirm-button
     mc-loading
     mc-alert
     opportunity-create-model
     opportunity-create-based-model
+    opportunity-exporter
 ');
 ?>
 <div v-if="!empty" class="entity-actions">
@@ -57,22 +60,14 @@ $this->import('
                         <?php i::_e('Você está certo que deseja excluir?') ?>
                     </template>
                 </mc-confirm-button>
-                <mc-confirm-button v-if="entity.currentUserPermissions?.modify && entity.status != -2 && entity.__objectType == 'opportunity' && entity.isModel != 1" @confirm="entity.duplicate()" no="Cancelar" yes="Continuar">
-                    <template #button="modal">
-                        <button @click="modal.open()" class="button button--icon button--sm">
-                            <?php i::_e("Duplicar oportunidade") ?>
-                        </button>
-                    </template>
-                    <template #message="message">
-                        <h4><b><?php i::_e('Duplicar modelo'); ?></b></h4>
-                        <br>
-                        <p><?php i::_e('Todas as configurações atuais da oportunidade, incluindo o vínculo<br> com a entidade associada e os campos de formulário criados, serão<br> duplicadas.') ?></p>
-                        <p><?php i::_e('Deseja continuar?') ?></p>
-                    </template>
-                </mc-confirm-button>
+                <?php if ($showAdminActions): ?>
                 <div v-if="entity.currentUserPermissions?.modify && entity.status != -2 && entity.__objectType == 'opportunity' && entity.isModel != 1">
                     <opportunity-create-model :entity="entity" classes="col-12"></opportunity-create-model>
                 </div> 
+                <template v-if="entity.currentUserPermissions?.modify && entity.status != -2 && entity.__objectType == 'opportunity'">
+                    <opportunity-exporter :entity="entity"></opportunity-exporter>
+                </template>
+                <?php endif; ?>
                 <?php $this->applyTemplateHook('entity-actions--primary', 'end') ?>
             </div>
             <?php $this->applyTemplateHook('entity-actions--leftGroupBtn', 'after'); ?>
