@@ -94,10 +94,6 @@
 
         .mc-header-logo {
             max-width: size(286);
-
-            .main-header__logo-mobile {
-                display: none;
-            }
         }
 
         .mc-header-menu {
@@ -120,28 +116,6 @@
 
         @media (max-width: size(400)) {
             height: size(53);
-        }
-
-        @media (max-width: size(767)) {
-            .mc-header-logo {
-                max-width: size(220);
-
-                .theme-logo {
-                    display: none;
-                }
-
-                .main-header__logo-mobile {
-                    display: block;
-                    line-height: 0;
-
-                    img {
-                        display: block;
-                        height: auto;
-                        max-width: size(180);
-                        width: 100%;
-                    }
-                }
-            }
         }
 
         .logIn {

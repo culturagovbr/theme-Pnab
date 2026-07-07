@@ -10,7 +10,7 @@ return [
     */
     'app.siteName' => 'CultBR Editais',
     'app.siteDescription' => 'Aqui você encontra informações de editais e oportunidades do Ministério da Cultura.',
-    'logo.image' => './img/logo-site.png',
+    'logo.image' => './img/logo-site-vertical.png',
     'logo.hideLabel' => env('LOGO_HIDELABEL', true),
 
     /*

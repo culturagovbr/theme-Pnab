@@ -2,7 +2,7 @@
 return [
     // 'logo.title' => 'MAPA DA',
     // 'logo.subtitle' => 'CULTURA',	
-    'logo.image' => 'img/main-logo.svg',
+    'logo.image' => 'img/logo-site-vertical.png',
     'logo.hideLabel' => true,
 
     // Atualizando o favicon para PNG (BaseV2/header usa estas chaves; PNG no lugar do SVG padrão)

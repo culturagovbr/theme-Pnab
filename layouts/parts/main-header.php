@@ -13,8 +13,6 @@ $this->import('
     mc-messages 
     theme-logo 
 ');
-
-$mobile_logo_url = $this->asset('img/logo-site-vertical.png', false);
 ?>
 <?php $this->applyTemplateHook('main-header', 'before') ?>
 <header class="main-header" id="main-header">
@@ -28,11 +26,6 @@ $mobile_logo_url = $this->asset('img/logo-site-vertical.png', false);
             <!-- Logo -->
             <template #logo>
                 <theme-logo href="<?= $app->createUrl('panel', 'index') ?>"></theme-logo>
-                <?php if ($mobile_logo_url) : ?>
-                    <a class="main-header__logo-mobile" href="<?= $app->createUrl('panel', 'index') ?>">
-                        <img src="<?= htmlspecialchars($mobile_logo_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($app->siteName, ENT_QUOTES, 'UTF-8') ?>" />
-                    </a>
-                <?php endif; ?>
             </template>
             <!-- Menu principal -->
             <template #default>
