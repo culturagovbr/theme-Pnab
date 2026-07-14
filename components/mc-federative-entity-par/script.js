@@ -50,6 +50,14 @@ app.component('mc-federative-entity-par', {
             type: Array,
             default: () => [],
         },
+        /**
+         * Erros de validação do servidor por metadado (ex.: `entity.__validationErrors`).
+         * Chaves esperadas: parExercicioId / parMetaId / parAcaoId / parAtividadeId.
+         */
+        serverErrors: {
+            type: Object,
+            default: null,
+        },
     },
 
     data() {
@@ -446,6 +454,19 @@ app.component('mc-federative-entity-par', {
                 !fieldValidationErrors.acao &&
                 !fieldValidationErrors.atividade
             );
+        },
+
+        /** Primeira mensagem de erro do servidor para o nível (exercicio/meta/acao/atividade), ou ''. */
+        serverErrorMessage(validationFieldKey) {
+            const metadataKeyByField = {
+                exercicio: 'parExercicioId',
+                meta: 'parMetaId',
+                acao: 'parAcaoId',
+                atividade: 'parAtividadeId',
+            };
+            const messages =
+                this.serverErrors?.[metadataKeyByField[validationFieldKey]];
+            return Array.isArray(messages) && messages.length ? messages[0] : '';
         },
 
         fieldErrorMessage(validationFieldKey) {

@@ -43,7 +43,7 @@
             class="mc-federative-entity-par__empty"
         >{{ emptyHint || translateMessage('lista_vazia') }}</p>
         <template v-else>
-            <div class="field mc-federative-entity-par__field" :class="{ error: showFieldErrors && fieldErrors.exercicio }">
+            <div class="field mc-federative-entity-par__field" :class="{ error: (showFieldErrors && fieldErrors.exercicio) || serverErrorMessage('exercicio') }">
                 <label class="field__title">{{ translateMessage('label_exercicio') }} <span class="required">*{{ translateMessage('obrigatorio') }}</span></label>
                 <div class="field__input">
                     <select v-model="parExercicioId" required>
@@ -55,10 +55,10 @@
                         >{{ exercicio.ano }}</option>
                     </select>
                 </div>
-                <small v-if="showFieldErrors && fieldErrors.exercicio" class="field__error">{{ fieldErrorMessage('exercicio') }}</small>
+                <small v-if="(showFieldErrors && fieldErrors.exercicio) || serverErrorMessage('exercicio')" class="field__error">{{ serverErrorMessage('exercicio') || fieldErrorMessage('exercicio') }}</small>
             </div>
 
-            <div class="field mc-federative-entity-par__field" :class="{ error: showFieldErrors && fieldErrors.meta }">
+            <div class="field mc-federative-entity-par__field" :class="{ error: (showFieldErrors && fieldErrors.meta) || serverErrorMessage('meta') }">
                 <label class="field__title">{{ translateMessage('label_meta') }} <span class="required">*{{ translateMessage('obrigatorio') }}</span></label>
                 <p
                     v-if="exercicioSemMetasDisponiveis"
@@ -74,10 +74,10 @@
                         >{{ meta.nome }}</option>
                     </select>
                 </div>
-                <small v-if="showFieldErrors && fieldErrors.meta" class="field__error">{{ fieldErrorMessage('meta') }}</small>
+                <small v-if="(showFieldErrors && fieldErrors.meta) || serverErrorMessage('meta')" class="field__error">{{ serverErrorMessage('meta') || fieldErrorMessage('meta') }}</small>
             </div>
 
-            <div class="field mc-federative-entity-par__field" :class="{ error: showFieldErrors && fieldErrors.acao }">
+            <div class="field mc-federative-entity-par__field" :class="{ error: (showFieldErrors && fieldErrors.acao) || serverErrorMessage('acao') }">
                 <label class="field__title">{{ translateMessage('label_acao') }} <span class="required">*{{ translateMessage('obrigatorio') }}</span></label>
                 <p
                     v-if="metaSemAcoesDisponiveis"
@@ -93,10 +93,10 @@
                         >{{ acao.nome }}</option>
                     </select>
                 </div>
-                <small v-if="showFieldErrors && fieldErrors.acao" class="field__error">{{ fieldErrorMessage('acao') }}</small>
+                <small v-if="(showFieldErrors && fieldErrors.acao) || serverErrorMessage('acao')" class="field__error">{{ serverErrorMessage('acao') || fieldErrorMessage('acao') }}</small>
             </div>
 
-            <div class="field mc-federative-entity-par__field" :class="{ error: showFieldErrors && fieldErrors.atividade }">
+            <div class="field mc-federative-entity-par__field" :class="{ error: (showFieldErrors && fieldErrors.atividade) || serverErrorMessage('atividade') }">
                 <label class="field__title">{{ translateMessage('label_atividade') }} <span class="required">*{{ translateMessage('obrigatorio') }}</span></label>
                 <p
                     v-if="acaoSemAtividadesDisponiveis"
@@ -112,7 +112,7 @@
                         >{{ atividade.nome }}</option>
                     </select>
                 </div>
-                <small v-if="showFieldErrors && fieldErrors.atividade" class="field__error">{{ fieldErrorMessage('atividade') }}</small>
+                <small v-if="(showFieldErrors && fieldErrors.atividade) || serverErrorMessage('atividade')" class="field__error">{{ serverErrorMessage('atividade') || fieldErrorMessage('atividade') }}</small>
             </div>
         </template>
     </template>
