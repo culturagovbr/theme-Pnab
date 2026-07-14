@@ -110,6 +110,7 @@ $this->import('
                         v-if="showParField"
                         class="header-opp__field header-opp__field--par-readonly grid-12 col-12"
                         :readonly="parReadonly"
+                        :exercicios="parExercicios"
                         :allowed-acao-names="parAcaoAllowedNames"
                         :server-errors="entity.__validationErrors"
                         load-par-exercicios v-model="parModel"></mc-federative-entity-par>

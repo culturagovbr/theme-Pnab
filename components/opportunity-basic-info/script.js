@@ -144,6 +144,12 @@ app.component('opportunity-basic-info' , {
             return this.hasPar || this.canEditPar;
         },
 
+        /** Exercícios do PAR do ente da oportunidade (resolve rótulos sem depender da sessão). */
+        parExercicios() {
+            const exercicios = $MAPAS.config?.opportunityBasicInfo?.parExercicios;
+            return Array.isArray(exercicios) ? exercicios : [];
+        },
+
         /**
          * Ações do PAR permitidas para esta oportunidade (herdadas do modelo via `parActions`).
          * Restringe o select de Ação às ações do modelo, mesmo padrão validado no "usar modelo".
