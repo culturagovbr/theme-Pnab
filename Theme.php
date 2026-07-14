@@ -2418,19 +2418,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     }
 
     /**
-     * Metadado «gerada a partir de modelo» (evita repetir filter_var em hooks e validação).
-     *
-     * @param Opportunity $entity
-     */
-    private function isOpportunityGeneratedFromModel($entity): bool
-    {
-        return (bool) filter_var(
-            $entity->getMetadata(\AldirBlanc\Controller::OPPORTUNITY_META_IS_GENERATED_FROM_MODEL),
-            FILTER_VALIDATE_BOOLEAN
-        );
-    }
-
-    /**
      * Valida se o job de integração com o CultBR deve ser disparado
      */
     private function validateIntegrationJob($entity)
@@ -2440,7 +2427,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $parent = $entity->parent;
         $status = $entity->status;
         $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', 0);
-        $isGeneratedFromModel = $this->isOpportunityGeneratedFromModel($entity);
 
         // Se federativeEntityId não estiver definido, não disparar o job
         if (
@@ -2448,12 +2434,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             || $federativeEntityId === ''
             || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
         ) {
-            return false;
-        }
-
-        // Clone recém-criado via generateopportunity: isGeneratedFromModel ainda não foi gravado.
-        // O create job é enfileirado explicitamente por saveOpportunityPostGenerate, após os dados PAR estarem salvos.
-        if (!empty($federativeEntityId) && !$isGeneratedFromModel) {
             return false;
         }
 
