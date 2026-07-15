@@ -2461,6 +2461,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return false;
         }
 
+        // Sem os 4 dados do PAR preenchidos, não disparar o job
+        $parValues = array_map(
+            fn($parKey) => trim((string) $entity->getMetadata($parKey)),
+            ['parExercicioId', 'parMetaId', 'parAcaoId', 'parAtividadeId']
+        );
+        if (in_array('', $parValues, true)) {
+            return false;
+        }
+
         return true;
     }
 }
