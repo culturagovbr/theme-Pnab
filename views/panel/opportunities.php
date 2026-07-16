@@ -13,6 +13,7 @@ $this->import('
 if (!$isGestorCultBr) {
     $this->import('
         create-opportunity
+        opportunity-importer
     ');
 }
 ?>
