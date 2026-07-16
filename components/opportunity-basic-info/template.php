@@ -105,9 +105,28 @@ $this->import('
                         :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12"
                         prop="longDescription"></entity-field>
+                </div>
+            </template>
+        </mc-card>
+
+        <!-- Card Dados do PAR: instrumento do PAR isolado, com o status das ações do modelo -->
+        <mc-card v-if="showParField">
+            <template #title>
+                <h3><?= i::__('Dados do PAR') ?></h3>
+            </template>
+            <template #content>
+                <div class="grid-12">
+                    <mc-alert v-if="hasParActions" type="warning" class="col-12">
+                        <?php i::_e('Edital criado a partir de um modelo que está associado às seguintes ações do PAR:') ?>
+                        <ul class="opportunity-basic-info__par-actions-list">
+                            <li v-for="acao in parAcaoAllowedNames" :key="acao">{{ acao }}</li>
+                        </ul>
+                    </mc-alert>
+                    <mc-alert v-else type="danger" class="col-12">
+                        <?php i::_e('Não foi encontrado ação do PAR associada à esta oportunidade, por favor, entre em contato com o suporte') ?>
+                    </mc-alert>
 
                     <mc-federative-entity-par
-                        v-if="showParField"
                         class="header-opp__field header-opp__field--par-readonly grid-12 col-12"
                         :readonly="parReadonly"
                         :exercicios="parExercicios"
@@ -229,7 +248,7 @@ $this->import('
             a <strong style="color: var(--mc-danger-500)">Meta</strong>,
             a <strong style="color: var(--mc-danger-500)">Ação</strong> e
             a <strong style="color: var(--mc-danger-500)">Atividade</strong>
-            no campo do cabeçalho para regularizá-la.
+            no card "Dados do PAR" para regularizá-la.
         </mc-alert>
     </template>
     <template #actions="modal">

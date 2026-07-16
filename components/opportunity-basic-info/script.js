@@ -159,6 +159,11 @@ app.component('opportunity-basic-info' , {
             return Array.isArray(parActions) ? parActions : [];
         },
 
+        /** true quando o modelo da oportunidade tem ações do PAR associadas (metadado `parActions`). */
+        hasParActions() {
+            return this.parAcaoAllowedNames.length > 0;
+        },
+
         parReadonly() {
             return !this.canEditPar;
         },
