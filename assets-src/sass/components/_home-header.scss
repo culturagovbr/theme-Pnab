@@ -38,20 +38,16 @@ $home-header-parallax-min-width: 64rem; // 1024px
     text-align: left;
   }
 
-  // +10% base, depois +20% visual (616×1.2 ≈ 739); vw limitado para não estourar a tela.
+  // Largura limitada para não estourar a tela.
   &__brand-logo {
     display: block;
     max-width: min(90vw, #{size(739)});
     width: auto;
     height: auto;
     object-fit: contain;
-    // Correção óptica: o "C" arredondado do logo provisório parece recuado em relação
+    // Correção óptica: o "C" arredondado do logo parece recuado em relação
     // à borda reta da tagline abaixo; puxa um pouco para a esquerda para compensar.
     margin-left: #{size(-8)};
-  }
-
-  &__brand-logo--mobile {
-    display: none;
   }
 
   &__brand-tagline {
@@ -98,14 +94,6 @@ $home-header-parallax-min-width: 64rem; // 1024px
       width: min(82vw, #{size(360)});
       max-width: 100%;
       margin-left: 0;
-    }
-
-    &__brand-logo--desktop {
-      display: none;
-    }
-
-    &__brand-logo--mobile {
-      display: block;
     }
 
     &__main {
