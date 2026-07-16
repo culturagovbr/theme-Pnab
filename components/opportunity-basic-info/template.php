@@ -58,30 +58,6 @@ $this->import('
         </template>
     </mc-card>
 
-    <mc-card>
-        <template #title>
-            <h3><?= i::__("Informações obrigatórias") ?></h3>
-        </template>
-        <template #content>
-            <?php $this->applyTemplateHook('opportunity-basic-info', 'before') ?>
-            <div class="grid-12">
-                <?php $this->applyTemplateHook('opportunity-basic-info', 'begin') ?>
-                <entity-field :entity="entity" prop="registrationFrom" classes="col-6 sm:col-12"></entity-field>
-                <entity-field v-if="!entity.isContinuousFlow || entity.hasEndDate" :entity="entity"
-                    prop="registrationTo" classes="col-6 sm:col-12"></entity-field>
-
-                <entity-field v-if="lastPhase && entity.isContinuousFlow && entity.hasEndDate" :entity="lastPhase"
-                    prop="publishTimestamp"
-                    label="<?php i::esc_attr_e("Publicação final de resultados (data e hora)") ?>"
-                    classes="col-6 sm:col-12"></entity-field>
-
-
-
-                <?php $this->applyTemplateHook('opportunity-basic-info', 'afeter') ?>
-            </div>
-            <?php $this->applyTemplateHook('opportunity-basic-info', 'end') ?>
-        </template>
-    </mc-card>
 </div>
 
 <mc-container>
