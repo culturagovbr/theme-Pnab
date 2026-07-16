@@ -1092,30 +1092,34 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 if (UserAccessService::isGestorCultBr() && !$this->parent) {
                     $parExercicios = FederativeEntityService::getParExerciciosForSessionSelectedEntity();
                     if (!empty($parExercicios)) {
-                        $parExercicioId = (string) ($this->parExercicioId ?? '');
-                        $parMetaId = (string) ($this->parMetaId ?? '');
-                        $parAcaoId = (string) ($this->parAcaoId ?? '');
-                        $parAtividadeId = (string) ($this->parAtividadeId ?? '');
+                        $parActionsRaw = $this->parActions;
+                        if (is_string($parActionsRaw)) {
+                            $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
+                        }
+                        $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
 
-                        if ($parExercicioId === '') {
-                            $errors['parExercicioId'] = [i::__('O campo "Exercício" é obrigatório.')];
-                        }
-                        if ($parMetaId === '') {
-                            $errors['parMetaId'] = [i::__('O campo "Meta" é obrigatório.')];
-                        }
-                        if ($parAtividadeId === '') {
-                            $errors['parAtividadeId'] = [i::__('O campo "Atividade" é obrigatório.')];
-                        }
-                        if ($parAcaoId === '') {
-                            $errors['parAcaoId'] = [i::__('O campo "Ação" é obrigatório.')];
+                        // Sem parActions não há como validar a ação escolhida: bloqueia o save do PAR.
+                        if (empty($parActions)) {
+                            $errors['parAcaoId'] = [i::__('Não foi encontrado ação do PAR associada à esta oportunidade, por favor, entre em contato com o suporte.')];
                         } else {
-                            // Ação deve estar entre as permitidas pelo modelo (parActions).
-                            $parActionsRaw = $this->parActions;
-                            if (is_string($parActionsRaw)) {
-                                $parActionsRaw = json_decode($parActionsRaw, true) ?? [];
+                            $parExercicioId = (string) ($this->parExercicioId ?? '');
+                            $parMetaId = (string) ($this->parMetaId ?? '');
+                            $parAcaoId = (string) ($this->parAcaoId ?? '');
+                            $parAtividadeId = (string) ($this->parAtividadeId ?? '');
+
+                            if ($parExercicioId === '') {
+                                $errors['parExercicioId'] = [i::__('O campo "Exercício" é obrigatório.')];
                             }
-                            $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
-                            if (!empty($parActions)) {
+                            if ($parMetaId === '') {
+                                $errors['parMetaId'] = [i::__('O campo "Meta" é obrigatório.')];
+                            }
+                            if ($parAtividadeId === '') {
+                                $errors['parAtividadeId'] = [i::__('O campo "Atividade" é obrigatório.')];
+                            }
+                            if ($parAcaoId === '') {
+                                $errors['parAcaoId'] = [i::__('O campo "Ação" é obrigatório.')];
+                            } else {
+                                // Ação deve estar entre as permitidas pelo modelo (parActions).
                                 $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
                                 if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
                                     $errors['parAcaoId'] = [i::__('A ação selecionada não é compatível com este modelo.')];
