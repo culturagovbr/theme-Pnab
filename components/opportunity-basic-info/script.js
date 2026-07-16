@@ -130,18 +130,27 @@ app.component('opportunity-basic-info' , {
         },
 
         /**
-         * GestorCultBr (não-admin) pode editar quando a oportunidade carregou sem PAR.
-         * Baseia-se no estado inicial (parWasMissingOnLoad), não no estado vivo, para não
-         * fechar a edição assim que o primeiro nível da cascata é selecionado. Após concluir
-         * e salvar o PAR completo, alterna para readonly (parSavedDuringEdit).
+         * Contexto de edição do PAR pelo gestor (não-admin): a oportunidade carregou sem PAR e
+         * ainda não foi salva nesta sessão. Baseia-se no estado inicial (parWasMissingOnLoad),
+         * não no estado vivo, para não fechar o preenchimento assim que o primeiro nível da
+         * cascata é selecionado. Define a visibilidade do card, independente de haver parActions
+         * — assim o gestor de um modelo sem parActions ainda vê o card (com o aviso de suporte).
          */
-        canEditPar() {
+        parEditContext() {
             return !this.isAdmin && this.parWasMissingOnLoad && !this.parSavedDuringEdit;
         },
 
-        /** Só exibe o instrumento PAR quando há dados a mostrar ou o usuário pode preenchê-lo. */
+        /**
+         * Só permite editar o PAR quando o modelo tem parActions: sem elas não há como validar
+         * a ação escolhida, então os campos ficam somente-leitura.
+         */
+        canEditPar() {
+            return this.parEditContext && this.hasParActions;
+        },
+
+        /** Exibe o instrumento PAR quando há dados a mostrar ou o gestor está no contexto de preenchê-lo. */
         showParField() {
-            return this.hasPar || this.canEditPar;
+            return this.hasPar || this.parEditContext;
         },
 
         /** Exercícios do PAR do ente da oportunidade (resolve rótulos sem depender da sessão). */
