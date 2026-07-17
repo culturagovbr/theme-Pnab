@@ -11,6 +11,7 @@ $this->import('
     custom-http-multiselect
     mc-federative-entity-par
     mc-alert
+    mc-modal
     entity-admins
     entity-cover
     entity-field
@@ -104,11 +105,34 @@ $this->import('
                         :max-length="400"></entity-field>
                     <entity-field :entity="entity" classes="header-opp__field--name col-12"
                         prop="longDescription"></entity-field>
+                </div>
+            </template>
+        </mc-card>
+
+        <!-- Card Dados do PAR: instrumento do PAR isolado, com o status das ações do modelo -->
+        <mc-card v-if="showParField">
+            <template #title>
+                <h3><?= i::__('Dados do PAR') ?></h3>
+            </template>
+            <template #content>
+                <div class="grid-12">
+                    <mc-alert v-if="hasParActions" type="warning" class="col-12">
+                        <?php i::_e('Edital criado a partir de um modelo que está associado às seguintes ações do PAR:') ?>
+                        <ul class="opportunity-basic-info__par-actions-list">
+                            <li v-for="acao in parAcaoAllowedNames" :key="acao">{{ acao }}</li>
+                        </ul>
+                    </mc-alert>
+                    <mc-alert v-else type="danger" class="col-12">
+                        <?php i::_e('Não foi encontrado ação do PAR associada à esta oportunidade, por favor, entre em contato com o suporte') ?>
+                    </mc-alert>
 
                     <mc-federative-entity-par
-                        v-if="entity.parExercicioId || entity.parMetaId || entity.parAcaoId || entity.parAtividadeId"
-                        class="header-opp__field header-opp__field--par-readonly grid-12 col-12" readonly
-                        load-par-exercicios :model-value="parSelecoesParaExibicao"></mc-federative-entity-par>
+                        class="header-opp__field header-opp__field--par-readonly grid-12 col-12"
+                        :readonly="parReadonly"
+                        :exercicios="parExercicios"
+                        :allowed-acao-names="parAcaoAllowedNames"
+                        :server-errors="entity.__validationErrors"
+                        load-par-exercicios v-model="parModel"></mc-federative-entity-par>
                 </div>
             </template>
         </mc-card>
@@ -213,3 +237,21 @@ $this->import('
     </aside>
 </mc-container>
 <confirm-before-exit :entity="entity"></confirm-before-exit>
+
+<!-- Aviso: oportunidade sem dados do PAR. Abre automaticamente (via ref) quando o usuário pode editar. -->
+<mc-modal ref="parMissingModal" classes="opportunity-basic-info__par-missing-modal"
+    title="<?php i::esc_attr_e('Dados do PAR ausentes') ?>">
+    <template #default>
+        <mc-alert type="warning">
+            Esta oportunidade está sem os dados do PAR.<br>
+            Preencha o <strong style="color: var(--mc-danger-500)">Exercício</strong>,
+            a <strong style="color: var(--mc-danger-500)">Meta</strong>,
+            a <strong style="color: var(--mc-danger-500)">Ação</strong> e
+            a <strong style="color: var(--mc-danger-500)">Atividade</strong>
+            no card "Dados do PAR" para regularizá-la.
+        </mc-alert>
+    </template>
+    <template #actions="modal">
+        <button class="button button--primary" @click="modal.close()"><?php i::_e('Entendi') ?></button>
+    </template>
+</mc-modal>

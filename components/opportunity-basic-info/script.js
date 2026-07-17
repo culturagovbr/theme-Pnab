@@ -30,10 +30,22 @@ app.component('opportunity-basic-info' , {
             etapaOutrosField: 'etapaOutros',
             pautaOutrosField: 'pautaOutros',
             parActionsLoading: false,
+            // Estado do PAR fixado no carregamento: define se o instrumento entra editável.
+            // Não pode ser reativo ao estado vivo, senão selecionar o Exercício já marcaria
+            // hasPar=true e voltaria o componente para readonly no meio da cascata.
+            parWasMissingOnLoad: false,
+            parSavedDuringEdit: false,
         };
     },
 
     async created() {
+        this.parWasMissingOnLoad = !(
+            this.entity.parExercicioId ||
+            this.entity.parMetaId ||
+            this.entity.parAcaoId ||
+            this.entity.parAtividadeId
+        );
+
         if($MAPAS.opportunityPhases && $MAPAS.opportunityPhases.length > 0) {
             this.phases = $MAPAS.opportunityPhases;
         } else {
@@ -47,6 +59,11 @@ app.component('opportunity-basic-info' , {
         this.initializeOutrosField('pauta', this.pautaOutrosField);
 
         this.initializeRequiredFields();
+
+        // Oportunidade sem dados do PAR e usuário habilitado a editar: avisa e libera edição.
+        if (this.canEditPar) {
+            this.$nextTick(() => this.$refs.parMissingModal?.open());
+        }
 
         const originalSave = this.entity.save.bind(this.entity);
         this.entity.save = (...args) => {
@@ -97,25 +114,112 @@ app.component('opportunity-basic-info' , {
             return Array.isArray(val) ? val.includes(outra) : val === outra;
         },
 
-        parSelecoesParaExibicao() {
-            return {
-                parExercicioId:
-                    this.entity.parExercicioId != null
-                        ? String(this.entity.parExercicioId)
-                        : '',
-                parMetaId:
-                    this.entity.parMetaId != null
-                        ? String(this.entity.parMetaId)
-                        : '',
-                parAcaoId:
-                    this.entity.parAcaoId != null
-                        ? String(this.entity.parAcaoId)
-                        : '',
-                parAtividadeId:
-                    this.entity.parAtividadeId != null
-                        ? String(this.entity.parAtividadeId)
-                        : '',
-            };
+        /** true se a oportunidade já tem qualquer id do PAR preenchido. */
+        hasPar() {
+            return Boolean(
+                this.entity.parExercicioId ||
+                this.entity.parMetaId ||
+                this.entity.parAcaoId ||
+                this.entity.parAtividadeId
+            );
+        },
+
+        /** Admin (ou permissão maior) vê o PAR sempre em modo leitura. */
+        isAdmin() {
+            return Boolean($MAPAS.config?.opportunityBasicInfo?.userIsAdmin);
+        },
+
+        /**
+         * Contexto de edição do PAR pelo gestor (não-admin): a oportunidade carregou sem PAR e
+         * ainda não foi salva nesta sessão. Baseia-se no estado inicial (parWasMissingOnLoad),
+         * não no estado vivo, para não fechar o preenchimento assim que o primeiro nível da
+         * cascata é selecionado. Define a visibilidade do card, independente de haver parActions
+         * — assim o gestor de um modelo sem parActions ainda vê o card (com o aviso de suporte).
+         */
+        parEditContext() {
+            return !this.isAdmin && this.parWasMissingOnLoad && !this.parSavedDuringEdit;
+        },
+
+        /**
+         * Só permite editar o PAR quando o modelo tem parActions: sem elas não há como validar
+         * a ação escolhida, então os campos ficam somente-leitura.
+         */
+        canEditPar() {
+            return this.parEditContext && this.hasParActions;
+        },
+
+        /** Exibe o instrumento PAR quando há dados a mostrar ou o gestor está no contexto de preenchê-lo. */
+        showParField() {
+            return this.hasPar || this.parEditContext;
+        },
+
+        /** Exercícios do PAR do ente da oportunidade (resolve rótulos sem depender da sessão). */
+        parExercicios() {
+            const exercicios = $MAPAS.config?.opportunityBasicInfo?.parExercicios;
+            return Array.isArray(exercicios) ? exercicios : [];
+        },
+
+        /**
+         * Ações do PAR permitidas para esta oportunidade (herdadas do modelo via `parActions`).
+         * Restringe o select de Ação às ações do modelo, mesmo padrão validado no "usar modelo".
+         */
+        parAcaoAllowedNames() {
+            const parActions = this.entity.parActions;
+            return Array.isArray(parActions) ? parActions : [];
+        },
+
+        /** true quando o modelo da oportunidade tem ações do PAR associadas (metadado `parActions`). */
+        hasParActions() {
+            return this.parAcaoAllowedNames.length > 0;
+        },
+
+        parReadonly() {
+            return !this.canEditPar;
+        },
+
+        /**
+         * v-model do instrumento PAR: lê/escreve nos metadados da própria oportunidade.
+         * Ao completar os quatro níveis, persiste pelo fluxo normal de save (PATCH),
+         * que dispara o hook update:finish e reenvia o update ao CultBR.
+         */
+        parModel: {
+            get() {
+                return {
+                    parExercicioId:
+                        this.entity.parExercicioId != null
+                            ? String(this.entity.parExercicioId)
+                            : '',
+                    parMetaId:
+                        this.entity.parMetaId != null
+                            ? String(this.entity.parMetaId)
+                            : '',
+                    parAcaoId:
+                        this.entity.parAcaoId != null
+                            ? String(this.entity.parAcaoId)
+                            : '',
+                    parAtividadeId:
+                        this.entity.parAtividadeId != null
+                            ? String(this.entity.parAtividadeId)
+                            : '',
+                };
+            },
+            set(novaSelecaoPar) {
+                this.entity.parExercicioId = novaSelecaoPar.parExercicioId || null;
+                this.entity.parMetaId = novaSelecaoPar.parMetaId || null;
+                this.entity.parAcaoId = novaSelecaoPar.parAcaoId || null;
+                this.entity.parAtividadeId = novaSelecaoPar.parAtividadeId || null;
+
+                const parCompleto =
+                    novaSelecaoPar.parExercicioId &&
+                    novaSelecaoPar.parMetaId &&
+                    novaSelecaoPar.parAcaoId &&
+                    novaSelecaoPar.parAtividadeId;
+                // Evita persistir seleção parcial durante a cascata Exercício→Meta→Ação→Atividade.
+                if (parCompleto) {
+                    this.parSavedDuringEdit = true;
+                    this.entity.save();
+                }
+            },
         },
     },
 

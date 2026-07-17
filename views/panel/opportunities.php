@@ -43,5 +43,5 @@ if (!$isGestorCultBr) {
         <?php endif; ?>
     </header>
 
-    <panel--entity-tabs type="opportunity"></panel--entity-tabs>
+    <panel--entity-tabs type="opportunity" select="id,status,name,type,createTimestamp,terms,files.avatar,currentUserPermissions,isModel,isModelPublic,owner,parActions"></panel--entity-tabs>
 </div>

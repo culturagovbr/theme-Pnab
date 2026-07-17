@@ -42,6 +42,22 @@ app.component('mc-federative-entity-par', {
             type: Boolean,
             default: false,
         },
+        /**
+         * Nomes de ações do PAR permitidas (ex.: `parActions` herdado do modelo). Se preenchido,
+         * o select de Ação lista apenas as ações cujo nome está nesta lista. Vazio = sem restrição.
+         */
+        allowedAcaoNames: {
+            type: Array,
+            default: () => [],
+        },
+        /**
+         * Erros de validação do servidor por metadado (ex.: `entity.__validationErrors`).
+         * Chaves esperadas: parExercicioId / parMetaId / parAcaoId / parAtividadeId.
+         */
+        serverErrors: {
+            type: Object,
+            default: null,
+        },
     },
 
     data() {
@@ -227,9 +243,20 @@ app.component('mc-federative-entity-par', {
                     String(metaEntry.id) ===
                     String(this.normalizedModel.parMetaId)
             );
-            return metaSelecionada && Array.isArray(metaSelecionada.acoes)
-                ? metaSelecionada.acoes
-                : [];
+            const acoesDaMeta =
+                metaSelecionada && Array.isArray(metaSelecionada.acoes)
+                    ? metaSelecionada.acoes
+                    : [];
+            // Restringe às ações permitidas (parActions do modelo), quando informado.
+            if (!this.allowedAcaoNames.length) {
+                return acoesDaMeta;
+            }
+            const allowedNames = this.allowedAcaoNames.map((nome) =>
+                String(nome).trim()
+            );
+            return acoesDaMeta.filter((acao) =>
+                allowedNames.includes(String(acao?.nome ?? '').trim())
+            );
         },
 
         parAtividades() {
@@ -427,6 +454,19 @@ app.component('mc-federative-entity-par', {
                 !fieldValidationErrors.acao &&
                 !fieldValidationErrors.atividade
             );
+        },
+
+        /** Primeira mensagem de erro do servidor para o nível (exercicio/meta/acao/atividade), ou ''. */
+        serverErrorMessage(validationFieldKey) {
+            const metadataKeyByField = {
+                exercicio: 'parExercicioId',
+                meta: 'parMetaId',
+                acao: 'parAcaoId',
+                atividade: 'parAtividadeId',
+            };
+            const messages =
+                this.serverErrors?.[metadataKeyByField[validationFieldKey]];
+            return Array.isArray(messages) && messages.length ? messages[0] : '';
         },
 
         fieldErrorMessage(validationFieldKey) {

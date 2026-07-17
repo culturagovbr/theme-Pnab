@@ -76,9 +76,39 @@ app.component('entity-actions', {
             }
             
             const event = new Event("entitySave");
+
+            // Oportunidade sem campos alterados: força o PATCH para disparar update:finish
+            // (e o PUT de sync com o CultBR), que o Entity.save() pularia por short-circuit.
+            // Vale em qualquer status (inclusive rascunho), pois o envio ao CultBR ocorre
+            // em qualquer save. Com campos alterados, o Entity.save() já persiste e reconcilia.
+            const isOpportunity = this.entity.__objectType === 'opportunity' && this.entity.id;
+            const hasModifiedFields = Object.keys(this.entity.data(true)).length > 0;
+
+            if (isOpportunity && !hasModifiedFields) {
+                this.forceBackendSave().then(() => {
+                    window.dispatchEvent(event);
+                });
+                return;
+            }
+
             this.entity.save().then(() => {
                 window.dispatchEvent(event);
             });
+        },
+        /** PATCH ao backend mesmo sem campos modificados (o Entity.save() abortaria). */
+        async forceBackendSave() {
+            const entity = this.entity;
+            entity.__processing = entity.text('salvando');
+            try {
+                const res = await entity.API.persistEntity(entity);
+                return await entity.doPromise(res, (persisted) => {
+                    entity.sendMessage(entity.text('modificacoes salvas'));
+                    entity.populate(persisted, true, {});
+                    entity.cleanErrors();
+                });
+            } catch (error) {
+                return entity.doCatch(error);
+            }
         },
         exit() {
             window.location.href = this.entity.getUrl('single');

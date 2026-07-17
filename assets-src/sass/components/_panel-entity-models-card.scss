@@ -1,0 +1,15 @@
+.panel-entity-models-card {
+    &__header-actions {
+        gap: size(8);
+    }
+
+    &__par-missing-badge {
+        background-color: $error;
+        color: #fff;
+    }
+
+    &__par-defined-badge {
+        background-color: $success-main;
+        color: #fff;
+    }
+}
