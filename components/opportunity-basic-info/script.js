@@ -163,6 +163,15 @@ app.component('opportunity-basic-info' , {
             return Array.isArray(parActions) ? parActions : [];
         },
 
+        /**
+         * Restrição aplicada ao select de Ação. Vazio para o admin: ele escolhe qualquer ação da
+         * meta, sem se limitar às do modelo. Não substitui `parAcaoAllowedNames`, que segue
+         * listando as ações do modelo no aviso do card.
+         */
+        parAcaoSelectableNames() {
+            return this.isAdmin ? [] : this.parAcaoAllowedNames;
+        },
+
         /** true quando o modelo da oportunidade tem ações do PAR associadas (metadado `parActions`). */
         hasParActions() {
             return this.parAcaoAllowedNames.length > 0;
