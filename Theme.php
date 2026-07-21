@@ -88,6 +88,20 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Aba "Logs CultBr" na gestão de oportunidade: histórico de envios à API do CultBR.
+         * Só admin (ou permissão maior) — o guard aqui impede a própria renderização da aba;
+         * o endpoint que alimenta a lista repete a checagem (Controller::GET_opportunityCultLogs).
+         */
+        $app->hook('template(opportunity.edit.tabs):end', function () {
+            if (!UserAccessService::isAdmin()) {
+                return;
+            }
+
+            /** @var \MapasCulturais\Theme $this */
+            $this->part('opportunity-cultbr-logs-tab');
+        });
+
+        /**
          * Na edição de agente, o campo "Tipo de Agente Coletivo" não é exibido:
          * uma vez configurado (na criação), o usuário não pode mais alterá-lo.
          */
