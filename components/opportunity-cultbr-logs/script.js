@@ -215,9 +215,7 @@ app.component('opportunity-cultbr-logs', {
             // com _truncated quando passou do teto de tamanho.
             if (typeof value === 'object' && 'raw' in value) {
                 return value._truncated
-                    ? String(value.raw) + '
-
-' + this.translateMessage('resposta_truncada', {bytes: value._originalLength})
+                    ? String(value.raw) + '\n\n' + this.translateMessage('resposta_truncada', {bytes: value._originalLength})
                     : String(value.raw);
             }
             try {
