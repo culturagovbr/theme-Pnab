@@ -98,15 +98,17 @@ $this->import('
                             <li v-for="acao in parAcaoAllowedNames" :key="acao">{{ acao }}</li>
                         </ul>
                     </mc-alert>
-                    <mc-alert v-else type="danger" class="col-12">
-                        <?php i::_e('Não foi encontrado ação do PAR associada à esta oportunidade, por favor, entre em contato com o suporte') ?>
+                    <!-- Pede o preenchimento dos campos abaixo; não fala das ações herdadas do
+                         modelo (parActions), que o usuário não resolve por aqui. -->
+                    <mc-alert v-if="!hasPar" type="danger" class="col-12">
+                        <?php i::_e('Os dados do PAR ainda não foram preenchidos. Selecione o exercício, a meta, a ação e a atividade abaixo.') ?>
                     </mc-alert>
 
                     <mc-federative-entity-par
                         class="header-opp__field header-opp__field--par-readonly grid-12 col-12"
                         :readonly="parReadonly"
                         :exercicios="parExercicios"
-                        :allowed-acao-names="parAcaoAllowedNames"
+                        :allowed-acao-names="parAcaoSelectableNames"
                         :server-errors="entity.__validationErrors"
                         load-par-exercicios v-model="parModel"></mc-federative-entity-par>
                 </div>

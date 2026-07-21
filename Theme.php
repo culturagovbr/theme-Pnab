@@ -88,6 +88,21 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Aba "Logs CultBr": histórico de envios à API do CultBR, na gestão e na visualização
+         * da oportunidade (nesta, entra depois de "Suporte", que é o último part do single).
+         * Só admin (ou permissão maior) — o guard aqui impede a própria renderização da aba;
+         * o endpoint que alimenta a lista repete a checagem (Controller::GET_opportunityCultLogs).
+         */
+        $app->hook('template(opportunity.edit.tabs):end,template(opportunity.single.tabs):end', function () {
+            if (!UserAccessService::isAdmin()) {
+                return;
+            }
+
+            /** @var \MapasCulturais\Theme $this */
+            $this->part('opportunity-cultbr-logs-tab');
+        });
+
+        /**
          * Na edição de agente, o campo "Tipo de Agente Coletivo" não é exibido:
          * uma vez configurado (na criação), o usuário não pode mais alterá-lo.
          */
@@ -179,7 +194,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Roda antes de qualquer persistência — se inválido, nada é criado.
          */
         $app->hook('POST(opportunity.generateopportunity):before', function () use ($app) {
-            if (!UserAccessService::isGestorCultBr()) {
+            // Admin escolhe qualquer ação do PAR, inclusive fora das previstas no modelo —
+            // vale mesmo quando ele acumula o papel de gestor.
+            if (!UserAccessService::isGestorCultBr() || UserAccessService::isAdmin()) {
                 return;
             }
 
@@ -1086,10 +1103,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
 
                 // Validação do instrumento PAR (obrigatório para o gestor). Vale só na
-                // oportunidade raiz (não em fases) e não bloqueia admin. Só exige quando o
-                // ente tem exercícios do PAR — mesma regra do "usar modelo" (evita travar
-                // ente sem PAR). A ação ainda precisa ser compatível com o modelo (parActions).
-                if (UserAccessService::isGestorCultBr() && !$this->parent) {
+                // oportunidade raiz (não em fases) e nunca bloqueia admin — nem quando ele
+                // também tem o papel de gestor. Só exige quando o ente tem exercícios do PAR
+                // — mesma regra do "usar modelo" (evita travar ente sem PAR). A ação ainda
+                // precisa ser compatível com o modelo (parActions).
+                if (UserAccessService::isGestorCultBr() && !UserAccessService::isAdmin() && !$this->parent) {
                     $parExercicios = FederativeEntityService::getParExerciciosForSessionSelectedEntity();
                     if (!empty($parExercicios)) {
                         $parActionsRaw = $this->parActions;
@@ -1099,8 +1117,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
 
                         // Sem parActions não há como validar a ação escolhida: bloqueia o save do PAR.
+                        // A mensagem fala do vínculo com o modelo — problema que o gestor não
+                        // resolve preenchendo os campos, diferente do alerta da tela.
                         if (empty($parActions)) {
-                            $errors['parAcaoId'] = [i::__('Não foi encontrado ação do PAR associada à esta oportunidade, por favor, entre em contato com o suporte.')];
+                            $errors['parAcaoId'] = [i::__('Este edital não está vinculado a nenhuma ação do PAR do modelo que o originou. Entre em contato com o suporte.')];
                         } else {
                             $parExercicioId = (string) ($this->parExercicioId ?? '');
                             $parMetaId = (string) ($this->parMetaId ?? '');
