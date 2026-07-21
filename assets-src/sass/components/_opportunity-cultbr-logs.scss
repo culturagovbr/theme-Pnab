@@ -71,8 +71,15 @@
             color: var(--mc-warning-500, #b04706);
         }
 
-        &--simulated {
+        &--simulated,
+        &--abandoned {
             color: var(--mc-gray-400, #68686e);
+        }
+
+        // Cor própria: com o mesmo âmbar do pendente, "Recusado" e "Em andamento" só se
+        // distinguiriam pelo ícone.
+        &--rejected {
+            color: var(--mc-primary-500, #0a72e8);
         }
     }
 

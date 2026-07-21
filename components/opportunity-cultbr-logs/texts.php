@@ -20,6 +20,8 @@ return [
     'status_success' => i::__('Sucesso'),
     'status_error' => i::__('Falha'),
     'status_simulated' => i::__('Simulado'),
+    'status_abandoned' => i::__('Substituído'),
+    'status_rejected' => i::__('Recusado'),
     'carregar_mais' => i::__('Carregar mais'),
     'copiar' => i::__('Copiar'),
     'copiado' => i::__('Copiado para a área de transferência.'),

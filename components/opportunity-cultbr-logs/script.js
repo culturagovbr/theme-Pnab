@@ -12,6 +12,8 @@ const CULTBR_LOGS_STATUS_KEYS = {
     success: 'status_success',
     error: 'status_error',
     simulated: 'status_simulated',
+    abandoned: 'status_abandoned',
+    rejected: 'status_rejected',
 };
 
 /** Ícone que representa cada status na listagem (nomes do iconset do tema). */
@@ -20,6 +22,8 @@ const CULTBR_LOGS_STATUS_ICONS = {
     success: 'circle-checked',
     error: 'exclamation',
     simulated: 'code',
+    abandoned: 'exchange',
+    rejected: 'close',
 };
 
 app.component('opportunity-cultbr-logs', {
