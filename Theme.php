@@ -88,11 +88,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Aba "Logs CultBr" na gestão de oportunidade: histórico de envios à API do CultBR.
+         * Aba "Logs CultBr": histórico de envios à API do CultBR, na gestão e na visualização
+         * da oportunidade (nesta, entra depois de "Suporte", que é o último part do single).
          * Só admin (ou permissão maior) — o guard aqui impede a própria renderização da aba;
          * o endpoint que alimenta a lista repete a checagem (Controller::GET_opportunityCultLogs).
          */
-        $app->hook('template(opportunity.edit.tabs):end', function () {
+        $app->hook('template(opportunity.edit.tabs):end,template(opportunity.single.tabs):end', function () {
             if (!UserAccessService::isAdmin()) {
                 return;
             }
