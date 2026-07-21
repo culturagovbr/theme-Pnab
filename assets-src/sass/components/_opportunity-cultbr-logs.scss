@@ -1,0 +1,209 @@
+// Aba "Logs CultBr" (componente opportunity-cultbr-logs): leitura de log de integração,
+// com badge de status por linha e blocos de payload/resposta em monoespaçada.
+.cultbr-logs {
+    // Mesma faixa de leitura das outras abas de oportunidade (ver .tabs-component__header
+    // e .mc-stepper-vertical-wrapper do BaseV2): centralizada, com respiro nas laterais.
+    max-width: size(1170);
+    width: 100%;
+    margin: 0 auto;
+    padding: size(32) size(16);
+
+    // Um card por envio, separados entre si; o container da aba não tem fundo próprio.
+    // Padding menor que o do mc-card (size(24)): a linha do envio é só uma faixa de leitura.
+    // A borda é o que delimita o card na visualização da oportunidade, cujo fundo é branco
+    // (na gestão o fundo cinza do action-edit já daria o contraste).
+    &__run-card {
+        padding: size(8) size(16);
+        margin-bottom: size(12);
+        border: size(1) solid var(--mc-gray-300, #ececec);
+
+        &:last-of-type {
+            margin-bottom: 0;
+        }
+    }
+
+    // O mc-accordion do core tem fundo cinza e header limitado a size(870) — daí a faixa
+    // cinza sobrando à direita. Aqui o card já dá o fundo e a largura é a do card.
+    .mc-accordion {
+        background: transparent;
+
+        &__header {
+            max-width: 100%;
+            padding: size(10) 0;
+        }
+
+        &__content {
+            max-width: 100%;
+            padding: size(12) 0 0;
+        }
+    }
+
+    &__run-title,
+    &__attempt-title {
+        display: inline-flex;
+        align-items: center;
+        gap: size(8);
+        flex-wrap: wrap;
+    }
+
+    &__uuid {
+        font-family: monospace;
+        word-break: break-all;
+    }
+
+    &__date,
+    &__author {
+        color: var(--mc-gray-500, #4b4b53);
+    }
+
+    // Estado como ícone (padrão "GitHub Actions"): a cor comunica, o title/aria-label nomeia.
+    &__status {
+        flex-shrink: 0;
+        font-size: size(20);
+        color: var(--mc-gray-500, #4b4b53);
+
+        &--success {
+            color: var(--mc-success-500, #4cb051);
+        }
+
+        &--error {
+            color: var(--mc-danger-500, #b7292e);
+        }
+
+        &--pending {
+            color: var(--mc-warning-500, #b04706);
+        }
+
+        &--simulated,
+        &--abandoned {
+            color: var(--mc-gray-400, #68686e);
+        }
+
+        // Cor própria: com o mesmo âmbar do pendente, "Recusado" e "Em andamento" só se
+        // distinguiriam pelo ícone.
+        &--rejected {
+            color: var(--mc-primary-500, #0a72e8);
+        }
+    }
+
+    // Accordions aninhados ocupam a largura do pai; o recuo vai por padding, não por
+    // margem negativa de largura.
+    .mc-accordion {
+        width: 100%;
+    }
+
+    // Cada tentativa é um bloco fechado: sem moldura, o conteúdo expandido da tentativa 1 se
+    // confunde com as linhas das tentativas seguintes.
+    &__attempt {
+        margin-top: size(12);
+        padding: 0 size(12);
+        border: size(1) solid var(--mc-gray-300, #ececec);
+        border-radius: var(--mc-border-radius-xs, size(4));
+
+        .mc-accordion__content {
+            border-top: size(1) solid var(--mc-gray-300, #ececec);
+            padding: size(12) 0;
+        }
+    }
+
+    // Metadados são leitura, não ação: sem moldura, com rótulo em cinza.
+    &__meta {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: size(4) size(16);
+        margin: 0 0 size(12);
+
+        dt {
+            color: var(--mc-gray-500, #4b4b53);
+            font-weight: $weight-medium;
+        }
+
+        @include mobile {
+            grid-template-columns: 1fr;
+        }
+
+        dd {
+            margin: 0;
+            word-break: break-all;
+        }
+    }
+
+    // Payload e resposta são gavetas clicáveis — precisam se distinguir das linhas de
+    // metadado (Enviado em / Endpoint), que são texto puro.
+    &__payload,
+    &__response {
+        margin-top: size(8);
+
+        .mc-accordion__header {
+            padding: size(10) size(12);
+            border: size(1) solid var(--mc-gray-300, #ececec);
+            border-radius: var(--mc-border-radius-xs, size(4));
+            background: var(--mc-gray-100, #fafafa);
+
+            &:hover {
+                border-color: var(--mc-primary-500, #0a72e8);
+            }
+        }
+
+        // A moldura da gaveta já vem do header; o conteúdo não repete a linha divisória.
+        .mc-accordion__content {
+            border-top: 0;
+            padding: size(12) 0 0;
+        }
+    }
+
+    // Bloco de código com botão de copiar sobreposto, como no GitHub.
+    &__code {
+        position: relative;
+        width: 100%;
+
+        &:hover .cultbr-logs__copy,
+        .cultbr-logs__copy:focus-visible {
+            opacity: 1;
+        }
+    }
+
+    &__copy {
+        position: absolute;
+        top: size(8);
+        right: size(8);
+        display: inline-flex;
+        align-items: center;
+        gap: size(4);
+        padding: size(4) size(8);
+        border: size(1) solid var(--mc-gray-500, #4b4b53);
+        border-radius: var(--mc-border-radius-xs, size(4));
+        background: var(--mc-gray-600, #313135);
+        color: var(--mc-white, #fff);
+        font-size: $body-sm-size;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+
+        // Sem hover (toque), o botão fica sempre visível.
+        @include mobile {
+            opacity: 1;
+        }
+    }
+
+    // Log longo rola dentro do próprio bloco: a página nunca ganha rolagem horizontal.
+    // Teto de altura equivalente a ~20 linhas antes de rolar.
+    &__json {
+        width: 100%;
+        max-height: size(384);
+        margin: 0;
+        overflow: auto;
+        padding: size(12);
+        border-radius: var(--mc-border-radius-xs, size(4));
+        background: var(--mc-gray-600, #313135);
+        color: var(--mc-white, #fff);
+        font-family: monospace;
+        font-size: $body-sm-size;
+        line-height: $lh-base;
+        white-space: pre;
+    }
+
+    &__more {
+        margin-top: size(16);
+    }
+}

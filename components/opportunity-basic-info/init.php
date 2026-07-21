@@ -8,12 +8,12 @@ use AldirBlanc\Services\FederativeEntityService;
 $this->useOpportunityAPI();
 
 // Exercícios do PAR do ente da própria oportunidade (independe do ente da sessão):
-// necessário para o admin, que não tem ente selecionado, resolver os rótulos no readonly.
+// necessário para o admin, que não tem ente selecionado, montar a cascata e os rótulos.
 $federativeEntityId = (int) ($entity->federativeEntityId ?? 0);
 
 $this->jsObject['config']['opportunityBasicInfo'] = [
     'canManageOfficialModelParActions' => UserAccessService::canAssociatePARAction(),
-    // Admin (ou permissão maior) vê o instrumento PAR sempre readonly; os demais
+    // Admin (ou permissão maior) edita o instrumento PAR sempre; os demais
     // (GestorCultBr) podem editar quando a oportunidade está sem os dados do PAR.
     'userIsAdmin' => UserAccessService::isAdmin(),
     'parExercicios' => $federativeEntityId > 0
