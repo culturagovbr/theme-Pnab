@@ -5,8 +5,10 @@
  */
 
 use MapasCulturais\i;
+use AldirBlanc\Services\UserAccessService;
 
 $this->import('
+    mc-alert
     mc-entities
     mc-tab
     mc-tabs
@@ -14,6 +16,8 @@ $this->import('
     panel--entity-models-card
     registration-card
 ');
+
+$showOpportunityModelsNotice = UserAccessService::isGestorCultBr() || UserAccessService::isAdmin();
 
 $tabs = $tabs ?? [
     'publish' => i::esc_attr__('Publicados'),
@@ -50,6 +54,11 @@ $this->applyComponentHook('.sortOptions', [&$tabs]);
     <?php $this->applyComponentHook($status, 'before') ?>
     <mc-tab v-if="showTab('<?=$status?>')" cache key="<?=$status?>" label="<?=$label?>" slug="<?=$status?>">
         <?php $this->applyComponentHook($status, 'begin') ?>
+        <?php if ($status === 'publish' && $showOpportunityModelsNotice): ?>
+            <mc-alert v-if="type === 'opportunity'" type="warning" closeButton>
+                <?= i::__('Para criar novas oportunidades, utilize os modelos disponíveis na aba Meus modelos.') ?>
+            </mc-alert>
+        <?php endif; ?>
         <mc-entities :name="type + ':<?=$status?>'" :type="type" 
             :select="select"
             :query="queries['<?=$status?>']" 
