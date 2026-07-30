@@ -20,3 +20,9 @@ $this->import('mc-icon');
         <p class="label"> <?php i::_e('Rede CultBR') ?> </p>
     </a>
 </li>
+<li>
+    <a href="https://calendly.com/culteditais" target="_blank" rel="noopener noreferrer" class="mc-header-menu--item event">
+        <span class="icon"> <mc-icon name="training"></mc-icon> </span>
+        <p class="label"> <?php i::_e('Treinamentos') ?> </p>
+    </a>
+</li>

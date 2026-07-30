@@ -810,6 +810,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $iconset['twitter'] = 'simple-icons:x';
             $iconset['registration'] = 'material-symbols:description';
             $iconset['evaluation'] = 'material-symbols:reviews';
+            $iconset['training'] = 'mdi:school';
             $iconset['validation'] = 'material-symbols:thumb-up';
         });
 
@@ -1054,19 +1055,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Validação de oportunidade:
          * - Torna o campo "Descrição curta" obrigatório apenas para oportunidade raiz
-         * - Torna o campo "Tipos do proponente" obrigatório nas fases de edição (não novas e não últimas fases)
+         * - Torna o campo "Tipos do proponente" obrigatório na edição da oportunidade raiz
          */
         $app->hook('entity(Opportunity).validations', function (&$validations) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
 
-            // Descrição curta obrigatória apenas na oportunidade raiz (pai)
-            if (!$this->parent) {
-                $validations['shortDescription'] = [
-                    'required' => i::__('O campo "Descrição curta" é obrigatório.')
-                ];
+            // Fases filhas possuem apenas os campos próprios da fase. Os campos
+            // cadastrais do edital são validados exclusivamente na oportunidade raiz.
+            if ($this->parent) {
+                unset($validations['shortDescription'], $validations['type']);
+                return;
             }
 
-            // Tipos do proponente obrigatórios apenas em edição, como já era feito antes
+            // Descrição curta obrigatória apenas na oportunidade raiz (pai)
+            $validations['shortDescription'] = [
+                'required' => i::__('O campo "Descrição curta" é obrigatório.')
+            ];
+
+            // Tipos do proponente obrigatórios apenas na edição da oportunidade raiz
             if (!$this->isNew() && !$this->isLastPhase && !UserAccessService::isSaasSuperAdmin()) {
                 if (!is_array($this->registrationProponentTypes)) {
                     $this->registrationProponentTypes = [];
@@ -1083,11 +1089,26 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $app->hook('entity(Opportunity).validationErrors', function (&$errors) use ($app) {
             /** @var \MapasCulturais\Entities\Opportunity $this */
             if ($this->parent) {
-                // Em fases (oportunidades filhas), não valida os campos "Descrição curta" e "Tipo de Edital"
-                unset($errors['shortDescription'], $errors['tipoDeEdital']);
+                // Em fases filhas, mantém somente as validações próprias da fase.
+                foreach ([
+                    'type',
+                    'shortDescription',
+                    'tipoDeEdital',
+                    'segmento',
+                    'etapa',
+                    'pauta',
+                    'territorio',
+                    'recursosOutrasFontes',
+                    'formasInscricaoEdital',
+                    'outrasModalidadesAcoesAfirmativas',
+                    'registrationProponentTypes',
+                    'rules',
+                ] as $field) {
+                    unset($errors[$field]);
+                }
             }
 
-            if (!$this->isNew() && !$this->isLastPhase) {
+            if (!$this->parent && !$this->isNew() && !$this->isLastPhase) {
                 if (!UserAccessService::isSaasSuperAdmin()) {
                     // Validação de Tipos do proponente
                     $proponentTypes = $this->registrationProponentTypes;
@@ -1245,13 +1266,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         /**
          * Garante que os campos customizados sejam incluídos no POST mesmo quando não estão presentes
          * Necessário para que a validação seja executada e o erro seja retornado
-         * Usa a mesma condição das validações existentes: !$entity->isNew() && !$entity->isLastPhase
+         * Usa a mesma condição das validações existentes e somente para a oportunidade raiz
          * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
          */
         $app->hook('PATCH(opportunity.single):data', function (&$data) {
             /** @var \MapasCulturais\Controllers\Opportunity $this */
             $entity = $this->requestedEntity;
-            if ($entity && !$entity->isNew() && !$entity->isLastPhase) {
+            if ($entity && !$entity->parent && !$entity->isNew() && !$entity->isLastPhase) {
                 if (!isset($data['registrationProponentTypes']) && !isset($this->postData['registrationProponentTypes'])) {
                     $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes)
                         ? $entity->registrationProponentTypes
