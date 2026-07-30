@@ -810,6 +810,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $iconset['twitter'] = 'simple-icons:x';
             $iconset['registration'] = 'material-symbols:description';
             $iconset['evaluation'] = 'material-symbols:reviews';
+            $iconset['training'] = 'mdi:school';
             $iconset['validation'] = 'material-symbols:thumb-up';
         });
 
