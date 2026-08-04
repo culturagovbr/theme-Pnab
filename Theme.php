@@ -1245,6 +1245,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
+            $errors += self::getRequiredAmountErrors($this);
+
             // Garante que TODOS os campos com erro sejam incluídos no postData
             if (!$this->isNew() && !empty($errors)) {
                 $controller = $app->controller('opportunity');
@@ -2439,6 +2441,39 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         return false;
+    }
+
+    /** Indica se o valor é um número maior que zero. */
+    private static function isPositiveNumber($value): bool
+    {
+        return is_numeric($value) && (float) $value > 0;
+    }
+
+    /**
+     * Erros de "Total de vagas" e "Valor total": ambos obrigatórios e maiores que zero, para
+     * que o edital não chegue ao CultBR sem quantidade nem valor. Só valem para o edital em si
+     * — não para fases, na criação nem para o SaasSuperAdmin, como os demais campos obrigatórios
+     * do tema. Recebe $post_data porque na validação do PATCH os valores enviados ainda não
+     * foram aplicados na entidade.
+     * Público pois é chamado de dentro de hooks onde $this é a entidade ou o controller.
+     */
+    public static function getRequiredAmountErrors(Opportunity $entity, array $post_data = []): array
+    {
+        if ($entity->parent || $entity->isNew() || $entity->isLastPhase || UserAccessService::isSaasSuperAdmin()) {
+            return [];
+        }
+
+        $errors = [];
+
+        if (!self::isPositiveNumber($post_data['vacancies'] ?? $entity->vacancies ?? null)) {
+            $errors['vacancies'] = [i::__('O campo "Total de vagas" é obrigatório e deve ser maior que zero.')];
+        }
+
+        if (!self::isPositiveNumber($post_data['totalResource'] ?? $entity->totalResource ?? null)) {
+            $errors['totalResource'] = [i::__('O campo "Valor total" é obrigatório e deve ser maior que zero.')];
+        }
+
+        return $errors;
     }
 
     /**
