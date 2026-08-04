@@ -282,8 +282,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
+            // Estes errorJson interrompem o PATCH antes da validação da entidade, então os
+            // campos obrigatórios do edital vão junto — do contrário o usuário só veria o
+            // erro de categorias/cotas e nada indicaria os campos em branco.
             if (!empty($rangeErrors)) {
-                $this->errorJson($rangeErrors, 400);
+                $this->errorJson($rangeErrors + self::getRequiredAmountErrors($entity, $postData), 400);
             }
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
@@ -301,7 +304,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($touchesQuotasOrVacancies) {
                 $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
                 if ($quotasReservationErrors) {
-                    $this->errorJson($quotasReservationErrors, 400);
+                    $this->errorJson($quotasReservationErrors + self::getRequiredAmountErrors($entity, $postData), 400);
                 }
             }
         });
