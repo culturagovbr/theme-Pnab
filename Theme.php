@@ -1422,6 +1422,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $this->jsObject['Taxonomies']['area']['required'] = false;
             }
             $this->jsObject['canAccessOpportunitiesPanel'] = UserAccessService::canAccess();
+
+            // Marca "Total de vagas" e "Valor total" como obrigatórios no formulário do edital.
+            // Só o rótulo: quem bloqueia o save é o hook entity(Opportunity).validationErrors,
+            // que exige os campos apenas na oportunidade raiz.
+            foreach (['vacancies', 'totalResource'] as $metadataKey) {
+                if (isset($this->jsObject['EntitiesDescription']['opportunity'][$metadataKey])) {
+                    $this->jsObject['EntitiesDescription']['opportunity'][$metadataKey]['required'] = true;
+                }
+            }
         });
 
         /**
