@@ -50,7 +50,7 @@ $label = $this->isRequestedEntityMine() ? i::__('Minhas oportunidades') : i::__(
 
 $this->breadcrumb = [
   ['label' => i::__('Inicio'), 'url' => $app->createUrl('panel', 'index')],
-  ['label' => $label, 'url' => $app->createUrl('panel', 'opportunity')],
+  ['label' => $label, 'url' => $app->createUrl('panel', 'opportunities')],
   ['label' => $entity->name, 'url' => $app->createUrl('opportunity', 'single', [$entity->id])],
 ];
 ?>
