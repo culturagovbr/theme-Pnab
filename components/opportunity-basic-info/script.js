@@ -60,7 +60,7 @@ app.component('opportunity-basic-info' , {
         this.initializeRequiredFields();
 
         // Oportunidade sem dados do PAR e usuário habilitado a editar: avisa e libera edição.
-        if (this.canEditPar && this.parWasMissingOnLoad) {
+        if (this.parEditContext && this.parWasMissingOnLoad) {
             this.$nextTick(() => this.$refs.parMissingModal?.open());
         }
 
@@ -124,23 +124,11 @@ app.component('opportunity-basic-info' , {
         },
 
         /**
-         * Contexto de edição do PAR: admin sempre; gestor quando a oportunidade carregou sem PAR e
-         * ainda não foi salva nesta sessão. Baseia-se no estado inicial (parWasMissingOnLoad),
-         * não no estado vivo, para não fechar o preenchimento assim que o primeiro nível da
-         * cascata é selecionado. Define a visibilidade do card, independente de haver parActions
-         * — assim o gestor de um modelo sem parActions ainda vê o card (com o aviso de suporte).
+         * Admin edita sempre; gestor quando a oportunidade carregou sem os dados do PAR.
+         * Usa o estado inicial para não fechar a edição no meio da cascata.
          */
         parEditContext() {
             return this.isAdmin || (this.parWasMissingOnLoad && !this.parSavedDuringEdit);
-        },
-
-        /**
-         * Só permite editar o PAR quando o modelo tem parActions: sem elas não há como validar
-         * a ação escolhida, então os campos ficam somente-leitura. Não vale para o admin, que a
-         * validação do save (Theme::validations) também não restringe.
-         */
-        canEditPar() {
-            return this.parEditContext && (this.isAdmin || this.hasParActions);
         },
 
         /** Exibe o instrumento PAR quando há dados a mostrar ou o gestor está no contexto de preenchê-lo. */
@@ -178,7 +166,7 @@ app.component('opportunity-basic-info' , {
         },
 
         parReadonly() {
-            return !this.canEditPar;
+            return !this.parEditContext;
         },
 
         /**
