@@ -282,8 +282,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 }
             }
 
+            // Estes errorJson interrompem o PATCH antes da validação da entidade, então os
+            // campos obrigatórios do edital vão junto — do contrário o usuário só veria o
+            // erro de categorias/cotas e nada indicaria os campos em branco.
             if (!empty($rangeErrors)) {
-                $this->errorJson($rangeErrors, 400);
+                $this->errorJson($rangeErrors + self::getRequiredAmountErrors($entity, $postData), 400);
             }
 
             $theme->trimOtherValue('etapa', 'etapaOutros', $postData);
@@ -301,7 +304,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if ($touchesQuotasOrVacancies) {
                 $quotasReservationErrors = InMincQuotasService::validateQuotasReservation($entity, $postData);
                 if ($quotasReservationErrors) {
-                    $this->errorJson($quotasReservationErrors, 400);
+                    $this->errorJson($quotasReservationErrors + self::getRequiredAmountErrors($entity, $postData), 400);
                 }
             }
         });
@@ -1137,12 +1140,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         }
                         $parActions = is_array($parActionsRaw) ? $parActionsRaw : [];
 
-                        // Sem parActions não há como validar a ação escolhida: bloqueia o save do PAR.
-                        // A mensagem fala do vínculo com o modelo — problema que o gestor não
-                        // resolve preenchendo os campos, diferente do alerta da tela.
-                        if (empty($parActions)) {
-                            $errors['parAcaoId'] = [i::__('Este edital não está vinculado a nenhuma ação do PAR do modelo que o originou. Entre em contato com o suporte.')];
-                        } else {
+                        // Sem parActions não há whitelist para validar a ação.
+                        if (!empty($parActions)) {
                             $parExercicioId = (string) ($this->parExercicioId ?? '');
                             $parMetaId = (string) ($this->parMetaId ?? '');
                             $parAcaoId = (string) ($this->parAcaoId ?? '');
@@ -1248,6 +1247,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     }
                 }
             }
+
+            $errors += self::getRequiredAmountErrors($this);
 
             // Garante que TODOS os campos com erro sejam incluídos no postData
             if (!$this->isNew() && !empty($errors)) {
@@ -1421,6 +1422,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $this->jsObject['Taxonomies']['area']['required'] = false;
             }
             $this->jsObject['canAccessOpportunitiesPanel'] = UserAccessService::canAccess();
+
+            // Marca "Total de vagas" e "Valor total" como obrigatórios no formulário do edital.
+            // Só o rótulo: quem bloqueia o save é o hook entity(Opportunity).validationErrors,
+            // que exige os campos apenas na oportunidade raiz.
+            foreach (['vacancies', 'totalResource'] as $metadataKey) {
+                if (isset($this->jsObject['EntitiesDescription']['opportunity'][$metadataKey])) {
+                    $this->jsObject['EntitiesDescription']['opportunity'][$metadataKey]['required'] = true;
+                }
+            }
         });
 
         /**
@@ -2443,6 +2453,39 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         return false;
+    }
+
+    /** Indica se o valor é um número maior que zero. */
+    private static function isPositiveNumber($value): bool
+    {
+        return is_numeric($value) && (float) $value > 0;
+    }
+
+    /**
+     * Erros de "Total de vagas" e "Valor total": ambos obrigatórios e maiores que zero, para
+     * que o edital não chegue ao CultBR sem quantidade nem valor. Só valem para o edital em si
+     * — não para fases, na criação nem para o SaasSuperAdmin, como os demais campos obrigatórios
+     * do tema. Recebe $post_data porque na validação do PATCH os valores enviados ainda não
+     * foram aplicados na entidade.
+     * Público pois é chamado de dentro de hooks onde $this é a entidade ou o controller.
+     */
+    public static function getRequiredAmountErrors(Opportunity $entity, array $post_data = []): array
+    {
+        if ($entity->parent || $entity->isNew() || $entity->isLastPhase || UserAccessService::isSaasSuperAdmin()) {
+            return [];
+        }
+
+        $errors = [];
+
+        if (!self::isPositiveNumber($post_data['vacancies'] ?? $entity->vacancies ?? null)) {
+            $errors['vacancies'] = [i::__('O campo "Total de vagas" é obrigatório e deve ser maior que zero.')];
+        }
+
+        if (!self::isPositiveNumber($post_data['totalResource'] ?? $entity->totalResource ?? null)) {
+            $errors['totalResource'] = [i::__('O campo "Valor total" é obrigatório e deve ser maior que zero.')];
+        }
+
+        return $errors;
     }
 
     /**
