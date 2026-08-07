@@ -30,6 +30,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     protected const AGENT_INDIVIDUAL_TYPE_ID = 1;
     protected const PROPONENT_TYPES_WITH_COLLECTIVE_AGENT_RELATION = ['Coletivo', 'Pessoa Jurídica'];
 
+    /** Valor de tipoAgenteColetivo do agente coletivo que não possui personalidade jurídica. */
+    protected const TIPO_AGENTE_COLETIVO_SEM_PERSONALIDADE_JURIDICA = 'coletivos_grupos_informais';
+
+    /** Metadados que só existem em agente coletivo com personalidade jurídica. */
+    protected const AGENT_COLETIVO_METADATA_PESSOA_JURIDICA = ['nomeSocial', 'nomeCompleto', 'cnpj', 'dataDeNascimento'];
+
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
     public const OPTIONS_OTHER_MODALITIES_WITH_SUBLIST = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
@@ -1339,6 +1345,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             if ($typeId === $agentColetivoTypeId && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
                 foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
+                    if ($theme->isAgentMetadataNaoAplicavel($entity, $key)) {
+                        continue;
+                    }
                     if (!array_key_exists($key, $data)) {
                         $data[$key] = $entity->$key ?? null;
                         $this->postData[$key] = $data[$key];
@@ -1378,7 +1387,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
                 $requiredKeys = [];
                 if ($typeId === self::AGENT_COLETIVO_TYPE_ID && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
-                    $requiredKeys = $theme->getRequeredsAgentColetivoMetadata();
+                    $requiredKeys = array_filter(
+                        $theme->getRequeredsAgentColetivoMetadata(),
+                        fn (string $key) => !$theme->isAgentMetadataNaoAplicavel($this, $key)
+                    );
                 } elseif (($typeId === self::AGENT_INDIVIDUAL_TYPE_ID || $typeId === null) && method_exists($theme, 'getRequeredsAgentIndividualMetadata')) {
                     $requiredKeys = $theme->getRequeredsAgentIndividualMetadata();
                 }
@@ -1571,8 +1583,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     continue;
                 }
 
-                $def->config['should_validate'] = function ($entity, $value) use ($def) {
-                    if ($entity->isNew()) {
+                $def->config['should_validate'] = function ($entity, $value) use ($def, $metaKey, $theme) {
+                    if ($entity->isNew() || $theme->isAgentMetadataNaoAplicavel($entity, $metaKey)) {
                         return false;
                     }
                     $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
@@ -2231,6 +2243,25 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $payload['proponentAgentRelation'] = $relations;
         $payload['useAgentRelationColetivo'] = in_array(true, $relations, true) ? 'required' : 'dontUse';
+    }
+
+    /**
+     * Informa se um metadado não se aplica ao agente e portanto não deve ser validado.
+     *
+     * Coletivos e grupos informais não possuem personalidade jurídica, então os campos
+     * de pessoa jurídica não são exigidos deles nem exibidos na edição do agente.
+     *
+     * @param \MapasCulturais\Entities\Agent $agent Agente que está sendo validado
+     * @param string $metaKey Chave do metadado
+     * @return bool
+     */
+    public function isAgentMetadataNaoAplicavel(\MapasCulturais\Entities\Agent $agent, string $metaKey): bool
+    {
+        if (!in_array($metaKey, self::AGENT_COLETIVO_METADATA_PESSOA_JURIDICA, true)) {
+            return false;
+        }
+
+        return ($agent->tipoAgenteColetivo ?? '') === self::TIPO_AGENTE_COLETIVO_SEM_PERSONALIDADE_JURIDICA;
     }
 
     /**
