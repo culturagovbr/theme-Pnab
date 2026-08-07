@@ -1270,9 +1270,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa a mesma condição das validações existentes e somente para a oportunidade raiz
          * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
          */
-        $app->hook('PATCH(opportunity.single):data', function (&$data) use ($theme) {
+        $app->hook('PATCH(opportunity.single):data', function (&$data) use ($app) {
             /** @var \MapasCulturais\Controllers\Opportunity $this */
             $entity = $this->requestedEntity;
+            $theme = $app->view;
 
             if ($entity && $theme->protectProponentAgentRelationPatch($data, $entity, UserAccessService::isAdmin())) {
                 $this->postData['proponentAgentRelation'] = $data['proponentAgentRelation'];
