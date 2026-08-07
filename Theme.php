@@ -1276,9 +1276,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa a mesma condição das validações existentes e somente para a oportunidade raiz
          * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
          */
-        $app->hook('PATCH(opportunity.single):data', function (&$data) {
+        $app->hook('PATCH(opportunity.single):data', function (&$data) use ($theme) {
             /** @var \MapasCulturais\Controllers\Opportunity $this */
             $entity = $this->requestedEntity;
+
+            if ($entity && $theme->protectProponentAgentRelationPatch($data, $entity, UserAccessService::isAdmin())) {
+                $this->postData['proponentAgentRelation'] = $data['proponentAgentRelation'];
+                $this->postData['useAgentRelationColetivo'] = $data['useAgentRelationColetivo'];
+            }
+
             if ($entity && !$entity->parent && !$entity->isNew() && !$entity->isLastPhase) {
                 if (!isset($data['registrationProponentTypes']) && !isset($this->postData['registrationProponentTypes'])) {
                     $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes)
@@ -2262,6 +2268,46 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         }
 
         return ($agent->tipoAgenteColetivo ?? '') === self::TIPO_AGENTE_COLETIVO_SEM_PERSONALIDADE_JURIDICA;
+    }
+
+    /**
+     * Restringe a configuração de vínculo de agente coletivo a administradores.
+     *
+     * Para os demais usuários, qualquer tentativa de alterar esses campos no PATCH é
+     * substituída pelos valores persistidos. Para administradores, o mapa é normalizado
+     * e só permite vínculo em tipos de proponente selecionados.
+     */
+    public function protectProponentAgentRelationPatch(array &$data, Opportunity $entity, bool $canConfigure): bool
+    {
+        $touchesAgentRelation = array_key_exists('proponentAgentRelation', $data)
+            || array_key_exists('useAgentRelationColetivo', $data);
+
+        if (!$touchesAgentRelation) {
+            return false;
+        }
+
+        if (!$canConfigure) {
+            $data['proponentAgentRelation'] = $entity->proponentAgentRelation ?? null;
+            $data['useAgentRelationColetivo'] = $entity->useAgentRelationColetivo ?? 'dontUse';
+            return true;
+        }
+
+        $relations = $data['proponentAgentRelation'] ?? ($entity->proponentAgentRelation ?? []);
+        $relations = is_object($relations) ? (array) $relations : $relations;
+        $relations = is_array($relations) ? $relations : [];
+
+        $selectedTypes = $data['registrationProponentTypes'] ?? ($entity->registrationProponentTypes ?? []);
+        $selectedTypes = is_array($selectedTypes) ? $selectedTypes : [];
+
+        foreach ($relations as $proponentType => $enabled) {
+            $isSupportedType = in_array($proponentType, self::PROPONENT_TYPES_WITH_COLLECTIVE_AGENT_RELATION, true);
+            $isSelectedType = in_array($proponentType, $selectedTypes, true);
+            $relations[$proponentType] = $isSupportedType && $isSelectedType && $enabled === true;
+        }
+
+        $data['proponentAgentRelation'] = $relations;
+        $data['useAgentRelationColetivo'] = in_array(true, $relations, true) ? 'required' : 'dontUse';
+        return true;
     }
 
     /**
