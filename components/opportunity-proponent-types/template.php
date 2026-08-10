@@ -23,6 +23,19 @@ use MapasCulturais\i;
                     > 
                     {{ description.options[optionValue] }}
                 </label>
+                <div
+                    class="opportunity-proponent-types__field field__collective"
+                    v-if="canConfigureAgentRelation && ((showColetivoBinding && optionValue === 'Coletivo') || (showJuridicaBinding && optionValue === 'Pessoa Jurídica'))"
+                >
+                    <label>
+                        <input
+                            type="checkbox"
+                            :checked="proponentAgentRelation[optionValue]"
+                            @change="toggleAgentRelation($event, optionValue)"
+                        >
+                        <?= i::__("Habilitar a vinculação de agente coletivo")?>
+                    </label>
+                </div>
             </div>
         </div>
         <small v-if="hasError && getErrors.length > 0" class="field__error">{{ getErrors.join('; ') }}</small>

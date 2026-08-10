@@ -28,6 +28,7 @@ app.component('opportunity-proponent-types', {
             description,
             value,
             proponentTypesToAgentsMap: $MAPAS.config.opportunityProponentTypes,
+            canConfigureAgentRelation: $MAPAS.config.opportunityProponentTypesCanConfigureAgentRelation === true,
             useAgentRelationColetivo: this.entity.useAgentRelationColetivo || 'dontUse',
             proponentAgentRelation: this.entity.proponentAgentRelation || {
                 "Coletivo": false,
@@ -96,14 +97,27 @@ app.component('opportunity-proponent-types', {
 
             if (index === -1) {
                 this.value.push(optionValue);
-                if (this.usesCollectiveAgentRelation(optionValue)) {
-                    this.proponentAgentRelation[optionValue] = true;
-                }
             } else {
                 this.value.splice(index, 1);
-                this.proponentAgentRelation[optionValue] = false;
+
+                if (this.canConfigureAgentRelation && this.usesCollectiveAgentRelation(optionValue)) {
+                    this.proponentAgentRelation[optionValue] = false;
+                }
             }
 
+            if (this.canConfigureAgentRelation) {
+                this.updateProponentAgentRelation();
+            }
+
+            this.entity.save();
+        },
+
+        toggleAgentRelation(event, type) {
+            if (!this.canConfigureAgentRelation || !this.usesCollectiveAgentRelation(type) || !this.value.includes(type)) {
+                return;
+            }
+
+            this.proponentAgentRelation[type] = event.target.checked;
             this.updateProponentAgentRelation();
             this.entity.save();
         },
