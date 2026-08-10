@@ -30,6 +30,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     protected const AGENT_INDIVIDUAL_TYPE_ID = 1;
     protected const PROPONENT_TYPES_WITH_COLLECTIVE_AGENT_RELATION = ['Coletivo', 'Pessoa Jurídica'];
 
+    /** Valor de tipoAgenteColetivo do agente coletivo que não possui personalidade jurídica. */
+    protected const TIPO_AGENTE_COLETIVO_SEM_PERSONALIDADE_JURIDICA = 'coletivos_grupos_informais';
+
+    /** Metadados que só existem em agente coletivo com personalidade jurídica. */
+    protected const AGENT_COLETIVO_METADATA_PESSOA_JURIDICA = ['nomeSocial', 'nomeCompleto', 'cnpj', 'dataDeNascimento'];
+
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
     public const OPTIONS_OTHER_MODALITIES_WITH_SUBLIST = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
@@ -1270,9 +1276,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * Usa a mesma condição das validações existentes e somente para a oportunidade raiz
          * IMPORTANTE: Não sobrescreve campos existentes, apenas adiciona os que não estão presentes
          */
-        $app->hook('PATCH(opportunity.single):data', function (&$data) {
+        $app->hook('PATCH(opportunity.single):data', function (&$data) use ($app) {
             /** @var \MapasCulturais\Controllers\Opportunity $this */
             $entity = $this->requestedEntity;
+            $theme = $app->view;
+
+            if ($entity && $theme->protectProponentAgentRelationPatch($data, $entity, UserAccessService::isAdmin())) {
+                $this->postData['proponentAgentRelation'] = $data['proponentAgentRelation'];
+                $this->postData['useAgentRelationColetivo'] = $data['useAgentRelationColetivo'];
+            }
+
             if ($entity && !$entity->parent && !$entity->isNew() && !$entity->isLastPhase) {
                 if (!isset($data['registrationProponentTypes']) && !isset($this->postData['registrationProponentTypes'])) {
                     $data['registrationProponentTypes'] = is_array($entity->registrationProponentTypes)
@@ -1339,6 +1352,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             if ($typeId === $agentColetivoTypeId && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
                 foreach ($theme->getRequeredsAgentColetivoMetadata() as $key) {
+                    if ($theme->isAgentMetadataNaoAplicavel($entity, $key)) {
+                        continue;
+                    }
                     if (!array_key_exists($key, $data)) {
                         $data[$key] = $entity->$key ?? null;
                         $this->postData[$key] = $data[$key];
@@ -1378,7 +1394,10 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
                 $requiredKeys = [];
                 if ($typeId === self::AGENT_COLETIVO_TYPE_ID && method_exists($theme, 'getRequeredsAgentColetivoMetadata')) {
-                    $requiredKeys = $theme->getRequeredsAgentColetivoMetadata();
+                    $requiredKeys = array_filter(
+                        $theme->getRequeredsAgentColetivoMetadata(),
+                        fn (string $key) => !$theme->isAgentMetadataNaoAplicavel($this, $key)
+                    );
                 } elseif (($typeId === self::AGENT_INDIVIDUAL_TYPE_ID || $typeId === null) && method_exists($theme, 'getRequeredsAgentIndividualMetadata')) {
                     $requiredKeys = $theme->getRequeredsAgentIndividualMetadata();
                 }
@@ -1571,8 +1590,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     continue;
                 }
 
-                $def->config['should_validate'] = function ($entity, $value) use ($def) {
-                    if ($entity->isNew()) {
+                $def->config['should_validate'] = function ($entity, $value) use ($def, $metaKey, $theme) {
+                    if ($entity->isNew() || $theme->isAgentMetadataNaoAplicavel($entity, $metaKey)) {
                         return false;
                     }
                     $vazio = $value === null || $value === '' || (is_array($value) && empty($value));
@@ -2231,6 +2250,65 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
         $payload['proponentAgentRelation'] = $relations;
         $payload['useAgentRelationColetivo'] = in_array(true, $relations, true) ? 'required' : 'dontUse';
+    }
+
+    /**
+     * Informa se um metadado não se aplica ao agente e portanto não deve ser validado.
+     *
+     * Coletivos e grupos informais não possuem personalidade jurídica, então os campos
+     * de pessoa jurídica não são exigidos deles nem exibidos na edição do agente.
+     *
+     * @param \MapasCulturais\Entities\Agent $agent Agente que está sendo validado
+     * @param string $metaKey Chave do metadado
+     * @return bool
+     */
+    public function isAgentMetadataNaoAplicavel(\MapasCulturais\Entities\Agent $agent, string $metaKey): bool
+    {
+        if (!in_array($metaKey, self::AGENT_COLETIVO_METADATA_PESSOA_JURIDICA, true)) {
+            return false;
+        }
+
+        return ($agent->tipoAgenteColetivo ?? '') === self::TIPO_AGENTE_COLETIVO_SEM_PERSONALIDADE_JURIDICA;
+    }
+
+    /**
+     * Restringe a configuração de vínculo de agente coletivo a administradores.
+     *
+     * Para os demais usuários, qualquer tentativa de alterar esses campos no PATCH é
+     * substituída pelos valores persistidos. Para administradores, o mapa é normalizado
+     * e só permite vínculo em tipos de proponente selecionados.
+     */
+    public function protectProponentAgentRelationPatch(array &$data, Opportunity $entity, bool $canConfigure): bool
+    {
+        $touchesAgentRelation = array_key_exists('proponentAgentRelation', $data)
+            || array_key_exists('useAgentRelationColetivo', $data);
+
+        if (!$touchesAgentRelation) {
+            return false;
+        }
+
+        if (!$canConfigure) {
+            $data['proponentAgentRelation'] = $entity->proponentAgentRelation ?? null;
+            $data['useAgentRelationColetivo'] = $entity->useAgentRelationColetivo ?? 'dontUse';
+            return true;
+        }
+
+        $relations = $data['proponentAgentRelation'] ?? ($entity->proponentAgentRelation ?? []);
+        $relations = is_object($relations) ? (array) $relations : $relations;
+        $relations = is_array($relations) ? $relations : [];
+
+        $selectedTypes = $data['registrationProponentTypes'] ?? ($entity->registrationProponentTypes ?? []);
+        $selectedTypes = is_array($selectedTypes) ? $selectedTypes : [];
+
+        foreach ($relations as $proponentType => $enabled) {
+            $isSupportedType = in_array($proponentType, self::PROPONENT_TYPES_WITH_COLLECTIVE_AGENT_RELATION, true);
+            $isSelectedType = in_array($proponentType, $selectedTypes, true);
+            $relations[$proponentType] = $isSupportedType && $isSelectedType && $enabled === true;
+        }
+
+        $data['proponentAgentRelation'] = $relations;
+        $data['useAgentRelationColetivo'] = in_array(true, $relations, true) ? 'required' : 'dontUse';
+        return true;
     }
 
     /**
