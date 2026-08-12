@@ -53,6 +53,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $app = App::i();
 
         $app->hook('template(<<*>>.<<*>>.body):begin', function () {
+            $this->import('google-analytics');
+            echo '<google-analytics></google-analytics>';
+
             if (UserAccessService::isGestorCultBr()) {
                 $this->import('tawk-to-chat');
                 echo '<tawk-to-chat></tawk-to-chat>';
