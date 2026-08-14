@@ -1437,6 +1437,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
         });
 
+        /** Disponibiliza o indicador de modelo nos componentes de configuração das fases. */
+        $app->hook('module(OpportunityPhases).dataCollectionPhaseData', function (&$properties) {
+            $properties .= ',isModel';
+        });
+
         /**
          * Modifica o objeto JavaScript para refletir que a taxonomia "área de atuação" é opcional para Opportunity
          */

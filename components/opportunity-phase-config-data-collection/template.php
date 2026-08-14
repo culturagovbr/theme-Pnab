@@ -40,12 +40,12 @@ $this->import('
 
     <div class="opportunity-data-collection__limits col-12" v-if="phase.isFirstPhase">
         <div class="opportunity-data-collection__fields">
-            <entity-field :entity="phase" prop="vacancies" :min="0" class="field__limits">
+            <entity-field :entity="phase" prop="vacancies" :min="0" :hide-required="phase.isModel == 1" class="field__limits">
                 <template #info>
                     <?php $this->info('editais-oportunidades -> configuracoes -> total-vagas') ?>
                 </template>
             </entity-field>
-            <entity-field :entity="phase" prop="totalResource" :min="0" class="field__limits">
+            <entity-field :entity="phase" prop="totalResource" :min="0" :hide-required="phase.isModel == 1" class="field__limits">
                 <template #info>
                     <?php $this->info('editais-oportunidades -> configuracoes -> valor-total') ?>
                 </template>
