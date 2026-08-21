@@ -1049,9 +1049,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $opportunity = $this;
 
-            $regulations = $opportunity->getFiles('rules');
-            if (empty($regulations)) {
-                $errors[] = i::__('O campo "Adicionar regulamento" é obrigatório.');
+            if (!self::isOpportunityModel($opportunity)) {
+                $regulations = $opportunity->getFiles('rules');
+                if (empty($regulations)) {
+                    $errors[] = i::__('O campo "Adicionar regulamento" é obrigatório.');
+                }
             }
 
             // Validar Tipos de Proponente
@@ -1125,10 +1127,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                         $errors['registrationProponentTypes'] = [i::__('O campo "Tipos do proponente" é obrigatório.')];
                     }
 
-                    // Validação de Regulamento
-                    $regulations = $this->getFiles('rules');
-                    if (empty($regulations)) {
-                        $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
+                    // Validação de Regulamento (opcional em oportunidades modelo)
+                    if (!self::isOpportunityModel($this)) {
+                        $regulations = $this->getFiles('rules');
+                        if (empty($regulations)) {
+                            $errors['rules'] = [i::__('O campo "Adicionar regulamento" é obrigatório.')];
+                        }
                     }
                 }
 
@@ -1431,6 +1435,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             if (isset($taxonomies['area'])) {
                 $taxonomies['area']->required = false;
             }
+        });
+
+        /** Disponibiliza o indicador de modelo nos componentes de configuração das fases. */
+        $app->hook('module(OpportunityPhases).dataCollectionPhaseData', function (&$properties) {
+            $properties .= ',isModel';
         });
 
         /**
@@ -2539,17 +2548,23 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         return is_numeric($value) && (float) $value > 0;
     }
 
+    /** Indica se a oportunidade é um modelo reutilizável. */
+    public static function isOpportunityModel(Opportunity $entity): bool
+    {
+        return (string) $entity->getMetadata('isModel') === '1';
+    }
+
     /**
      * Erros de "Total de vagas" e "Valor total": ambos obrigatórios e maiores que zero, para
      * que o edital não chegue ao CultBR sem quantidade nem valor. Só valem para o edital em si
-     * — não para fases, na criação nem para o SaasSuperAdmin, como os demais campos obrigatórios
-     * do tema. Recebe $post_data porque na validação do PATCH os valores enviados ainda não
-     * foram aplicados na entidade.
+     * — não para modelos, fases, na criação nem para o SaasSuperAdmin, como os demais campos
+     * obrigatórios do tema. Recebe $post_data porque na validação do PATCH os valores enviados
+     * ainda não foram aplicados na entidade.
      * Público pois é chamado de dentro de hooks onde $this é a entidade ou o controller.
      */
     public static function getRequiredAmountErrors(Opportunity $entity, array $post_data = []): array
     {
-        if ($entity->parent || $entity->isNew() || $entity->isLastPhase || UserAccessService::isSaasSuperAdmin()) {
+        if (self::isOpportunityModel($entity) || $entity->parent || $entity->isNew() || $entity->isLastPhase || UserAccessService::isSaasSuperAdmin()) {
             return [];
         }
 
