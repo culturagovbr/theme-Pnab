@@ -28,7 +28,7 @@
     &__list {
         display: flex;
         flex-direction: column;
-        gap: size(12);
+        gap: size(8);
         list-style: none;
         margin: 0;
         padding: 0;
@@ -38,8 +38,8 @@
 .opportunity-sync-card {
     display: flex;
     align-items: center;
-    gap: size(16);
-    padding: size(12) size(16);
+    gap: size(12);
+    padding: size(6) size(16);
     border: size(1) solid var(--mc-gray-300, #ececec);
     border-radius: size(8);
     background: var(--mc-high-500, #fff);
@@ -64,14 +64,14 @@
     &__info {
         display: flex;
         flex-direction: column;
-        gap: size(4);
+        gap: size(2);
         flex: 1;
         min-width: 0;
     }
 
     &__name {
         margin: 0;
-        font-size: size(16);
+        font-size: size(14);
         overflow-wrap: anywhere;
     }
 
@@ -79,13 +79,13 @@
         display: flex;
         gap: size(12);
         margin: 0;
-        font-size: size(13);
+        font-size: size(12);
         color: var(--mc-gray-600, #6d6d6d);
     }
 
     &__reason {
         margin: 0;
-        font-size: size(13);
+        font-size: size(12);
         color: var(--mc-danger-500, #d14526);
     }
 
@@ -94,7 +94,7 @@
         align-items: center;
         gap: size(8);
         flex-shrink: 0;
-        font-size: size(13);
+        font-size: size(12);
         color: var(--mc-gray-600, #6d6d6d);
         text-align: right;
     }
