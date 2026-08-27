@@ -62,6 +62,12 @@
         font-size: size(13);
     }
 
+    // O .button--primary do core não muda de aparência quando desabilitado.
+    &__sync[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     &__list {
         display: flex;
         flex-direction: column;
