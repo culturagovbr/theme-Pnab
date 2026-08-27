@@ -2,6 +2,7 @@
 
 namespace Pnab;
 
+use AldirBlanc\Controller as AldirBlancController;
 use AldirBlanc\Services\UserAccessService;
 use AldirBlanc\Services\FederativeEntityService;
 use AldirBlanc\Services\InMincQuotasService;
@@ -198,6 +199,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $this->render('opportunities-sync', [
                 'syncableFilters' => $opportunityService->syncableApiQueryFilters(),
                 'listingFilters' => $opportunityService->listingApiQueryFilters(),
+                'maxPerRequest' => AldirBlancController::MAX_OPPORTUNITIES_PER_REQUEST,
             ]);
         });
 

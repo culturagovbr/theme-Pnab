@@ -47,6 +47,12 @@ app.component('opportunities-sync-list', {
             type: Object,
             default: () => ({}),
         },
+
+        /** Teto do endpoint de disparo; acima dele a seleção é recusada pelo servidor. */
+        maxPerRequest: {
+            type: Number,
+            required: true,
+        },
     },
 
     data() {
@@ -56,6 +62,7 @@ app.component('opportunities-sync-list', {
             query: { ...this.syncableFilters },
             selected: {},
             status: {},
+            isSyncing: false,
         };
     },
 
@@ -70,6 +77,18 @@ app.component('opportunities-sync-list', {
 
         selectedCount() {
             return this.selectedIds.length;
+        },
+
+        exceedsLimit() {
+            return this.selectedCount > this.maxPerRequest;
+        },
+
+        canSync() {
+            return this.selectedCount > 0 && !this.exceedsLimit && !this.isSyncing;
+        },
+
+        confirmationMessage() {
+            return this.translateMessage('confirmar', { total: this.selectedCount });
         },
     },
 
@@ -206,6 +225,33 @@ app.component('opportunities-sync-list', {
             const selected = { ...this.selected };
             syncable.forEach((entity) => { selected[entity.id] = true; });
             this.selected = selected;
+        },
+
+        /** O job em lote revalida a elegibilidade: o que deixou de ser sincronizável é descartado lá. */
+        async sync() {
+            if (!this.canSync) {
+                return;
+            }
+
+            this.isSyncing = true;
+            const enviados = this.selectedIds;
+
+            try {
+                const response = await this.api.POST('forceResyncOpportunities', { opportunityIds: enviados });
+                const body = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(typeof body?.data === 'string' ? body.data : this.translateMessage('erro_sincronizar'));
+                }
+
+                this.messages.success(this.translateMessage('enfileirado', { total: body.accepted ?? enviados.length }));
+                this.selected = {};
+            } catch (syncError) {
+                console.error('Erro ao disparar o reenvio ao CultBR:', syncError);
+                this.messages.error(syncError.message);
+            } finally {
+                this.isSyncing = false;
+            }
         },
 
         /** Nova aba: voltar descartaria a seleção em andamento. */

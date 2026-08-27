@@ -6,6 +6,7 @@
 
 $this->import('
     mc-avatar
+    mc-confirm-button
     mc-entities
     mc-icon
 ');
@@ -44,13 +45,7 @@ $this->import('
                 </button>
             </div>
         </form>
-    </template>
 
-    <template #empty>
-        <p class="panel__row"> {{ translateMessage('sem_oportunidades') }} </p>
-    </template>
-
-    <template #default="{ entities }">
         <div class="opportunities-sync__actions panel__row">
             <label class="opportunities-sync__select-all">
                 <input type="checkbox"
@@ -60,9 +55,34 @@ $this->import('
                 {{ translateMessage('selecionar_todas') }}
             </label>
 
-            <span class="opportunities-sync__counter"> {{ translateMessage('selecionadas', { total: selectedCount }) }} </span>
-        </div>
+            <div class="opportunities-sync__summary">
+                <span class="opportunities-sync__counter"> {{ translateMessage('selecionadas', { total: selectedCount }) }} </span>
 
+                <span class="opportunities-sync__limit" v-if="exceedsLimit">
+                    {{ translateMessage('acima_do_teto', { max: maxPerRequest }) }}
+                </span>
+
+                <mc-confirm-button
+                    :title="translateMessage('sincronizar')"
+                    :message="confirmationMessage"
+                    :yes="translateMessage('confirmar_sim')"
+                    :no="translateMessage('confirmar_nao')"
+                    @confirm="sync()">
+                    <template #button="{ open }">
+                        <button type="button" class="button button--primary opportunities-sync__sync" :disabled="!canSync" @click="open()">
+                            {{ translateMessage('sincronizar') }}
+                        </button>
+                    </template>
+                </mc-confirm-button>
+            </div>
+        </div>
+    </template>
+
+    <template #empty>
+        <p class="panel__row"> {{ translateMessage('sem_oportunidades') }} </p>
+    </template>
+
+    <template #default="{ entities }">
         <ul class="opportunities-sync__list">
             <li class="opportunity-sync-card" v-for="entity in entities" :key="entity.id"
                 :class="{ 'opportunity-sync-card--blocked': ineligibilityReason(entity) }">

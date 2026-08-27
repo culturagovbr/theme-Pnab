@@ -24,5 +24,6 @@ $this->import('
     <?php $encode = fn(array $filters) => json_encode($filters, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>
     <opportunities-sync-list
         :syncable-filters='<?= $encode($syncableFilters) ?>'
-        :listing-filters='<?= $encode($listingFilters) ?>'></opportunities-sync-list>
+        :listing-filters='<?= $encode($listingFilters) ?>'
+        :max-per-request="<?= (int) $maxPerRequest ?>"></opportunities-sync-list>
 </div>

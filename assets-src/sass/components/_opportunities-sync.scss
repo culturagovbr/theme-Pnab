@@ -45,9 +45,21 @@
         cursor: pointer;
     }
 
+    &__summary {
+        display: flex;
+        align-items: center;
+        gap: size(16);
+        flex-wrap: wrap;
+    }
+
     &__counter {
         color: var(--mc-gray-600, #6d6d6d);
         font-size: size(14);
+    }
+
+    &__limit {
+        color: var(--mc-danger-500, #d14526);
+        font-size: size(13);
     }
 
     &__list {
