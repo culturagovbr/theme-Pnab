@@ -2,9 +2,11 @@
 
 namespace Pnab;
 
+use AldirBlanc\Controller as AldirBlancController;
 use AldirBlanc\Services\UserAccessService;
 use AldirBlanc\Services\FederativeEntityService;
 use AldirBlanc\Services\InMincQuotasService;
+use AldirBlanc\Services\OpportunityService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
@@ -184,6 +186,24 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Implementa a action administrativa para o reenvio de oportunidades ao CultBR.
+         */
+        $app->hook('GET(panel.opportunitiesSync)', function () use ($app) {
+            $this->requireAuthentication();
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $app->pass();
+            }
+
+            $opportunityService = new OpportunityService();
+
+            $this->render('opportunities-sync', [
+                'syncableFilters' => $opportunityService->syncableApiQueryFilters(),
+                'listingFilters' => $opportunityService->listingApiQueryFilters(),
+                'maxPerRequest' => AldirBlancController::MAX_OPPORTUNITIES_PER_REQUEST,
+            ]);
+        });
+
+        /**
          * Verifica se o usuário tem permissão para criar uma oportunidade
          */
         $app->hook('POST(opportunity.index):before', function () use ($canAccess) {
@@ -247,8 +267,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
          * O endpoint é upsert (cria se não existir), então não há POST separado; o fluxo «usar modelo»
          * dispara o envio pelo próprio save(true) do saveOpportunityPostGenerate.
          */
-        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
-            if (!$theme->validateIntegrationJob($this)) {
+        $app->hook('entity(Opportunity).update:finish', function () use ($app) {
+            if (!(new OpportunityService())->isEligibleForSync($this)) {
                 return;
             }
 
@@ -712,6 +732,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     'route' => 'panel/federativeEntities',
                     'icon' => 'agent',
                     'label' => i::__('Entes Federados'),
+                    'condition' => fn() => UserAccessService::isSaasSuperAdmin(),
+                ];
+
+                $nav['admin']['items'][] = [
+                    'route' => 'panel/opportunitiesSync',
+                    'icon' => 'sync',
+                    'label' => i::__('Sincronização'),
                     'condition' => fn() => UserAccessService::isSaasSuperAdmin(),
                 ];
             }
@@ -2596,61 +2623,5 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             return is_array($decoded) ? $decoded : [];
         }
         return [];
-    }
-
-    /**
-     * Valida se o job de integração com o CultBR deve ser disparado
-     */
-    private function validateIntegrationJob($entity)
-    {
-        $federativeEntityId = $entity->getMetadata('federativeEntityId');
-        $subsiteId = (int) $entity->subsite?->id;
-        $parent = $entity->parent;
-        $status = $entity->status;
-        $themePnabSubsiteId = (int) env('ALDIRBLANC_SUBSITE_ID', 0);
-
-        // Se federativeEntityId não estiver definido, não disparar o job
-        if (
-            $federativeEntityId === null
-            || $federativeEntityId === ''
-            || (is_string($federativeEntityId) && trim($federativeEntityId) === '')
-        ) {
-            return false;
-        }
-
-        // Se subsiteId não estiver definido, não disparar o job
-        if ($subsiteId < 1) {
-            return false;
-        }
-
-        // Se ALDIRBLANC_SUBSITE_ID não estiver definido, não disparar o job
-        if ($themePnabSubsiteId === 0) {
-            return false;
-        }
-
-        // Subsite da entidade precisa ser o subsite do Pnab (ALDIRBLANC_SUBSITE_ID, já garantido > 0 acima).
-        if ($subsiteId !== $themePnabSubsiteId) {
-            return false;
-        }
-
-        if ((int) $status === (int) Opportunity::STATUS_PHASE) {
-            return false;
-        }
-
-        // Se a oportunidade for uma oportunidade complementar, não disparar o job
-        if ((bool) $parent) {
-            return false;
-        }
-
-        // Sem os 4 dados do PAR preenchidos, não disparar o job
-        $parValues = array_map(
-            fn($parKey) => trim((string) $entity->getMetadata($parKey)),
-            ['parExercicioId', 'parMetaId', 'parAcaoId', 'parAtividadeId']
-        );
-        if (in_array('', $parValues, true)) {
-            return false;
-        }
-
-        return true;
     }
 }
