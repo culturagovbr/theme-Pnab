@@ -161,6 +161,11 @@ app.component('opportunities-sync-list', {
             return this.status[entity.id] ?? null;
         },
 
+        /** Sem resposta do plugin não se sabe nada da oportunidade — nem que ela nunca foi enviada. */
+        statusUnavailable(entity) {
+            return this.statusOf(entity) === null;
+        },
+
         /** Enquanto o status não chega, a oportunidade não é selecionável: não se sabe se pode ser enviada. */
         isSyncable(entity) {
             return this.statusOf(entity)?.syncable === true;

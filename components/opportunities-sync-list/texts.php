@@ -20,6 +20,7 @@ return [
     'acima_do_teto' => i::__('Selecione no máximo {max} por vez.'),
     'erro_sincronizar' => i::__('Não foi possível disparar o reenvio.'),
     'nunca_enviada' => i::__('Nunca enviada'),
+    'situacao_indisponivel' => i::__('Situação indisponível'),
     'ultimo_envio' => i::__('Último envio'),
     'nao_sincronizavel' => i::__('Não pode ser enviada'),
     'erro_status' => i::__('Não foi possível carregar a situação das oportunidades.'),

@@ -113,6 +113,9 @@ $this->import('
                         <span> {{ lastSyncLabel(entity) }} </span>
                         <time :datetime="lastSync(entity).date"> {{ formatDate(lastSync(entity).date) }} </time>
                     </template>
+                    <span v-else-if="statusUnavailable(entity)" class="opportunity-sync-card__never">
+                        {{ translateMessage('situacao_indisponivel') }}
+                    </span>
                     <span v-else class="opportunity-sync-card__never"> {{ translateMessage('nunca_enviada') }} </span>
                 </div>
 
