@@ -161,4 +161,23 @@
     &:hover {
         background: var(--mc-gray-100, #f5f5f5);
     }
+
+    // Em tela estreita a linha vira duas: identificação em cima, situação e logs embaixo.
+    @media (max-width: size(768)) {
+        flex-wrap: wrap;
+
+        // Sem um mínimo, a identificação encolhe e tudo continua espremido numa linha só.
+        &__info {
+            min-width: 60%;
+        }
+
+        &__status {
+            flex: 1;
+            text-align: left;
+        }
+
+        &__logs {
+            margin-left: auto;
+        }
+    }
 }
