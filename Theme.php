@@ -727,6 +727,13 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                     'label' => i::__('Entes Federados'),
                     'condition' => fn() => UserAccessService::isSaasSuperAdmin(),
                 ];
+
+                $nav['admin']['items'][] = [
+                    'route' => 'panel/opportunitiesSync',
+                    'icon' => 'sync',
+                    'label' => i::__('Sincronização'),
+                    'condition' => fn() => UserAccessService::isSaasSuperAdmin(),
+                ];
             }
 
             // Usuário sem canAccess não vê "Minhas Oportunidades" (apenas GestorCultBr pode criar/acessar a página)
