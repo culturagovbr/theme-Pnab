@@ -1,6 +1,9 @@
 <?php
 use MapasCulturais\i;
-$this->import('mc-icon');
+$this->import('
+    mc-icon
+    opportunities-sync-list
+');
 ?>
 
 <div class="panel-page">
@@ -17,4 +20,6 @@ $this->import('mc-icon');
             <?= i::_e('Nesta seção você pode reenviar oportunidades publicadas ao CultBR') ?>
         </p>
     </header>
+
+    <opportunities-sync-list :filters='<?= json_encode($syncableFilters, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>'></opportunities-sync-list>
 </div>

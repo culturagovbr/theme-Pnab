@@ -193,7 +193,9 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 $app->pass();
             }
 
-            $this->render('opportunities-sync');
+            $this->render('opportunities-sync', [
+                'syncableFilters' => (new OpportunityService())->syncableApiQueryFilters(),
+            ]);
         });
 
         /**
