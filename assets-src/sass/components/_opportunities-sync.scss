@@ -22,7 +22,14 @@
         font-size: size(13);
         cursor: pointer;
 
-        &--active {
+        &:focus,
+        &:hover {
+            background: var(--mc-gray-100, #f5f5f5);
+        }
+
+        &--active,
+        &--active:focus,
+        &--active:hover {
             border-color: var(--mc-opportunities-500);
             background: var(--mc-opportunities-500);
             color: var(--mc-high-500, #fff);
@@ -148,5 +155,10 @@
 
     &__logs {
         flex-shrink: 0;
+    }
+
+    &:focus-within,
+    &:hover {
+        background: var(--mc-gray-100, #f5f5f5);
     }
 }
