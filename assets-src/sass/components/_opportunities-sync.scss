@@ -1,7 +1,32 @@
 // Tela de sincronização: cada linha é uma oportunidade selecionável para reenvio ao CultBR.
 .opportunities-sync {
     &__filters {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        flex-wrap: wrap;
         margin-bottom: size(16);
+    }
+
+    &__modes {
+        display: flex;
+        gap: size(4);
+    }
+
+    &__mode {
+        padding: size(6) size(16);
+        border: size(1) solid var(--mc-gray-300, #ececec);
+        border-radius: size(20);
+        background: transparent;
+        font-size: size(13);
+        cursor: pointer;
+
+        &--active {
+            border-color: var(--mc-opportunities-500);
+            background: var(--mc-opportunities-500);
+            color: var(--mc-high-500, #fff);
+        }
     }
 
     &__actions {
