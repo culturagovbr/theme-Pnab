@@ -12,6 +12,7 @@ $this->import('
 ?>
 
 <mc-entities
+    ref="list"
     type="opportunity"
     select="id,name,type,files.avatar"
     order="name ASC"
@@ -25,7 +26,7 @@ $this->import('
                 :aria-label="translateMessage('palavras_chave')"
                 :placeholder="translateMessage('buscar')"
                 v-model="entities.query['@keyword']"
-                @keyup="entities.refresh(500)">
+                @keyup="search(entities)">
 
             <div class="opportunities-sync__modes" role="group" :aria-label="translateMessage('modo')">
                 <button type="button" class="opportunities-sync__mode"

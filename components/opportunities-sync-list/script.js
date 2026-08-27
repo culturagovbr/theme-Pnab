@@ -4,6 +4,7 @@
  */
 
 const SYNC_LIST_PAGE_SIZE = 20;
+const SYNC_LIST_SEARCH_DEBOUNCE_MS = 500;
 
 /** Rótulo de cada desfecho devolvido pelo endpoint de status. */
 const SYNC_LIST_STATUS_KEYS = {
@@ -73,6 +74,22 @@ app.component('opportunities-sync-list', {
     },
 
     methods: {
+        /**
+         * mc-entities.refresh() não zera a página: depois de "carregar mais", uma consulta nova
+         * viria da página corrente e a lista abriria pelo meio.
+         */
+        refreshFromFirstPage(entities, debounce = 0) {
+            if (this.$refs.list) {
+                this.$refs.list.page = 1;
+            }
+
+            entities.refresh(debounce);
+        },
+
+        search(entities) {
+            this.refreshFromFirstPage(entities, SYNC_LIST_SEARCH_DEBOUNCE_MS);
+        },
+
         /** Troca o recorte preservando a busca em curso. */
         setOnlySyncable(onlySyncable, entities) {
             if (this.onlySyncable === onlySyncable) {
@@ -92,7 +109,7 @@ app.component('opportunities-sync-list', {
             // As duas: o mc-entities mescla a prop com a referência do created, e trocar só uma deixa vazar filtro do modo anterior.
             this.query = query;
             entities.query = query;
-            entities.refresh();
+            this.refreshFromFirstPage(entities);
         },
 
         /** Cada carga pede ao plugin só o que ainda não tem: "carregar mais" acumula na mesma lista. */
