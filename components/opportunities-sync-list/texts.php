@@ -4,6 +4,9 @@ use MapasCulturais\i;
 
 return [
     'buscar' => i::__('Buscar por palavras-chave'),
+    'modo' => i::__('O que listar'),
+    'modo_sincronizaveis' => i::__('Sincronizáveis'),
+    'modo_todas' => i::__('Todas'),
     'palavras_chave' => i::__('Palavras-chave'),
     'selecionar_todas' => i::__('Selecionar todas as sincronizáveis'),
     'selecionadas' => i::__('{total} selecionadas'),

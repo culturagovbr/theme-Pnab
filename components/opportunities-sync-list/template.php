@@ -26,6 +26,22 @@ $this->import('
                 :placeholder="translateMessage('buscar')"
                 v-model="entities.query['@keyword']"
                 @keyup="entities.refresh(500)">
+
+            <div class="opportunities-sync__modes" role="group" :aria-label="translateMessage('modo')">
+                <button type="button" class="opportunities-sync__mode"
+                    :class="{ 'opportunities-sync__mode--active': onlySyncable }"
+                    :aria-pressed="onlySyncable"
+                    @click="setOnlySyncable(true, entities)">
+                    {{ translateMessage('modo_sincronizaveis') }}
+                </button>
+
+                <button type="button" class="opportunities-sync__mode"
+                    :class="{ 'opportunities-sync__mode--active': !onlySyncable }"
+                    :aria-pressed="!onlySyncable"
+                    @click="setOnlySyncable(false, entities)">
+                    {{ translateMessage('modo_todas') }}
+                </button>
+            </div>
         </form>
     </template>
 

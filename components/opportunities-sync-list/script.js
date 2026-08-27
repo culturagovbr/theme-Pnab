@@ -3,7 +3,6 @@
  * servidor; a elegibilidade e o último envio de cada uma vêm do plugin, por página carregada.
  */
 
-/** Oportunidades por página. */
 const SYNC_LIST_PAGE_SIZE = 20;
 
 /** Rótulo de cada desfecho devolvido pelo endpoint de status. */
@@ -36,7 +35,14 @@ app.component('opportunities-sync-list', {
     },
 
     props: {
-        filters: {
+        /** Publicadas e raiz que a regra aprova. */
+        syncableFilters: {
+            type: Object,
+            default: () => ({}),
+        },
+
+        /** Publicadas e raiz, elegíveis ou não. */
+        listingFilters: {
             type: Object,
             default: () => ({}),
         },
@@ -45,7 +51,8 @@ app.component('opportunities-sync-list', {
     data() {
         return {
             pageSize: SYNC_LIST_PAGE_SIZE,
-            query: { ...this.filters },
+            onlySyncable: true,
+            query: { ...this.syncableFilters },
             selected: {},
             status: {},
         };
@@ -66,6 +73,28 @@ app.component('opportunities-sync-list', {
     },
 
     methods: {
+        /** Troca o recorte preservando a busca em curso. */
+        setOnlySyncable(onlySyncable, entities) {
+            if (this.onlySyncable === onlySyncable) {
+                return;
+            }
+
+            this.onlySyncable = onlySyncable;
+
+            const keyword = entities.query['@keyword'];
+            const filters = onlySyncable ? this.syncableFilters : this.listingFilters;
+            const query = { ...filters };
+
+            if (keyword) {
+                query['@keyword'] = keyword;
+            }
+
+            // As duas: o mc-entities mescla a prop com a referência do created, e trocar só uma deixa vazar filtro do modo anterior.
+            this.query = query;
+            entities.query = query;
+            entities.refresh();
+        },
+
         /** Cada carga pede ao plugin só o que ainda não tem: "carregar mais" acumula na mesma lista. */
         async loadStatus(entities) {
             const ids = entities
