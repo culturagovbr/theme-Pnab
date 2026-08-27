@@ -185,6 +185,18 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Implementa a action administrativa para o reenvio de oportunidades ao CultBR.
+         */
+        $app->hook('GET(panel.opportunitiesSync)', function () use ($app) {
+            $this->requireAuthentication();
+            if (!UserAccessService::isSaasSuperAdmin()) {
+                $app->pass();
+            }
+
+            $this->render('opportunities-sync');
+        });
+
+        /**
          * Verifica se o usuário tem permissão para criar uma oportunidade
          */
         $app->hook('POST(opportunity.index):before', function () use ($canAccess) {
