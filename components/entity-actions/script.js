@@ -59,7 +59,7 @@ app.component('entity-actions', {
     },
 
     methods: {
-        save() {
+        async save() {
             // Garante que o campo seja incluído no save quando necessário
             if (this.entity.__objectType === 'opportunity' && 
                 this.entity.isFirstPhase && 
@@ -76,6 +76,8 @@ app.component('entity-actions', {
             }
             
             const event = new Event("entitySave");
+
+            await this.saveModifiedPhases();
 
             // Oportunidade sem campos alterados: força o PATCH para disparar update:finish
             // (e o PUT de sync com o CultBR), que o Entity.save() pularia por short-circuit.
@@ -95,6 +97,58 @@ app.component('entity-actions', {
                 window.dispatchEvent(event);
             });
         },
+        /** Persiste as fases alteradas e diz se todas gravaram; a raiz segue pelo fluxo normal do save(). */
+        async saveModifiedPhases() {
+            if (this.entity.__objectType !== 'opportunity') {
+                return true;
+            }
+
+            // captura antes de qualquer requisição: a resposta de uma fase repopula as vizinhas
+            const pending = ($MAPAS?.opportunityPhases ?? [])
+                .filter((phase) => phase !== this.entity)
+                .map((phase) => ({ phase, payload: phase.data(true) }))
+                .filter(({ payload }) => Object.keys(payload).length > 0);
+
+            if (!pending.length) {
+                return true;
+            }
+
+            this.entity.__processing = this.entity.text('salvando');
+            let allSaved = true;
+
+            try {
+                for (const { phase, payload } of pending) {
+                    allSaved = await this.savePhase(phase, payload) && allSaved;
+                }
+            } finally {
+                this.entity.__processing = false;
+            }
+
+            return allSaved;
+        },
+        /** Erro em uma fase fica nela e não interrompe as demais. */
+        async savePhase(phase, payload) {
+            try {
+                const res = await phase.API.PATCH(phase.singleUrl, payload);
+                await phase.doPromise(res, (persisted) => {
+                    phase.populate(persisted, true, payload);
+                    phase.cleanErrors();
+                });
+                return true;
+            } catch (error) {
+                // o 400 já vem com toast e __validationErrors pelo doPromise; falha de rede não
+                if (!error?.status) {
+                    phase.sendMessage(phase.text('erro inesperado'), 'error');
+                }
+                return false;
+            }
+        },
+        /** Publica só se todas as fases alteradas foram gravadas. */
+        async publish() {
+            if (await this.saveModifiedPhases()) {
+                await this.entity.publish();
+            }
+        },
         /** PATCH ao backend mesmo sem campos modificados (o Entity.save() abortaria). */
         async forceBackendSave() {
             const entity = this.entity;
@@ -103,7 +157,7 @@ app.component('entity-actions', {
                 const res = await entity.API.persistEntity(entity);
                 return await entity.doPromise(res, (persisted) => {
                     entity.sendMessage(entity.text('modificacoes salvas'));
-                    entity.populate(persisted, true, {});
+                    entity.populate(persisted, true);
                     entity.cleanErrors();
                 });
             } catch (error) {
