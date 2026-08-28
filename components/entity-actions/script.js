@@ -97,10 +97,10 @@ app.component('entity-actions', {
                 window.dispatchEvent(event);
             });
         },
-        /** Persiste as fases alteradas; a raiz segue pelo fluxo normal do save(). */
+        /** Persiste as fases alteradas e diz se todas gravaram; a raiz segue pelo fluxo normal do save(). */
         async saveModifiedPhases() {
             if (this.entity.__objectType !== 'opportunity') {
-                return;
+                return true;
             }
 
             // captura antes de qualquer requisição: a resposta de uma fase repopula as vizinhas
@@ -110,18 +110,21 @@ app.component('entity-actions', {
                 .filter(({ payload }) => Object.keys(payload).length > 0);
 
             if (!pending.length) {
-                return;
+                return true;
             }
 
             this.entity.__processing = this.entity.text('salvando');
+            let allSaved = true;
 
             try {
                 for (const { phase, payload } of pending) {
-                    await this.savePhase(phase, payload);
+                    allSaved = await this.savePhase(phase, payload) && allSaved;
                 }
             } finally {
                 this.entity.__processing = false;
             }
+
+            return allSaved;
         },
         /** Erro em uma fase fica nela e não interrompe as demais. */
         async savePhase(phase, payload) {
@@ -131,11 +134,19 @@ app.component('entity-actions', {
                     phase.populate(persisted, true, payload);
                     phase.cleanErrors();
                 });
+                return true;
             } catch (error) {
                 // o 400 já vem com toast e __validationErrors pelo doPromise; falha de rede não
                 if (!error?.status) {
                     phase.sendMessage(phase.text('erro inesperado'), 'error');
                 }
+                return false;
+            }
+        },
+        /** Publica só se todas as fases alteradas foram gravadas. */
+        async publish() {
+            if (await this.saveModifiedPhases()) {
+                await this.entity.publish();
             }
         },
         /** PATCH ao backend mesmo sem campos modificados (o Entity.save() abortaria). */
