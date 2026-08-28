@@ -103,7 +103,7 @@ app.component('entity-actions', {
                 const res = await entity.API.persistEntity(entity);
                 return await entity.doPromise(res, (persisted) => {
                     entity.sendMessage(entity.text('modificacoes salvas'));
-                    entity.populate(persisted, true, {});
+                    entity.populate(persisted, true);
                     entity.cleanErrors();
                 });
             } catch (error) {
