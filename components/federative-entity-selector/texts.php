@@ -7,4 +7,5 @@ return [
     'Nenhum ente federado encontrado.' => i::__('Nenhum ente federado encontrado.'),
     'Selecione o ente federado que deseja utilizar:' => i::__('Selecione o ente federado que deseja utilizar:'),
     'Confirmar Seleção' => i::__('Confirmar Seleção'),
+    'Dados do PAR em análise' => i::__('Dados do PAR em análise'),
 ];

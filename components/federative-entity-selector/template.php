@@ -54,6 +54,9 @@ $this->import('
                     <div class="federative-entity-selector__item-info">
                         <h4 class="federative-entity-selector__item-name">{{ entity.name }}</h4>
                         <span class="federative-entity-selector__item-document">{{ entity.document }}</span>
+                        <span
+                            v-if="!entity.hasParData"
+                            class="federative-entity-selector__item-badge">{{ text('Dados do PAR em análise') }}</span>
                     </div>
                     <div class="federative-entity-selector__item-check-wrapper">
                         <mc-icon v-if="selectedEntity?.id === entity.id" name="check-circle" class="federative-entity-selector__item-check"></mc-icon>
