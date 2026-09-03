@@ -39,6 +39,9 @@ $this->import('
 
                 <template #subtitle="{ entity }">
                     {{ entity.document }}
+                    <span
+                        v-if="!entity.hasParData"
+                        class="federative-entities-list__par-badge"><?= i::__('Dados do PAR ausentes') ?></span>
                 </template>
 
                 <template #default="{ entity }">

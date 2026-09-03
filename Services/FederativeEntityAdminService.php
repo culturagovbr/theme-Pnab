@@ -107,11 +107,15 @@ class FederativeEntityAdminService
 
     private function getListEntityData(FederativeEntity $entity): array
     {
+        // empty() sobre propriedade mágica cai no __isset e ignora o valor — ler antes de testar.
+        $exercices = $entity->exercices;
+
         return [
             'id' => (int) $entity->id,
             'name' => (string) $entity->name,
             'document' => (string) $entity->document,
-            'exercices' => $entity->exercices,
+            'exercices' => $exercices,
+            'has_par_data' => !empty($exercices),
             'update_timestamp' => $this->formatDateTime($entity->updateTimestamp),
             'managers_count' => count($this->getEnabledRelations($entity)),
         ];
