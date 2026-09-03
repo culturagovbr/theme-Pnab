@@ -41,7 +41,7 @@ $this->import('
                     {{ entity.document }}
                     <span
                         v-if="!entity.hasParData"
-                        class="federative-entities-list__par-badge"><?= i::__('Dados do PAR ausentes') ?></span>
+                        class="federative-entities-list__par-badge"><?= i::__('Dados do PAR ausentes ou em análise') ?></span>
                 </template>
 
                 <template #default="{ entity }">

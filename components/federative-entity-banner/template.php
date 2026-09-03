@@ -51,6 +51,6 @@ $this->import('
         <?= i::__('<strong>Atenção</strong>: Você está utilizando o sistema com o ente federado ') . "<strong>{{ selectedEntityName }}</strong>" . " <span v-if=\"selectedEntityDocument\">(<code>{{ selectedEntityDocument }}</code>)</span>" ?>
         <span
             v-if="!selectedEntityHasParData"
-            class="selected-federative-entity-banner__par-badge"><?php i::_e('Dados do PAR em análise') ?></span>
+            class="selected-federative-entity-banner__par-badge"><?php i::_e('Dados do PAR ausentes ou em análise') ?></span>
     </mc-alert>
 </div>

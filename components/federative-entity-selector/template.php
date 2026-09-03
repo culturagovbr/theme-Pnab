@@ -57,7 +57,7 @@ $this->import('
                         <span class="federative-entity-selector__item-document">{{ entity.document }}</span>
                         <span
                             v-if="!entity.hasParData"
-                            class="federative-entity-selector__item-badge">{{ text('Dados do PAR em análise') }}</span>
+                            class="federative-entity-selector__item-badge">{{ text('Dados do PAR ausentes ou em análise') }}</span>
                     </div>
                     <div class="federative-entity-selector__item-check-wrapper">
                         <mc-icon v-if="selectedEntity?.id === entity.id" name="check-circle" class="federative-entity-selector__item-check"></mc-icon>
@@ -79,14 +79,14 @@ $this->import('
 
     <mc-modal
         ref="parWarningModal"
-        title="<?= i::esc_attr__('Dados do PAR em análise') ?>"
+        title="<?= i::esc_attr__('Dados do PAR ausentes ou em análise') ?>"
         classes="federative-entity-selector__par-warning"
         @close="discardPendingEntity">
         <template #button>
             <!-- Botão vazio para não renderizar o botão padrão do modal -->
         </template>
         <template #default>
-            <p><?php i::_e('O PAR deste ente federado está em análise, então não é possível criar novas oportunidades por ele.') ?></p>
+            <p><?php i::_e('Os dados do PAR deste ente federado estão ausentes ou em análise, então não é possível criar novas oportunidades por ele.') ?></p>
             <p><?php i::_e('As oportunidades que você já criou continuam disponíveis para edição normalmente.') ?></p>
         </template>
         <template #actions="modal">
