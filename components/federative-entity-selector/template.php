@@ -8,6 +8,7 @@
 use MapasCulturais\i;
 
 $this->import('
+    mc-modal
     mc-icon
 ');
 ?>
@@ -75,4 +76,26 @@ $this->import('
             </div>
         </div>
     </template>
+
+    <mc-modal
+        ref="parWarningModal"
+        title="<?= i::esc_attr__('Dados do PAR em análise') ?>"
+        classes="federative-entity-selector__par-warning"
+        @close="discardPendingEntity">
+        <template #button>
+            <!-- Botão vazio para não renderizar o botão padrão do modal -->
+        </template>
+        <template #default>
+            <p><?php i::_e('O PAR deste ente federado está em análise, então não é possível criar novas oportunidades por ele.') ?></p>
+            <p><?php i::_e('As oportunidades que você já criou continuam disponíveis para edição normalmente.') ?></p>
+        </template>
+        <template #actions="modal">
+            <button class="button button--text" @click="modal.close()">
+                <?php i::_e('Escolher outro ente') ?>
+            </button>
+            <button class="button button--primary" @click="confirmPendingEntity(modal)">
+                <?php i::_e('Continuar mesmo assim') ?>
+            </button>
+        </template>
+    </mc-modal>
 </div>
