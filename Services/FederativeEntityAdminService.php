@@ -60,9 +60,12 @@ class FederativeEntityAdminService
 
     public function getRequestedEntityData(FederativeEntity $entity): array
     {
+        $exercices = $entity->exercices;
+
         return [
             '@entityType' => 'agent',
             'id' => (int) $entity->id,
+            'parExercicios' => is_array($exercices) ? $exercices : [],
             'name' => (string) $entity->name,
             'shortDescription' => '',
             'longDescription' => '',

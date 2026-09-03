@@ -1,0 +1,74 @@
+.federative-entity-par-tree {
+    &__empty,
+    &__vazio {
+        margin: 0;
+        color: var(--mc-gray-500);
+        font-size: size(14);
+    }
+
+    &__exercicio + &__exercicio {
+        margin-top: size(24);
+    }
+
+    &__ano {
+        margin: 0 0 size(4);
+        padding-bottom: size(4);
+        border-bottom: size(1) solid var(--mc-gray-300);
+        font-size: size(13);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--mc-gray-500);
+    }
+
+    &__lista {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        & & {
+            padding-left: size(20);
+        }
+    }
+
+    &__item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: baseline;
+        gap: size(16);
+        padding: size(5) 0;
+    }
+
+    &__item--meta {
+        font-weight: 600;
+    }
+
+    &__item--acao {
+        font-size: size(14);
+    }
+
+    &__item--atividade {
+        color: var(--mc-gray-500);
+        font-size: size(13);
+    }
+
+    &__nome {
+        min-width: 0;
+        word-break: break-word;
+    }
+
+    &__valor {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        &__item {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        &__lista & {
+            padding-left: size(12);
+        }
+    }
+}
