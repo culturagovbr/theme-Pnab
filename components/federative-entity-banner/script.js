@@ -18,6 +18,9 @@ app.component('federative-entity-banner', {
         },
         selectedEntityDocument() {
             return this.selectedEntity?.document || null
+        },
+        selectedEntityHasParData() {
+            return this.selectedEntity?.hasParData !== false
         }
     },
 

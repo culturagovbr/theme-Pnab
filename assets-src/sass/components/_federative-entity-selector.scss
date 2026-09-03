@@ -207,6 +207,18 @@
         letter-spacing: 0.5px;
     }
 
+    &__item-badge {
+        align-self: flex-start;
+        padding: size(4) size(12);
+        border-radius: size(16);
+        background-color: var(--mc-warning);
+        color: var(--mc-warning-700);
+        font-size: size(13);
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+    }
+
     &__item-check-wrapper {
         display: flex;
         align-items: center;

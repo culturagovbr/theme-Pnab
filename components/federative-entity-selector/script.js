@@ -10,6 +10,7 @@ app.component('federative-entity-selector', {
         return {
             federativeEntities: [],
             selectedEntity: null,
+            pendingEntity: null,
             keyword: '',
             order: 'name ASC',
             loading: false,
@@ -62,7 +63,23 @@ app.component('federative-entity-selector', {
         },
 
         selectEntity(entity) {
+            // Ente sem PAR avisa antes de ser escolhido: ele não permite criar oportunidade nova.
+            if (!entity.hasParData) {
+                this.pendingEntity = entity
+                this.$refs.parWarningModal.open()
+                return
+            }
+
             this.selectedEntity = entity
+        },
+
+        confirmPendingEntity(modal) {
+            this.selectedEntity = this.pendingEntity
+            modal.close()
+        },
+
+        discardPendingEntity() {
+            this.pendingEntity = null
         },
 
         async confirmSelection() {

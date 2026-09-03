@@ -53,6 +53,7 @@ app.component('federative-entities-list', {
                 });
 
                 entity.document = item.document;
+                entity.hasParData = item.hasParData;
                 entity.managersCount = item.managersCount;
                 entity.updatedAt = item.updatedAt;
                 entity.federativeEntityUrl = item.singleUrl || '#';
