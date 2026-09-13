@@ -56,13 +56,12 @@ app.component('consolidating-data', {
                     this.statusMessage = ''
                     // Sync iniciado, começa a verificar o status
                     this.checkSyncStatus()
+                } else if (data.retryable === false) {
+                    // Configuração errada ou resposta fora do contrato não melhoram na próxima
+                    // tentativa: esperar trinta segundos só adiaria a mesma falha.
+                    this.failNow(data.errorMessage)
                 } else {
-                    // Erro ao iniciar sync
-                    if (data.error) {
-                        this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS, data.errorMessage)
-                    } else {
-                        this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS)
-                    }
+                    this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS, data.error ? data.errorMessage : undefined)
                 }
             } catch (error) {
                 console.error('Erro ao iniciar sincronização:', error)
@@ -70,13 +69,19 @@ app.component('consolidating-data', {
             }
         },
 
+        failNow(errorMessage) {
+            this.syncStarted = false
+            this.clearRetryCountdown()
+            this.hasError = true
+            this.statusMessage = ''
+            this.errorMessage = errorMessage || 'Não conseguimos estabelecer conexão com a API CultBr. Tente novamente mais tarde.'
+        },
+
         retryStartSync(maxAttempts, retryDelaySeconds, errorMessage) {
             this.syncStarted = false
 
             if (this.startSyncAttempts >= maxAttempts) {
-                this.hasError = true
-                this.statusMessage = ''
-                this.errorMessage = errorMessage || 'Não conseguimos estabelecer conexão com a API CultBr. Tente novamente mais tarde.'
+                this.failNow(errorMessage)
                 return
             }
 
