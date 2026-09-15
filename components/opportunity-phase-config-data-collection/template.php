@@ -22,11 +22,11 @@ $this->import('
     <?php $this->applyTemplateHook('opportunity-data-collection-config', 'before') ?>
     <div class="grid-12 col-12 opportunity-data-collection__section">
         <?php $this->applyTemplateHook('opportunity-data-collection-config', 'begin') ?>
-        <entity-field v-if="!phase.isFirstPhase" :entity="phase" prop="name" classes="col-12 sm:col-12"></entity-field>
-        <entity-field :entity="phase" prop="registrationFrom" :min="fromDateMin?._date" :max="fromDateMax?._date"
+        <entity-field v-if="!phase.isFirstPhase" :entity="phase" prop="name" :autosave="3000" classes="col-12 sm:col-12"></entity-field>
+        <entity-field :entity="phase" prop="registrationFrom" :autosave="3000" :min="fromDateMin?._date" :max="fromDateMax?._date"
             classes="col-6 sm:col-12"></entity-field>
         <entity-field v-if="!firstPhase?.isContinuousFlow || firstPhase?.hasEndDate" :entity="phase"
-            prop="registrationTo" :min="toDateMin?._date" :max="toDateMax?._date"
+            prop="registrationTo" :autosave="3000" :min="toDateMin?._date" :max="toDateMax?._date"
             classes="col-6 sm:col-12"></entity-field>
         <entity-field v-if="phase.isReportingPhase" :entity="phase" prop="includesWorkPlan"
             classes="col-12"></entity-field>
@@ -40,12 +40,12 @@ $this->import('
 
     <div class="opportunity-data-collection__limits col-12" v-if="phase.isFirstPhase">
         <div class="opportunity-data-collection__fields">
-            <entity-field :entity="phase" prop="vacancies" :min="0" class="field__limits">
+            <entity-field :entity="phase" prop="vacancies" :min="0" :autosave="3000" class="field__limits">
                 <template #info>
                     <?php $this->info('editais-oportunidades -> configuracoes -> total-vagas') ?>
                 </template>
             </entity-field>
-            <entity-field :entity="phase" prop="totalResource" :min="0" class="field__limits">
+            <entity-field :entity="phase" prop="totalResource" :min="0" :autosave="3000" class="field__limits">
                 <template #info>
                     <?php $this->info('editais-oportunidades -> configuracoes -> valor-total') ?>
                 </template>
