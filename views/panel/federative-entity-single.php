@@ -18,6 +18,7 @@ $this->import('
     entity-seals
     entity-social-media
     entity-terms
+    federative-entity-par-tree
     mc-breadcrumb
     mc-container
     mc-share-links
@@ -53,6 +54,9 @@ $this->breadcrumb = [
                             <entity-gallery :entity="entity" classes="col-12"></entity-gallery>
                             <div v-if="entity.children?.length > 0" class="col-12">
                                 <entity-list title="<?php i::esc_attr_e('Agentes');?>" type="agent" :ids="entity.children"></entity-list>
+                            </div>
+                            <div class="col-12">
+                                <federative-entity-par-tree></federative-entity-par-tree>
                             </div>
                         </div>
                     </main>

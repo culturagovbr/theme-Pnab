@@ -38,6 +38,7 @@ $viewEntities = array_map(function (array $entity) use ($app, $formatCnpj, $form
         'name' => (string) ($entity['name'] ?? ''),
         'document' => $formatCnpj($entity['document'] ?? ''),
         'managersCount' => (int) ($entity['managers_count'] ?? 0),
+        'hasParData' => (bool) ($entity['has_par_data'] ?? false),
         'updatedAt' => $formatDate($entity['update_timestamp'] ?? null),
         'updatedAtOrder' => $entity['update_timestamp'] ? strtotime((string) $entity['update_timestamp']) : 0,
         'singleUrl' => $app->createUrl('panel', 'federativeEntitySingle', [$id]),
