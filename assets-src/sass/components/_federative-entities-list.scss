@@ -1,0 +1,13 @@
+.federative-entities-list {
+    &__par-badge {
+        display: inline-block;
+        margin-left: size(8);
+        padding: size(2) size(10);
+        border-radius: size(16);
+        background-color: var(--mc-warning);
+        color: var(--mc-warning-700);
+        font-size: size(12);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+}

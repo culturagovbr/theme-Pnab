@@ -200,7 +200,7 @@ $this->import('
             <div class="grid-12">
                 <link-opportunity :entity="entity" editable class="col-12"></link-opportunity>
                 <entity-file :entity="entity" titleModal="<?php i::_e('Adicionar regulamento') ?>" groupName="rules"
-                    classes="col-12" title="<?php i::esc_attr_e('Adicionar regulamento'); ?>" :required="!canManageOfficialModelParActions"
+                    classes="col-12" title="<?php i::esc_attr_e('Adicionar regulamento'); ?>" :required="entity.isModel != 1"
                     editable></entity-file>
                 <entity-admins :entity="entity" classes="col-12" editable></entity-admins>
                 <!-- <entity-related-agents :entity="entity" classes="col-12" title="<?php i::esc_attr_e('Agentes Relacionados'); ?>" editable></entity-related-agents> -->
