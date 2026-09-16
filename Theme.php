@@ -257,7 +257,19 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
-                $this->errorJson(['parAcaoId' => [i::__('A ação selecionada não é compatível com este modelo.')]], 422);
+                // O casamento é por nome literal: dizer qual não casou é o que separa grafia divergente de escolha errada.
+                $app->log->error(sprintf(
+                    '[Pnab] generateopportunity (validação PAR): ação "%s" fora das associadas ao modelo %s (%s)',
+                    $acaoNome ?? '(não encontrada na árvore do ente)',
+                    $model->id,
+                    implode(' | ', $parActions)
+                ));
+
+                $mensagem = $acaoNome === null
+                    ? i::__('A ação selecionada não é compatível com este modelo.')
+                    : sprintf(i::__('A ação "%s" não está entre as associadas a este modelo.'), $acaoNome);
+
+                $this->errorJson(['parAcaoId' => [$mensagem]], 422);
                 return;
             }
         });
