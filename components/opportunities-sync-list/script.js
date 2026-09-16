@@ -13,7 +13,6 @@ const SYNC_LIST_STATUS_KEYS = {
     error: 'status_error',
     simulated: 'status_simulated',
     abandoned: 'status_abandoned',
-    rejected: 'status_rejected',
 };
 
 /** Ícone de cada desfecho de envio (nomes do iconset do tema). */
@@ -23,7 +22,6 @@ const SYNC_LIST_STATUS_ICONS = {
     error: 'exclamation',
     simulated: 'code',
     abandoned: 'exchange',
-    rejected: 'close',
 };
 
 app.component('opportunities-sync-list', {
