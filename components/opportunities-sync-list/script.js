@@ -24,6 +24,12 @@ const SYNC_LIST_STATUS_ICONS = {
     abandoned: 'exchange',
 };
 
+/** Rótulo de cada API que pode atender a integração. */
+const SYNC_LIST_PROVIDER_KEYS = {
+    gestao: 'provider_gestao',
+    conecta: 'provider_conecta',
+};
+
 app.component('opportunities-sync-list', {
     template: $TEMPLATES['opportunities-sync-list'],
 
@@ -186,6 +192,14 @@ app.component('opportunities-sync-list', {
 
         lastSyncIcon(entity) {
             return SYNC_LIST_STATUS_ICONS[this.lastSync(entity)?.result] ?? 'clock';
+        },
+
+        /** Envio anterior à coluna de provedor não tem o dado, e o card omite o rótulo. */
+        lastSyncProviderLabel(entity) {
+            const provider = this.lastSync(entity)?.provider;
+            const messageKey = SYNC_LIST_PROVIDER_KEYS[provider];
+
+            return messageKey ? this.translateMessage(messageKey) : provider;
         },
 
         isSelected(entity) {
