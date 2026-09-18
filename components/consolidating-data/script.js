@@ -57,8 +57,7 @@ app.component('consolidating-data', {
                     // Sync iniciado, começa a verificar o status
                     this.checkSyncStatus()
                 } else if (data.retryable === false) {
-                    // Configuração errada ou resposta fora do contrato não melhoram na próxima
-                    // tentativa: esperar trinta segundos só adiaria a mesma falha.
+                    // O backend já disse que repetir não resolve: esperar só adiaria a mesma falha.
                     this.failNow(data.errorMessage)
                 } else {
                     this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS, data.error ? data.errorMessage : undefined)
