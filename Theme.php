@@ -284,7 +284,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
+            $delay = $app->plugins['AldirBlanc']->config['integration']['delayJob'];
+            $start_string = (new \DateTime())->modify($delay)->format('Y-m-d H:i:s');
 
             $app->enqueueOrReplaceJob(
                 OportunidadeCultJob::SLUG,
