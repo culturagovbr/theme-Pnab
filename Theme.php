@@ -274,11 +274,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
         });
 
-        /**
-         * Envio ao CultBR: qualquer save de oportunidade elegível enfileira o PUT (upsert).
-         * O endpoint é upsert (cria se não existir), então não há POST separado; o fluxo «usar modelo»
-         * dispara o envio pelo próprio save(true) do saveOpportunityPostGenerate.
-         */
+        /** Qualquer save de oportunidade elegível enfileira o envio; o fluxo «usar modelo» dispara pelo save(true). */
         $app->hook('entity(Opportunity).update:finish', function () use ($app) {
             if (!(new OpportunityService())->isEligibleForSync($this)) {
                 return;
@@ -289,10 +285,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $app->enqueueOrReplaceJob(
                 OportunidadeCultJob::SLUG,
-                [
-                    'action' => 'update',
-                    'opportunity' => $this
-                ],
+                ['opportunity' => $this],
                 $start_string
             );
         });
