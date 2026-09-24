@@ -1293,6 +1293,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $errors += self::getRequiredAmountErrors($this);
 
+            if (UserAccessService::isSaasSuperAdmin()) {
+                foreach ([
+                    'recursosOutrasFontes',
+                    'formasInscricaoEdital',
+                    'formasInscricaoEdital_email',
+                    'outrasModalidadesAcoesAfirmativas',
+                ] as $field) {
+                    unset($errors[$field]);
+                }
+            }
+
             // Garante que TODOS os campos com erro sejam incluídos no postData
             if (!$this->isNew() && !empty($errors)) {
                 $controller = $app->controller('opportunity');
@@ -1754,6 +1765,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $isEmpty = $value === null || $value === '' || (is_array($value) && count($value) === 0);
 
         if (!$isEmpty) {
+            return false;
+        }
+
+        // Admin administra o edital, não o preenche: exigir escopo dele trava o modelo oficial.
+        if (UserAccessService::isSaasSuperAdmin()) {
             return false;
         }
 
