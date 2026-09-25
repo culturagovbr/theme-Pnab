@@ -13,7 +13,6 @@ const CULTBR_LOGS_STATUS_KEYS = {
     error: 'status_error',
     simulated: 'status_simulated',
     abandoned: 'status_abandoned',
-    rejected: 'status_rejected',
 };
 
 /** Ícone que representa cada status na listagem (nomes do iconset do tema). */
@@ -23,7 +22,12 @@ const CULTBR_LOGS_STATUS_ICONS = {
     error: 'exclamation',
     simulated: 'code',
     abandoned: 'exchange',
-    rejected: 'close',
+};
+
+/** Rótulo de cada API que pode atender a integração. */
+const CULTBR_LOGS_PROVIDER_KEYS = {
+    gestao: 'provider_gestao',
+    conecta: 'provider_conecta',
 };
 
 app.component('opportunity-cultbr-logs', {
@@ -127,6 +131,12 @@ app.component('opportunity-cultbr-logs', {
         statusLabel(status) {
             const messageKey = CULTBR_LOGS_STATUS_KEYS[status];
             return messageKey ? this.translateMessage(messageKey) : status;
+        },
+
+        /** Envio anterior à coluna de provedor não tem o dado, e a ficha omite a linha. */
+        providerLabel(provider) {
+            const messageKey = CULTBR_LOGS_PROVIDER_KEYS[provider];
+            return messageKey ? this.translateMessage(messageKey) : provider;
         },
 
         /** Envio sem autor (sync em lote, execução por CLI) não exibe nada — ver v-if no template. */
