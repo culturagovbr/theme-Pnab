@@ -257,29 +257,35 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
-                $this->errorJson(['parAcaoId' => [i::__('A ação selecionada não é compatível com este modelo.')]], 422);
+                // O casamento é por nome literal: dizer qual não casou é o que separa grafia divergente de escolha errada.
+                $app->log->error(sprintf(
+                    '[Pnab] generateopportunity (validação PAR): ação "%s" fora das associadas ao modelo %s (%s)',
+                    $acaoNome ?? '(não encontrada na árvore do ente)',
+                    $model->id,
+                    implode(' | ', $parActions)
+                ));
+
+                $mensagem = $acaoNome === null
+                    ? i::__('A ação selecionada não é compatível com este modelo.')
+                    : sprintf(i::__('A ação "%s" não está entre as associadas a este modelo.'), $acaoNome);
+
+                $this->errorJson(['parAcaoId' => [$mensagem]], 422);
                 return;
             }
         });
 
-        /**
-         * Envio ao CultBR: qualquer save de oportunidade elegível enfileira o PUT (upsert).
-         * O endpoint é upsert (cria se não existir), então não há POST separado; o fluxo «usar modelo»
-         * dispara o envio pelo próprio save(true) do saveOpportunityPostGenerate.
-         */
+        /** Qualquer save de oportunidade elegível enfileira o envio; o fluxo «usar modelo» dispara pelo save(true). */
         $app->hook('entity(Opportunity).update:finish', function () use ($app) {
             if (!(new OpportunityService())->isEligibleForSync($this)) {
                 return;
             }
 
-            $start_string = (new \DateTime())->modify(env('ALDIRBLANC_INTEGRATION_DELAY_JOB', 'now'))->format('Y-m-d H:i:s');
+            $delay = $app->plugins['AldirBlanc']->config['integration']['delayJob'];
+            $start_string = (new \DateTime())->modify($delay)->format('Y-m-d H:i:s');
 
             $app->enqueueOrReplaceJob(
                 OportunidadeCultJob::SLUG,
-                [
-                    'action' => 'update',
-                    'opportunity' => $this
-                ],
+                ['opportunity' => $this],
                 $start_string
             );
         });
@@ -1287,6 +1293,17 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
 
             $errors += self::getRequiredAmountErrors($this);
 
+            if (UserAccessService::isSaasSuperAdmin()) {
+                foreach ([
+                    'recursosOutrasFontes',
+                    'formasInscricaoEdital',
+                    'formasInscricaoEdital_email',
+                    'outrasModalidadesAcoesAfirmativas',
+                ] as $field) {
+                    unset($errors[$field]);
+                }
+            }
+
             // Garante que TODOS os campos com erro sejam incluídos no postData
             if (!$this->isNew() && !empty($errors)) {
                 $controller = $app->controller('opportunity');
@@ -1748,6 +1765,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         $isEmpty = $value === null || $value === '' || (is_array($value) && count($value) === 0);
 
         if (!$isEmpty) {
+            return false;
+        }
+
+        // Admin administra o edital, não o preenche: exigir escopo dele trava o modelo oficial.
+        if (UserAccessService::isSaasSuperAdmin()) {
             return false;
         }
 

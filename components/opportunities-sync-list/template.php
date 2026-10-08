@@ -112,6 +112,9 @@ $this->import('
                         <mc-icon :name="lastSyncIcon(entity)"></mc-icon>
                         <span> {{ lastSyncLabel(entity) }} </span>
                         <time :datetime="lastSync(entity).date"> {{ formatDate(lastSync(entity).date) }} </time>
+                        <span v-if="lastSync(entity).provider" class="opportunity-sync-card__provider">
+                            {{ lastSyncProviderLabel(entity) }}
+                        </span>
                     </template>
                     <span v-else-if="statusUnavailable(entity)" class="opportunity-sync-card__never">
                         {{ translateMessage('situacao_indisponivel') }}

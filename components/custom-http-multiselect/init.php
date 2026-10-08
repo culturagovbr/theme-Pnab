@@ -1,8 +1,8 @@
 <?php
 
-use AldirBlanc\Http\Clients\ParAcaoClient;
+use AldirBlanc\Integration\ParActionPageLimits;
 
 $this->jsObject['config']['customHttpMultiselect'] = [
-    'defaultSkip' => ParAcaoClient::DEFAULT_SKIP,
-    'defaultLimit' => ParAcaoClient::DEFAULT_LIMIT,
+    'defaultSkip' => ParActionPageLimits::DEFAULT_SKIP,
+    'defaultLimit' => ParActionPageLimits::DEFAULT_LIMIT,
 ];
