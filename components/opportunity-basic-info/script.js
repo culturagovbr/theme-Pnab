@@ -59,8 +59,8 @@ app.component('opportunity-basic-info' , {
 
         this.initializeRequiredFields();
 
-        // Oportunidade sem dados do PAR e usuário habilitado a editar: avisa e libera edição.
-        if (this.parEditContext && this.parWasMissingOnLoad) {
+        // Modelo não tem dados do PAR a preencher, e admin não precisa ser cobrado.
+        if (this.parWasMissingOnLoad && !this.isAdmin && !this.isModel) {
             this.$nextTick(() => this.$refs.parMissingModal?.open());
         }
 
@@ -88,12 +88,15 @@ app.component('opportunity-basic-info' , {
             return Boolean($MAPAS.config?.opportunityBasicInfo?.canManageOfficialModelParActions);
         },
 
+        isModel() {
+            return String(this.entity?.isModel || '') === '1';
+        },
+
         isOfficialModelAdmin() {
-            const isModel = String(this.entity?.isModel || '') === '1';
             const seals = this.entity?.seals || [];
             const hasVerificationSeal = seals.some((seal) => Boolean(seal.isVerificationSeal));
 
-            return Boolean(this.canManageOfficialModelParActions && isModel && hasVerificationSeal);
+            return Boolean(this.canManageOfficialModelParActions && this.isModel && hasVerificationSeal);
         },
 
         isEtapaOutra() {
