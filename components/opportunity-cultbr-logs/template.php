@@ -83,6 +83,10 @@ $this->import('
                                         <dd>{{ formatDate(attempt.sentAt) }}</dd>
                                         <dt>{{ translateMessage('endpoint') }}</dt>
                                         <dd><code>{{ attempt.httpMethod }} {{ attempt.endpoint }}</code></dd>
+                                        <template v-if="attempt.provider">
+                                            <dt>{{ translateMessage('provedor') }}</dt>
+                                            <dd>{{ providerLabel(attempt.provider) }}</dd>
+                                        </template>
                                     </dl>
 
                                     <mc-alert v-if="attempt.errorMessage" type="danger">

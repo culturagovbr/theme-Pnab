@@ -30,5 +30,6 @@ return [
     'status_error' => i::__('Falhou'),
     'status_simulated' => i::__('Simulada'),
     'status_abandoned' => i::__('Abandonada'),
-    'status_rejected' => i::__('Recusada'),
+    'provider_gestao' => i::__('Gestão'),
+    'provider_conecta' => i::__('Conecta'),
 ];
