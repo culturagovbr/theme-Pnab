@@ -18,6 +18,8 @@ $this->import('
     mc-card
     mc-icon
     mc-loading
+    mc-tabs
+    mc-tab
 ');
 ?>
 
@@ -25,6 +27,12 @@ $this->import('
      main/aside (estreita o conteúdo) e o .opportunity-container do core só recebe largura na
      action-single. -->
 <div class="cultbr-logs">
+    <!-- Painéis vazios de propósito: a listagem única abaixo troca com a aba, preservando o estado de cada uma. -->
+    <mc-tabs :sync-hash="false" default-tab="oportunidade" @changed="selectTab($event.tab.slug)">
+        <mc-tab slug="oportunidade" :label="translateMessage('aba_oportunidades')"></mc-tab>
+        <mc-tab slug="resultado" :label="translateMessage('aba_resultados')"></mc-tab>
+    </mc-tabs>
+
     <mc-loading :condition="isLoading"></mc-loading>
 
     <template v-if="!isLoading">

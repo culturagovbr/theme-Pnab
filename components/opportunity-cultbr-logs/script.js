@@ -49,8 +49,12 @@ app.component('opportunity-cultbr-logs', {
 
     data() {
         return {
-            logs: [],
-            total: 0,
+            activeTab: 'oportunidade',
+            // Estado por sub-aba: trocar de aba preserva a lista e a paginação da outra.
+            tabs: {
+                oportunidade: { logs: [], total: 0, loaded: false },
+                resultado: { logs: [], total: 0, loaded: false },
+            },
             isLoading: false,
             isLoadingMore: false,
             hasError: false,
@@ -66,16 +70,45 @@ app.component('opportunity-cultbr-logs', {
     },
 
     computed: {
+        currentTab() {
+            return this.tabs[this.activeTab];
+        },
+
+        logs() {
+            return this.currentTab.logs;
+        },
+
+        total() {
+            return this.currentTab.total;
+        },
+
         hasMore() {
             return this.logs.length < this.total;
         },
     },
 
     methods: {
+        selectTab(tab) {
+            if (!this.tabs[tab] || this.activeTab === tab) {
+                return;
+            }
+
+            this.activeTab = tab;
+
+            if (!this.currentTab.loaded) {
+                this.load();
+            } else {
+                // O erro é da carga que falhou, não da aba já carregada para a qual se volta.
+                this.hasError = false;
+            }
+        },
+
         async fetchLogs(append = false) {
+            const tab = this.currentTab;
             const url = this.api.createUrl('opportunityCultLogs', {
                 opportunityId: this.entity.id,
-                skip: append ? this.logs.length : 0,
+                action: this.activeTab,
+                skip: append ? tab.logs.length : 0,
                 limit: CULTBR_LOGS_PAGE_SIZE,
             });
 
@@ -87,10 +120,11 @@ app.component('opportunity-cultbr-logs', {
             }
 
             const rows = Array.isArray(body?.data) ? body.data : [];
-            this.logs = append ? this.logs.concat(rows) : rows;
+            tab.logs = append ? tab.logs.concat(rows) : rows;
             // Sem linhas novas, o total é o que já está em tela — evita "Carregar mais" eterno
             // quando o total do servidor diverge da listagem.
-            this.total = rows.length ? Number(body?.total ?? this.logs.length) : this.logs.length;
+            tab.total = rows.length ? Number(body?.total ?? tab.logs.length) : tab.logs.length;
+            tab.loaded = true;
         },
 
         async load() {
