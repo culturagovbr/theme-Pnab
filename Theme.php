@@ -7,6 +7,7 @@ use AldirBlanc\Services\UserAccessService;
 use AldirBlanc\Services\FederativeEntityService;
 use AldirBlanc\Services\InMincQuotasService;
 use AldirBlanc\Services\OpportunityService;
+use AldirBlanc\Services\ResultadoService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
@@ -288,6 +289,22 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 ['opportunity' => $this],
                 $start_string
             );
+        });
+
+        /** Publicar a fase final é o ato que oficializa o resultado; daqui ele segue para o CultBR. */
+        $app->hook('entity(Opportunity).publishRegistrations:after', function () use ($app) {
+            // O loop de publicação roda em->clear() antes deste hook: recarregar pelo id antes de consultar.
+            $fase = $app->repo('Opportunity')->find((int) $this->id);
+            if (!$fase) {
+                return;
+            }
+
+            $service = new ResultadoService();
+            if (!$service->isEligibleForResultSync($fase)) {
+                return;
+            }
+
+            $service->enqueueResultadoSync($fase->firstPhase);
         });
 
         /**
