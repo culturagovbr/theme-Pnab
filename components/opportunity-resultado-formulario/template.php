@@ -15,26 +15,38 @@ $this->import('
 ');
 ?>
 <div class="resultado-formulario">
-    <section v-for="etapa in etapas" :key="etapa.id_etapa" class="resultado-formulario__etapa">
+    <section v-for="(etapa, indiceEtapa) in etapas" :key="etapa.id_etapa" class="resultado-formulario__etapa">
         <h4 class="resultado-formulario__etapa-titulo">{{ etapa.nome }}</h4>
 
         <div class="grid-12">
-            <div v-for="questao in questoesVisiveis(etapa)" :key="questao.id_questao" class="field col-12" :class="{ error: erroDe(questao) }">
+            <template v-for="(bloco, indiceBloco) in blocosDe(etapa)" :key="bloco.automaticos ? 'autos-' + indiceBloco : bloco.questao.id_questao">
+
+            <!-- Calculado do próprio edital, empilhado numa coluna: o campo seguinte fica ao lado -->
+            <div v-if="bloco.automaticos" class="field col-6 resultado-formulario__autos">
+                <div v-for="questao in bloco.questoes" :key="questao.id_questao" class="resultado-formulario__auto-linha">
+                    <span class="resultado-formulario__auto-rotulo">{{ questao.nome }}:</span>
+                    <span class="resultado-formulario__auto">{{ automaticoFormatado(questao) }}</span>
+                </div>
+            </div>
+
+            <div v-else v-for="questao in [bloco.questao]" :key="questao.id_questao" class="field" :class="[{ error: erroDe(questao) }, campoLargo(questao) ? 'col-12' : 'col-6']">
                 <label class="field__title" :for="'resultado-questao-' + questao.id_questao">
                     {{ questao.nome }}
-                    <span v-if="questao.requerida && tipoDoCampo(questao) !== 'data-automatica'" class="required">*<?php i::_e('obrigatório') ?></span>
+                    <span v-if="questao.requerida" class="required">*<?php i::_e('obrigatório') ?></span>
                 </label>
                 <small v-if="questao.descricao" class="field__description">{{ questao.descricao }}</small>
 
-                <!-- Dados do edital: informativo, sem campo -->
-                <div v-if="tipoDoCampo(questao) === 'visualização simplificada edital'" class="resultado-formulario__edital">
-                    <strong>{{ entity.name }}</strong>
-                </div>
-
-                <!-- Data de publicação: automática, somente leitura -->
-                <div v-else-if="tipoDoCampo(questao) === 'data-automatica'" class="field__input">
-                    <input type="text" :value="dataPublicacaoFormatada()" disabled>
-                    <small class="field__description">{{ translateMessage('data_automatica') }}</small>
+                <div v-if="tipoDoCampo(questao) === 'tabela-automatica'" class="resultado-formulario__tabela resultado-formulario__tabela--auto">
+                    <table>
+                        <thead>
+                            <tr><th v-for="coluna in colunasDe(questao)" :key="coluna.key">{{ coluna.label }}</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(linha, indice) in valorAutomatico(questao)" :key="indice">
+                                <td v-for="coluna in colunasDe(questao)" :key="coluna.key">{{ celulaAutomaticaFormatada(questao, linha, coluna) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'número'" class="field__input">
@@ -109,12 +121,13 @@ $this->import('
 
                 <p v-if="erroDe(questao)" class="field__error" role="alert">{{ erroDe(questao) }}</p>
             </div>
+
+            </template>
         </div>
     </section>
 
-    <div class="resultado-formulario__acoes">
-        <button type="button" class="button button--primary button--md" :disabled="salvando" @click="salvar">
-            {{ salvando ? translateMessage('salvando') : translateMessage('salvar') }}
-        </button>
+    <div class="resultado-formulario__status" aria-live="polite">
+        <template v-if="salvando">{{ translateMessage('salvando') }}</template>
+        <template v-else-if="salvoEm">{{ translateMessage('salvo_as') }} {{ salvoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }}</template>
     </div>
 </div>

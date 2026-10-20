@@ -5,7 +5,7 @@
  */
 
 /** Questões sem campo nesta fase da integração. */
-const FORMULARIO_TIPOS_OCULTOS = ['anexo'];
+const FORMULARIO_TIPOS_OCULTOS = ['anexo', 'visualização simplificada edital'];
 
 /** A data de publicação é automática em qualquer formulário do PAR — a tag a identifica. */
 const FORMULARIO_TAG_DATA_PUBLICACAO = 'data_publicacao';
@@ -20,10 +20,6 @@ app.component('opportunity-resultado-formulario', {
     },
 
     props: {
-        entity: {
-            type: Entity,
-            required: true,
-        },
         estrutura: {
             type: Object,
             required: true,
@@ -32,17 +28,25 @@ app.component('opportunity-resultado-formulario', {
             type: Object,
             default: () => ({}),
         },
+        respostasAutomaticas: {
+            type: Object,
+            default: () => ({}),
+        },
+        questoesSemFonte: {
+            type: Array,
+            default: () => [],
+        },
         erros: {
             type: Object,
             default: () => ({}),
         },
-        dataPublicacao: {
-            type: String,
-            default: null,
-        },
         salvando: {
             type: Boolean,
             default: false,
+        },
+        salvoEm: {
+            type: Date,
+            default: null,
         },
     },
 
@@ -50,6 +54,7 @@ app.component('opportunity-resultado-formulario', {
         return {
             // Cópia editável; o que está salvo continua sendo do card.
             valores: this.clonarRespostas(),
+            autosaveTimeout: null,
         };
     },
 
@@ -57,6 +62,23 @@ app.component('opportunity-resultado-formulario', {
         respostas() {
             this.valores = this.clonarRespostas();
         },
+
+        // Autosave: como as fases, sem botão. O pós-save devolve o salvo igual ao local e não re-dispara.
+        valores: {
+            deep: true,
+            handler() {
+                if (JSON.stringify(this.valores) === JSON.stringify(this.clonarRespostas())) {
+                    return;
+                }
+
+                clearTimeout(this.autosaveTimeout);
+                this.autosaveTimeout = setTimeout(() => this.salvar(), 1500);
+            },
+        },
+    },
+
+    unmounted() {
+        clearTimeout(this.autosaveTimeout);
     },
 
     computed: {
@@ -76,8 +98,31 @@ app.component('opportunity-resultado-formulario', {
         questoesVisiveis(etapa) {
             return (etapa.questoes ?? []).filter(
                 (questao) => !FORMULARIO_TIPOS_OCULTOS.includes(questao.tipo_questao)
+                    && !this.isDataPublicacao(questao)
+                    && !this.isSemFonte(questao)
                     && this.dependenciaSatisfeita(questao),
             );
+        },
+
+        /** Automáticos consecutivos empilham numa coluna só; o campo seguinte fica ao lado. */
+        blocosDe(etapa) {
+            const blocos = [];
+
+            for (const questao of this.questoesVisiveis(etapa)) {
+                const ultimo = blocos[blocos.length - 1];
+
+                if (this.tipoDoCampo(questao) === 'texto-automatico') {
+                    if (ultimo?.automaticos) {
+                        ultimo.questoes.push(questao);
+                    } else {
+                        blocos.push({ automaticos: true, questoes: [questao] });
+                    }
+                } else {
+                    blocos.push({ automaticos: false, questao });
+                }
+            }
+
+            return blocos;
         },
 
         dependenciaSatisfeita(questao) {
@@ -92,7 +137,60 @@ app.component('opportunity-resultado-formulario', {
         },
 
         tipoDoCampo(questao) {
-            return this.isDataPublicacao(questao) ? 'data-automatica' : questao.tipo_questao;
+            if (this.isAutomatica(questao)) {
+                return questao.tipo_questao === 'Tabela Dinâmica' ? 'tabela-automatica' : 'texto-automatico';
+            }
+
+            return questao.tipo_questao;
+        },
+
+        isAutomatica(questao) {
+            return this.valorAutomatico(questao) !== undefined;
+        },
+
+        isSemFonte(questao) {
+            return this.questoesSemFonte.some((id) => Number(id) === Number(questao.id_questao));
+        },
+
+        valorAutomatico(questao) {
+            return this.respostasAutomaticas?.[questao.id_questao]
+                ?? this.respostasAutomaticas?.[String(questao.id_questao)];
+        },
+
+        /** Campos curtos dividem a linha; os longos (tabelas, textos, opções) ocupam inteira. */
+        campoLargo(questao) {
+            const tipo = this.tipoDoCampo(questao);
+
+            return ['textarea', 'múltipla escolha', 'Tabela Dinâmica', 'tabela-automatica',
+                'visualização simplificada edital'].includes(tipo);
+        },
+
+        automaticoFormatado(questao) {
+            const valor = this.valorAutomatico(questao);
+
+            if (questao.tipo_questao === 'moeda') {
+                return this.formatoMoeda(valor);
+            }
+
+            return String(valor);
+        },
+
+        formatoMoeda(valor) {
+            const numero = Number(valor);
+
+            return Number.isFinite(numero)
+                ? numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                : String(valor ?? '');
+        },
+
+        celulaAutomaticaFormatada(questao, linha, coluna) {
+            const valor = linha[coluna.key];
+
+            if (valor === null || valor === undefined) {
+                return '—';
+            }
+
+            return coluna.type === 'currency' ? this.formatoMoeda(valor) : String(valor);
         },
 
         isDataPublicacao(questao) {
@@ -208,17 +306,6 @@ app.component('opportunity-resultado-formulario', {
         celulaDe(questao, indice, chave) {
             const valor = this.linhasDe(questao)[indice]?.[chave];
             return valor === null || valor === undefined ? '' : valor;
-        },
-
-        dataPublicacaoFormatada() {
-            if (!this.dataPublicacao) {
-                return this.translateMessage('data_na_publicacao');
-            }
-
-            const data = new Date(this.dataPublicacao);
-            return Number.isNaN(data.getTime())
-                ? this.dataPublicacao
-                : data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         },
 
         salvar() {
