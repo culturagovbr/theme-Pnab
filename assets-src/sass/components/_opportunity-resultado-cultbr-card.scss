@@ -1,0 +1,151 @@
+// Card "Cadastrar Resultado" (componente opportunity-resultado-cultbr-card): o término novo da
+// trilha de fases — mesma métrica de um li do stepper (borda-trilho de 3px, padding de 45,
+// círculo de 56 centrado na linha com margin-left de -28), com o acento roxo dizendo que não
+// é uma fase: é a integração CultBR.
+.resultado-cultbr-card {
+    $accent: #6d4ca3;
+
+    &__item {
+        position: relative;
+        border-left: 3px solid red;
+        // Sem o padding-bottom dos li: o card é o término da trilha, a linha não vaza além dele.
+        padding: 0 0 0 45px;
+        margin-bottom: size(20);
+        margin-right: size(-28);
+
+        // Mesma métrica mobile dos li do stepper.
+        @media (max-width: size(600)) {
+            padding: 0 8px 0 32px;
+        }
+    }
+
+    &__marcador {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: size(56);
+        height: size(56);
+        margin-left: -28px;
+        background-color: var(--mc-high-500);
+        border: 3px solid var(--mc-gray-100);
+        border-radius: 50%;
+        color: $accent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+
+        svg {
+            width: size(26);
+            height: size(26);
+        }
+    }
+
+    &__box {
+        background: #fff;
+        border-radius: size(4);
+        border-left: size(4) solid $accent;
+        padding: size(16);
+        max-width: 1096px;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        flex-wrap: wrap;
+    }
+
+    &__titulo {
+        margin: 0;
+        font-size: size(24);
+        font-weight: 700;
+        line-height: size(28);
+        color: $accent;
+    }
+
+    &__subtitulo {
+        font-size: size(14);
+        font-weight: 600;
+        line-height: size(19);
+        color: var(--mc-gray-700);
+        text-transform: uppercase;
+    }
+
+    &__estado {
+        display: flex;
+        align-items: center;
+        gap: size(24);
+    }
+
+    &__chip {
+        display: inline-block;
+        padding: size(4) size(12);
+        border-radius: size(16);
+        font-size: size(13);
+        font-weight: 600;
+        background: var(--mc-gray-100, #f4f4f4);
+        color: var(--mc-gray-700, #555);
+        white-space: nowrap;
+
+        &--completo {
+            background: rgba(#6d4ca3, 0.12);
+            color: $accent;
+        }
+
+        &--enviado {
+            background: rgba(#1d8841, 0.12);
+            color: #1d8841;
+        }
+    }
+
+    &__expandir {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: size(4);
+        font-size: size(14);
+        font-weight: 700;
+        line-height: size(19);
+        color: var(--mc-primary-500);
+        white-space: nowrap;
+        min-width: size(82);
+        justify-content: flex-end;
+    }
+
+    &__body {
+        margin-top: size(16);
+        border-top: size(1) solid var(--mc-gray-200, #f0f0f0);
+        padding-top: size(16);
+    }
+
+    &__nota {
+        margin: 0;
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__acoes {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: size(16);
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+    }
+
+    &--travado &__box {
+        opacity: 0.9;
+    }
+}
+
+// Com o card presente, a trilha não termina mais na última fase: os segmentos que o stepper
+// apaga no fim (li e add-phase últimos de cada tipo) religam até chegar ao card.
+.opportunity-phases-config.com-resultado-cultbr {
+    ol.mc-stepper-vertical > li:last-of-type,
+    ol.mc-stepper-vertical > div.add-phase:last-of-type {
+        border-left: 3px solid red;
+    }
+}
