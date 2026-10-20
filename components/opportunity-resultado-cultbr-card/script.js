@@ -169,45 +169,5 @@ app.component('opportunity-resultado-cultbr-card', {
 
             this.expanded = !this.expanded;
         },
-
-        /** O stepper apaga a trilha na última fase; com o card presente, ela segue até ele. */
-        estenderTrilhaDoStepper() {
-            this.$el?.parentElement
-                ?.querySelector('.opportunity-phases-config')
-                ?.classList.add('com-resultado-cultbr');
-        },
-
-        toggle() {
-            if (this.travado) {
-                return;
-            }
-
-            this.expanded = !this.expanded;
-        },
-
-        async enviar() {
-            if (!this.envioHabilitado || this.isSending) {
-                return;
-            }
-
-            this.isSending = true;
-
-            try {
-                const url = this.api.createUrl('resultadoEnvio', {});
-                const response = await this.api.POST(url, { opportunityId: this.entity.id });
-                const body = await response.json().catch(() => ({}));
-
-                if (!response.ok) {
-                    throw new Error(body?.data ?? this.translateMessage('erro_enviar'));
-                }
-
-                this.messages.success(this.translateMessage('envio_aceito'));
-                await this.load();
-            } catch (error) {
-                this.messages.error(error?.message ?? this.translateMessage('erro_enviar'));
-            } finally {
-                this.isSending = false;
-            }
-        },
     },
 });
