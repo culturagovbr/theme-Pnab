@@ -15,8 +15,14 @@ $this->import('
     opportunity-resultado-formulario
 ');
 ?>
-<div v-if="visivel" class="mc-stepper-vertical-wrapper resultado-cultbr-card" :class="{'resultado-cultbr-card--travado': travado}">
-    <mc-loading :condition="isLoading"></mc-loading>
+<div v-if="visivel || isLoading" class="mc-stepper-vertical-wrapper resultado-cultbr-card" :class="{'resultado-cultbr-card--travado': travado}">
+    <!-- Esqueleto durante a consulta à Conecta: o card não aparece "do nada". -->
+    <div v-if="isLoading" class="resultado-cultbr-card__item resultado-cultbr-card__item--loading">
+        <span class="resultado-cultbr-card__marcador"><mc-icon name="exchange"></mc-icon></span>
+        <section class="resultado-cultbr-card__box resultado-cultbr-card__box--loading">
+            <mc-loading :condition="true"></mc-loading>
+        </section>
+    </div>
 
     <template v-if="!isLoading && hasError">
         <mc-alert type="danger">
@@ -32,7 +38,6 @@ $this->import('
             <header class="resultado-cultbr-card__header">
                 <div class="resultado-cultbr-card__info">
                     <h3 class="resultado-cultbr-card__titulo">{{ translateMessage('titulo') }}</h3>
-                    <div class="resultado-cultbr-card__subtitulo">{{ translateMessage('subtitulo') }}</div>
                 </div>
 
                 <div class="resultado-cultbr-card__estado">
@@ -52,20 +57,15 @@ $this->import('
 
             <main v-if="!travado && expanded" class="resultado-cultbr-card__body">
                 <opportunity-resultado-formulario
-                    :entity="entity"
                     :estrutura="estrutura"
                     :respostas="respostas"
+                    :respostas-automaticas="respostasAutomaticas"
+                    :questoes-sem-fonte="questoesSemFonte"
                     :erros="errosFormulario"
-                    :data-publicacao="dataPublicacao"
                     :salvando="isSaving"
+                    :salvo-em="salvoEm"
                     @salvar="salvarRespostas">
                 </opportunity-resultado-formulario>
-
-                <div class="resultado-cultbr-card__acoes">
-                    <button class="button button--primary button--md" :disabled="!envioHabilitado || isSending" @click="enviar">
-                        {{ translateMessage('enviar') }}
-                    </button>
-                </div>
             </main>
         </section>
     </div>

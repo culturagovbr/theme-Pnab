@@ -3,8 +3,7 @@
 use MapasCulturais\i;
 
 return [
-    'titulo' => i::__('Cadastrar Resultado'),
-    'subtitulo' => i::__('Envio do resultado ao CultBR'),
+    'titulo' => i::__('Envio do resultado ao CultBR'),
     'estado_aguardando_publicacao' => i::__('Aguardando a publicação final'),
     'estado_pendente' => i::__('Preenchimento pendente'),
     'estado_completo' => i::__('Pronto para envio'),
@@ -12,11 +11,7 @@ return [
     'travado_aviso' => i::__('Publique o resultado final do edital para preencher o formulário.'),
     'expandir' => i::__('Expandir'),
     'diminuir' => i::__('Diminuir'),
-    'enviar' => i::__('Enviar ao CultBr'),
-    'envio_aceito' => i::__('Envio do resultado agendado.'),
     'erro_carregar' => i::__('Não foi possível carregar o formulário de resultado.'),
-    'erro_enviar' => i::__('Não foi possível enviar o resultado.'),
-    'salvo' => i::__('Formulário salvo.'),
     'erro_salvar' => i::__('Não foi possível salvar o formulário.'),
     'tentar_novamente' => i::__('Tentar novamente'),
 ];

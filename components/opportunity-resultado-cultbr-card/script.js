@@ -46,11 +46,13 @@ app.component('opportunity-resultado-cultbr-card', {
             estado: null,
             estrutura: null,
             respostas: {},
+            respostasAutomaticas: {},
+            questoesSemFonte: [],
             envioHabilitado: false,
-            dataPublicacao: null,
             errosFormulario: {},
-            isSending: false,
             isSaving: false,
+            salvoEm: null,
+            pendingSave: null,
         };
     },
 
@@ -110,12 +112,15 @@ app.component('opportunity-resultado-cultbr-card', {
             this.estado = body.estado;
             this.estrutura = body.estrutura;
             this.respostas = body.respostas ?? {};
+            this.respostasAutomaticas = body.respostasAutomaticas ?? {};
+            this.questoesSemFonte = body.questoesSemFonte ?? [];
             this.envioHabilitado = Boolean(body.envioHabilitado);
-            this.dataPublicacao = body.dataPublicacao ?? null;
         },
 
         async salvarRespostas(valores) {
             if (this.isSaving) {
+                // Digitação durante o save em voo: guarda a versão mais nova e salva ao terminar.
+                this.pendingSave = valores;
                 return;
             }
 
@@ -135,12 +140,34 @@ app.component('opportunity-resultado-cultbr-card', {
 
                 this.errosFormulario = {};
                 this.aplicarEstado(body);
-                this.messages.success(this.translateMessage('salvo'));
+                // Autosave: sem toast a cada digitação — o formulário mostra "Salvo às HH:MM".
+                this.salvoEm = new Date();
             } catch (error) {
                 this.messages.error(this.translateMessage('erro_salvar'));
             } finally {
                 this.isSaving = false;
+
+                if (this.pendingSave) {
+                    const pendente = this.pendingSave;
+                    this.pendingSave = null;
+                    this.salvarRespostas(pendente);
+                }
             }
+        },
+
+        /** O stepper apaga a trilha na última fase; com o card presente, ela segue até ele. */
+        estenderTrilhaDoStepper() {
+            this.$el?.parentElement
+                ?.querySelector('.opportunity-phases-config')
+                ?.classList.add('com-resultado-cultbr');
+        },
+
+        toggle() {
+            if (this.travado) {
+                return;
+            }
+
+            this.expanded = !this.expanded;
         },
 
         /** O stepper apaga a trilha na última fase; com o card presente, ela segue até ele. */

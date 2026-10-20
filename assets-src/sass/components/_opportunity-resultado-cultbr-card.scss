@@ -19,6 +19,21 @@
         }
     }
 
+    &__item--loading {
+        border-left-color: transparent;
+    }
+
+    &__box--loading {
+        // Mesma altura do card colapsado (padding 16 + linha do título 28): troca sem pulo.
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: size(60);
+        overflow: hidden;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
     &__marcador {
         position: absolute;
         left: 0;
@@ -209,18 +224,52 @@
         }
     }
 
-    &__acoes {
-        display: flex;
-        justify-content: flex-start;
-        margin-top: size(8);
+    &__auto {
+        font-size: size(16);
+        font-weight: 700;
+        color: var(--mc-low-500, #333);
+    }
 
-        button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
+    &__auto-linha {
+        display: flex;
+        align-items: baseline;
+        gap: size(8);
+        padding: size(4) 0;
+    }
+
+    &__autos {
+        display: flex;
+        flex-direction: column;
+        gap: size(4);
+    }
+
+    &__auto-rotulo {
+        font-size: size(16);
+        font-weight: 700;
+        color: var(--mc-low-500, #333);
+    }
+
+    &__sem-fonte {
+        color: var(--mc-gray-700, #555);
+        font-style: italic;
+        padding: size(4) 0;
+    }
+
+    &__tabela--auto {
+        td {
+            padding: size(6) size(8);
+            font-weight: 600;
         }
     }
 
+    &__status {
+        min-height: size(20);
+        margin-top: size(4);
+        font-size: size(13);
+        color: var(--mc-gray-700, #555);
+    }
+
     .field {
-        margin-bottom: size(16);
+        margin-bottom: size(12);
     }
 }
