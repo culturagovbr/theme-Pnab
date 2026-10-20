@@ -149,3 +149,78 @@
         border-left: 3px solid red;
     }
 }
+
+// Formulário dinâmico dentro do card (componente opportunity-resultado-formulario).
+.resultado-formulario {
+    &__etapa {
+        margin-bottom: size(24);
+    }
+
+    &__etapa-titulo {
+        font-size: size(18);
+        font-weight: 700;
+        margin: 0 0 size(16);
+        padding-bottom: size(8);
+        border-bottom: size(1) solid var(--mc-gray-200, #f0f0f0);
+    }
+
+    &__edital {
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__opcoes {
+        display: flex;
+        flex-direction: column;
+        gap: size(8);
+    }
+
+    &__outros {
+        margin-top: size(8);
+    }
+
+    &__tabela {
+        overflow-x: auto;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: size(12);
+        }
+
+        th {
+            text-align: left;
+            font-size: size(13);
+            text-transform: uppercase;
+            color: var(--mc-gray-700, #555);
+            padding: size(8);
+        }
+
+        td {
+            padding: size(4) size(8);
+
+            input {
+                width: 100%;
+                min-width: size(120);
+            }
+        }
+
+        &-remover {
+            white-space: nowrap;
+        }
+    }
+
+    &__acoes {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: size(8);
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+    }
+
+    .field {
+        margin-bottom: size(16);
+    }
+}
