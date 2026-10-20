@@ -47,7 +47,10 @@ app.component('opportunity-resultado-cultbr-card', {
             estrutura: null,
             respostas: {},
             envioHabilitado: false,
+            dataPublicacao: null,
+            errosFormulario: {},
             isSending: false,
+            isSaving: false,
         };
     },
 
@@ -91,10 +94,7 @@ app.component('opportunity-resultado-cultbr-card', {
                     throw new Error(body?.data ?? this.translateMessage('erro_carregar'));
                 }
 
-                this.estado = body.estado;
-                this.estrutura = body.estrutura;
-                this.respostas = body.respostas ?? {};
-                this.envioHabilitado = Boolean(body.envioHabilitado);
+                this.aplicarEstado(body);
                 this.visivel = true;
                 this.$nextTick(() => this.estenderTrilhaDoStepper());
             } catch (error) {
@@ -103,6 +103,43 @@ app.component('opportunity-resultado-cultbr-card', {
                 this.hasError = true;
             } finally {
                 this.isLoading = false;
+            }
+        },
+
+        aplicarEstado(body) {
+            this.estado = body.estado;
+            this.estrutura = body.estrutura;
+            this.respostas = body.respostas ?? {};
+            this.envioHabilitado = Boolean(body.envioHabilitado);
+            this.dataPublicacao = body.dataPublicacao ?? null;
+        },
+
+        async salvarRespostas(valores) {
+            if (this.isSaving) {
+                return;
+            }
+
+            this.isSaving = true;
+
+            try {
+                const url = this.api.createUrl('resultadoFormulario', {});
+                const response = await this.api.POST(url, { opportunityId: this.entity.id, respostas: valores });
+                const body = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    this.errosFormulario = body?.data?.respostas ?? {};
+                    const motivo = body?.data?.message ?? (typeof body?.data === 'string' ? body.data : null);
+                    this.messages.error(motivo ?? this.translateMessage('erro_salvar'));
+                    return;
+                }
+
+                this.errosFormulario = {};
+                this.aplicarEstado(body);
+                this.messages.success(this.translateMessage('salvo'));
+            } catch (error) {
+                this.messages.error(this.translateMessage('erro_salvar'));
+            } finally {
+                this.isSaving = false;
             }
         },
 

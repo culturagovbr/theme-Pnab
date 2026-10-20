@@ -12,6 +12,7 @@ $this->import('
     mc-alert
     mc-icon
     mc-loading
+    opportunity-resultado-formulario
 ');
 ?>
 <div v-if="visivel" class="mc-stepper-vertical-wrapper resultado-cultbr-card" :class="{'resultado-cultbr-card--travado': travado}">
@@ -50,7 +51,15 @@ $this->import('
             </main>
 
             <main v-if="!travado && expanded" class="resultado-cultbr-card__body">
-                <p class="resultado-cultbr-card__nota">{{ translateMessage('formulario_em_breve') }}</p>
+                <opportunity-resultado-formulario
+                    :entity="entity"
+                    :estrutura="estrutura"
+                    :respostas="respostas"
+                    :erros="errosFormulario"
+                    :data-publicacao="dataPublicacao"
+                    :salvando="isSaving"
+                    @salvar="salvarRespostas">
+                </opportunity-resultado-formulario>
 
                 <div class="resultado-cultbr-card__acoes">
                     <button class="button button--primary button--md" :disabled="!envioHabilitado || isSending" @click="enviar">

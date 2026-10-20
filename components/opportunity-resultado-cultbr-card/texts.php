@@ -16,6 +16,7 @@ return [
     'envio_aceito' => i::__('Envio do resultado agendado.'),
     'erro_carregar' => i::__('Não foi possível carregar o formulário de resultado.'),
     'erro_enviar' => i::__('Não foi possível enviar o resultado.'),
+    'salvo' => i::__('Formulário salvo.'),
+    'erro_salvar' => i::__('Não foi possível salvar o formulário.'),
     'tentar_novamente' => i::__('Tentar novamente'),
-    'formulario_em_breve' => i::__('O preenchimento do formulário estará disponível em breve.'),
 ];
