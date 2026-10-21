@@ -55,11 +55,11 @@ $this->import('
                             <?php $this->info('editais-oportunidades -> configuracoes -> limite-inscricoes') ?>
                         </template>
                     </entity-field> -->
-            <!-- <entity-field :entity="phase" prop="registrationLimitPerOwner" :min="0"  class="field__limits">
-                        <template #info>
-                            <?php $this->info('editais-oportunidades -> configuracoes -> limite-inscritos-por-agente') ?>
-                        </template>
-                    </entity-field> -->
+            <entity-field :entity="phase" prop="registrationLimitPerOwner" :min="0" class="field__limits">
+                <template #info>
+                    <?php $this->info('editais-oportunidades -> configuracoes -> limite-inscritos-por-agente') ?>
+                </template>
+            </entity-field>
         </div>
         <?php $this->applyTemplateHook('opportunity-data-collection-config', 'end') ?>
     </div>
