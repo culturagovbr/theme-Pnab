@@ -243,7 +243,7 @@ app.component('opportunity-beneficiarios-grade', {
             }
 
             const celula = evento.currentTarget.closest('td');
-            this.$nextTick(() => celula?.querySelector('input, select')?.focus());
+            this.$nextTick(() => celula?.querySelector('input')?.focus());
         },
 
         encerrarEdicao() {
@@ -254,7 +254,7 @@ app.component('opportunity-beneficiarios-grade', {
         confirmarCelula(entity, coluna, evento) {
             if (coluna.tipo === 'data') {
                 this.definirData(entity, coluna, evento.target.value);
-            } else if (coluna.tipo !== 'moeda' && (coluna.tipo === 'selecao' || !coluna.opcoes)) {
+            } else if (coluna.tipo !== 'moeda' && coluna.tipo !== 'selecao' && !coluna.opcoes) {
                 this.definirCelula(entity, coluna, evento.target.value);
             }
 
@@ -342,6 +342,14 @@ app.component('opportunity-beneficiarios-grade', {
                 style: 'currency',
                 currency: $MAPAS.config.currency,
             }).format(numero);
+        },
+
+        /** O mc-select devolve {text, value}; vazio limpa a célula. */
+        definirSelecaoUnica(entity, coluna, opcao) {
+            this.definirCelula(entity, coluna, opcao?.value ?? '');
+            clearTimeout(this.timeouts[entity.id]);
+            this.salvarLinha(entity.id);
+            this.encerrarEdicao();
         },
 
         /** O multiselect indexa pelo rótulo, e vírgula no valor quebraria a lista do contrato. */

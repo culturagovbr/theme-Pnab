@@ -4,6 +4,7 @@
  */
 
 $this->import('
+    mc-select
     entity-table
     mc-alert
     mc-currency-input
@@ -66,10 +67,10 @@ $this->import('
 
             <div v-else-if="editandoCelula(entity, coluna)" class="field beneficiarios-grade__campo" :class="{ 'beneficiarios-grade__campo--pendente': celulaPendente(entity, coluna) }">
                 <div class="field__input">
-                    <select v-if="coluna.tipo === 'selecao'" class="beneficiarios-grade__selecao" :value="valorCru(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
-                        <option value="">—</option>
+                    <mc-select v-if="coluna.tipo === 'selecao'" class="beneficiarios-grade__selecao" :default-value="valorCru(entity, coluna)" :placeholder="coluna.label" @change-option="definirSelecaoUnica(entity, coluna, $event)">
+                        <option value="">&mdash;</option>
                         <option v-for="opcao in coluna.opcoes" :key="opcao" :value="opcao">{{ opcao }}</option>
-                    </select>
+                    </mc-select>
                     <mc-multiselect v-else-if="coluna.opcoes" class="beneficiarios-grade__opcoes" :model="selecaoAtiva" :items="itensDaColuna(coluna)" :placeholder="coluna.label" @selected="definirSelecao(entity, coluna)" @removed="definirSelecao(entity, coluna)" hide-button></mc-multiselect>
                     <mc-currency-input v-else-if="coluna.tipo === 'moeda'" :model-value="valorCru(entity, coluna)" @update:model-value="definirCelula(entity, coluna, $event)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)"></mc-currency-input>
                     <input v-else-if="coluna.tipo === 'numero'" type="number" min="0" :value="valorCru(entity, coluna)" @input="definirCelula(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
