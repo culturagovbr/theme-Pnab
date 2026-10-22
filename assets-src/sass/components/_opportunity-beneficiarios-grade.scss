@@ -90,8 +90,9 @@
             letter-spacing: size(0.4);
             text-transform: uppercase;
             color: var(--mc-low-500);
-            background: #e6eaf5;
-            border-bottom: size(2) solid var(--mc-low-500);
+            background: var(--mc-gray-100);
+            border-bottom: var(--mc-border-hairline) var(--mc-gray-500);
+            border-right: var(--mc-border-hairline) var(--mc-gray-300);
 
             &.is-obrigatoria::after {
                 content: ' *';
@@ -104,20 +105,18 @@
             padding: size(4) size(10);
             vertical-align: middle;
             background: var(--mc-white);
-            border-bottom: size(1) solid var(--mc-gray-300);
-        }
-
-        tbody th {
-            background: #f2f4fa;
+            border-bottom: var(--mc-border-hairline) var(--mc-gray-500);
+            border-right: var(--mc-border-hairline) var(--mc-gray-300);
         }
 
         // Fundo da coluna fixa precisa ser opaco: com alfa, as colunas passam por baixo ao rolar.
+        tbody tr:hover th,
         tbody tr:hover td {
-            background: #f7f8fc;
+            background: var(--mc-gray-100);
         }
 
-        tbody tr:hover th {
-            background: #e6eaf5;
+        .beneficiarios-grade__fixa {
+            border-right: size(2) solid var(--mc-gray-500);
         }
 
         td.is-numero { min-width: size(88); }
@@ -132,7 +131,6 @@
         position: sticky;
         left: 0;
         z-index: 1;
-        border-right: size(2) solid var(--mc-low-500);
     }
 
     &__linha {
