@@ -7,7 +7,6 @@ use AldirBlanc\Services\UserAccessService;
 use AldirBlanc\Services\FederativeEntityService;
 use AldirBlanc\Services\InMincQuotasService;
 use AldirBlanc\Services\OpportunityService;
-use AldirBlanc\Services\ResultadoService;
 use MapasCulturais\i;
 use MapasCulturais\App;
 use Pnab\Enum\OtherValues;
@@ -298,71 +297,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 ['opportunity' => $this],
                 $start_string
             );
-        });
-
-        /**
-         * Resultado já enviado e a lista publicada mudou (status alterado, inscrição removida pela
-         * abertura de recurso, sync de fase): reenvia como retificado, coalescendo as alterações.
-         * skipSync NÃO é descartado: a remoção causada pelo recurso chega exatamente com ele ligado.
-         */
-        $resyncResultadoSeFaseFinalEnviada = function (Opportunity $fase) use ($app): ?ResultadoService {
-            $service = new ResultadoService();
-
-            return $service->isEligibleForResultResync($fase) ? $service : null;
-        };
-
-        $agendaResyncDeResultado = function () use ($app, $resyncResultadoSeFaseFinalEnviada) {
-            /** @var \MapasCulturais\Entities\Registration $this */
-            $faseId = (int) ($this->opportunity->id ?? 0);
-            if ($faseId < 1) {
-                return;
-            }
-
-            try {
-                $fase = $app->repo('Opportunity')->find($faseId);
-                if ($fase && ($service = $resyncResultadoSeFaseFinalEnviada($fase))) {
-                    $service->scheduleResultadoResync($fase);
-                }
-            } catch (\Throwable $e) {
-                $app->log->warning("Reenvio de resultado: falha ao agendar para a fase {$faseId}: " . $e->getMessage());
-            }
-        };
-
-        $app->hook('entity(Registration).status(<<*>>)', $agendaResyncDeResultado);
-        $app->hook('entity(Registration).update:finish', $agendaResyncDeResultado);
-
-        /** remove:after é postRemove do Doctrine, dentro do flush: aqui só se marca; o enfileiramento sai depois. */
-        $app->hook('entity(Registration).remove:after', function () use ($app, $resyncResultadoSeFaseFinalEnviada) {
-            /** @var \MapasCulturais\Entities\Registration $this */
-            $faseId = (int) ($this->opportunity->id ?? 0);
-            if ($faseId < 1) {
-                return;
-            }
-
-            try {
-                $fase = $app->repo('Opportunity')->find($faseId);
-                if ($fase && ($service = $resyncResultadoSeFaseFinalEnviada($fase))) {
-                    $service->deferResultadoResync($fase);
-                }
-            } catch (\Throwable $e) {
-                $app->log->warning("Reenvio de resultado: falha ao adiar para a fase {$faseId}: " . $e->getMessage());
-            }
-        });
-
-        /** Publicar a fase final é o ato que oficializa o resultado; daqui ele segue para o CultBR. */
-        $app->hook('entity(Opportunity).publishRegistrations:after', function () use ($app) {
-            // O loop de publicação roda em->clear() antes deste hook: recarregar pelo id antes de consultar.
-            $fase = $app->repo('Opportunity')->find((int) $this->id);
-            if (!$fase) {
-                return;
-            }
-
-            $service = new ResultadoService();
-            if (!$service->isEligibleForResultSync($fase)) {
-                return;
-            }
-
-            $service->enqueueResultadoSync($fase->firstPhase);
         });
 
         /**
