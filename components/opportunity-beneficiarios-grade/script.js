@@ -352,6 +352,8 @@ app.component('opportunity-beneficiarios-grade', {
 
                 if (!response.ok) {
                     this.messages.error(body?.data?.message ?? body?.data ?? this.translateMessage('erro_salvar'));
+                    // A célula foi pintada antes da resposta; recusada, a tela não pode seguir mostrando o que não gravou.
+                    await this.carregarCelulas([registrationId]);
                     return;
                 }
 
