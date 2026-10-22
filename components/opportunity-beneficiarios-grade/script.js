@@ -1,4 +1,22 @@
 /** Grade dos beneficiários do resultado: a tabela da aplicação lista as contempladas e cada célula de execução é editável. */
+/** Largura de cada coluna, pelo tamanho do que ela carrega: data cabe em pouco, vocabulário não. */
+const LARGURA_DA_COLUNA = {
+    number: '160px',
+    identificador_edital: '220px',
+    cpf_responsavel_execucao: '150px',
+    cnpj_responsavel_execucao: '170px',
+    valor_recebido_pnab: '150px',
+    data_recebimento_recurso: '120px',
+    data_inicio_execucao: '120px',
+    data_termino_execucao: '120px',
+    recebeu_recursos_outras_fontes: '280px',
+    valor_recursos_outras_fontes: '150px',
+    qtd_pessoas_remuneradas_exec: '110px',
+    cpfs_remunerados: '200px',
+    formato_execucao: '190px',
+    cep_local_execucao: '120px',
+};
+
 app.component('opportunity-beneficiarios-grade', {
     template: $TEMPLATES['opportunity-beneficiarios-grade'],
 
@@ -68,12 +86,13 @@ app.component('opportunity-beneficiarios-grade', {
         },
 
         headers() {
-            const inscricao = { slug: 'number', text: this.translateMessage('inscricao'), value: 'number', visible: true, sticky: true };
+            const inscricao = { slug: 'number', text: this.translateMessage('inscricao'), value: 'number', visible: true, sticky: true, width: LARGURA_DA_COLUNA.number };
             const demais = this.colunasVisiveis.map((coluna) => ({
                 slug: coluna.chave,
                 text: this.rotuloDaColuna(coluna),
                 value: coluna.chave,
                 visible: true,
+                width: LARGURA_DA_COLUNA[coluna.chave],
             }));
 
             return [inscricao, ...demais];

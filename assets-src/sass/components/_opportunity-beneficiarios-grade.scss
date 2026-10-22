@@ -18,6 +18,12 @@
 
 // Grade de beneficiários do resultado: a tabela é a da aplicação, daqui saem só as células editáveis.
 .beneficiarios-grade {
+    // O entity-table impõe 150px de mínimo a toda coluna; aqui cada uma declara a sua largura.
+    .entity-table__table > thead > tr > th,
+    .entity-table__table > tbody > tr > td {
+        min-width: 0;
+    }
+
     // O cabeçalho do design system é generoso demais para uma barra de dois filtros.
     .entity-table__header {
         padding: size(16) size(16) size(12);
