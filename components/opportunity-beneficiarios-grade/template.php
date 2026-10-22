@@ -79,10 +79,10 @@ $this->import('
                     <div v-if="total > limit" class="beneficiarios-grade__rodape">
                         <span class="beneficiarios-grade__intervalo">{{ intervalo }}</span>
                         <div class="beneficiarios-grade__botoes">
-                            <button class="button button--text" :disabled="skip === 0" @click="paginar(skip - limit)">
+                            <button class="button button--primary-outline" :disabled="skip === 0" @click="paginar(skip - limit)">
                                 {{ translateMessage('anterior') }}
                             </button>
-                            <button class="button button--text" :disabled="!temProxima" @click="paginar(skip + limit)">
+                            <button class="button button--primary-outline" :disabled="!temProxima" @click="paginar(skip + limit)">
                                 {{ translateMessage('proxima') }}
                             </button>
                         </div>

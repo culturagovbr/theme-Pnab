@@ -225,6 +225,11 @@
     &__botoes {
         display: flex;
         gap: size(8);
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
     }
 
     // Overlay no padrão do mc-teleport-multiple: a grade ocupa a janela e rola por dentro.
