@@ -238,12 +238,12 @@ app.component('opportunity-beneficiarios-grade', {
             this.editando = { id: entity.id, chave: coluna.chave };
 
             // O multiselect edita o próprio array que recebe, então ele precisa ser estável entre renders.
-            if (coluna.opcoes) {
+            if (coluna.opcoes && coluna.tipo !== 'selecao') {
                 this.selecaoAtiva = this.selecionadas(entity, coluna);
             }
 
             const celula = evento.currentTarget.closest('td');
-            this.$nextTick(() => celula?.querySelector('input')?.focus());
+            this.$nextTick(() => celula?.querySelector('input, select')?.focus());
         },
 
         encerrarEdicao() {
@@ -254,7 +254,7 @@ app.component('opportunity-beneficiarios-grade', {
         confirmarCelula(entity, coluna, evento) {
             if (coluna.tipo === 'data') {
                 this.definirData(entity, coluna, evento.target.value);
-            } else if (coluna.tipo !== 'moeda' && !coluna.opcoes) {
+            } else if (coluna.tipo !== 'moeda' && (coluna.tipo === 'selecao' || !coluna.opcoes)) {
                 this.definirCelula(entity, coluna, evento.target.value);
             }
 
