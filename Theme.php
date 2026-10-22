@@ -929,6 +929,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $iconset['evaluation'] = 'material-symbols:reviews';
             $iconset['training'] = 'mdi:school';
             $iconset['validation'] = 'material-symbols:thumb-up';
+            $iconset['fullscreen'] = 'material-symbols:fullscreen';
+            $iconset['fullscreen-exit'] = 'material-symbols:fullscreen-exit';
         });
 
         /**
