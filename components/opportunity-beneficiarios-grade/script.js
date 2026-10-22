@@ -243,7 +243,15 @@ app.component('opportunity-beneficiarios-grade', {
             }
 
             const celula = evento.currentTarget.closest('td');
-            this.$nextTick(() => celula?.querySelector('input')?.focus());
+            this.$nextTick(() => {
+                // O mc-select abre no clique do próprio gatilho: sem isto, editar a célula custaria dois cliques.
+                if (coluna.tipo === 'selecao') {
+                    celula?.querySelector('.mc-select__selected-option')?.click();
+                    return;
+                }
+
+                celula?.querySelector('input')?.focus();
+            });
         },
 
         encerrarEdicao() {
