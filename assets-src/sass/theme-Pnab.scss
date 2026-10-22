@@ -82,6 +82,7 @@ $lightness-700: 25%;
 // Brand colors
 $primary-500: #0a72e8 !default;
 $secondary-500: #9eca80 !default;
+$cultbr-500: #6d4ca3 !default;
 
 // Primary colors
 $primary-light: #D7E9FF !default;
@@ -246,6 +247,7 @@ $gray-700: #19191c !default;
     --mc-home-header-gradient: rgba($primary-500, 0);
     --mc-home-feature: #{$home-feature};
     --mc-home-register: #{$home-register};
+    --mc-cultbr-500: #{$cultbr-500};
 
     /* Compatibilidade com utilitários (ex.: text-[--gray-500], font-medium) */
     --font-sans: #{$font-family-base};

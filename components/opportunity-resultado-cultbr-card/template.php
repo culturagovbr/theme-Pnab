@@ -15,13 +15,10 @@ $this->import('
     opportunity-resultado-formulario
 ');
 ?>
-<div v-if="visivel || isLoading" class="mc-stepper-vertical-wrapper resultado-cultbr-card" :class="{'resultado-cultbr-card--travado': travado}">
+<div v-if="visivel || isLoading" class="resultado-cultbr-card" :class="{'resultado-cultbr-card--travado': travado}">
     <!-- Esqueleto durante a consulta à Conecta: o card não aparece "do nada". -->
     <div v-if="isLoading" class="resultado-cultbr-card__item resultado-cultbr-card__item--loading">
-        <span class="resultado-cultbr-card__marcador"><mc-icon name="exchange"></mc-icon></span>
-        <section class="resultado-cultbr-card__box resultado-cultbr-card__box--loading">
-            <mc-loading :condition="true"></mc-loading>
-        </section>
+        <mc-loading :condition="true"></mc-loading>
     </div>
 
     <template v-if="!isLoading && hasError">
@@ -32,41 +29,24 @@ $this->import('
     </template>
 
     <div v-if="!isLoading && !hasError" class="resultado-cultbr-card__item">
-        <span class="resultado-cultbr-card__marcador"><mc-icon name="exchange"></mc-icon></span>
+        <!-- Aguardando publicação: ainda sem formulário; o aviso carrega o status. -->
+        <div v-if="travado" class="resultado-cultbr-card__aviso">
+            <span v-if="estadoLabel" class="resultado-cultbr-card__chip" :class="'resultado-cultbr-card__chip--' + estado">{{ estadoLabel }}</span>
+            <p class="resultado-cultbr-card__nota">{{ translateMessage('travado_aviso') }}</p>
+        </div>
 
-        <section class="resultado-cultbr-card__box">
-            <header class="resultado-cultbr-card__header">
-                <div class="resultado-cultbr-card__info">
-                    <h3 class="resultado-cultbr-card__titulo">{{ translateMessage('titulo') }}</h3>
-                </div>
-
-                <div class="resultado-cultbr-card__estado">
-                    <span class="resultado-cultbr-card__chip" :class="'resultado-cultbr-card__chip--' + estado">{{ estadoLabel }}</span>
-
-                    <a v-if="!travado" class="resultado-cultbr-card__expandir" @click="toggle">
-                        <template v-if="!expanded">{{ translateMessage('expandir') }}</template>
-                        <template v-if="expanded">{{ translateMessage('diminuir') }}</template>
-                        <mc-icon :name="expanded ? 'arrowPoint-up' : 'arrowPoint-down'"></mc-icon>
-                    </a>
-                </div>
-            </header>
-
-            <main v-if="travado" class="resultado-cultbr-card__body">
-                <p class="resultado-cultbr-card__nota">{{ translateMessage('travado_aviso') }}</p>
-            </main>
-
-            <main v-if="!travado && expanded" class="resultado-cultbr-card__body">
-                <opportunity-resultado-formulario
-                    :estrutura="estrutura"
-                    :respostas="respostas"
-                    :respostas-automaticas="respostasAutomaticas"
-                    :questoes-sem-fonte="questoesSemFonte"
-                    :erros="errosFormulario"
-                    :salvando="isSaving"
-                    :salvo-em="salvoEm"
-                    @salvar="salvarRespostas">
-                </opportunity-resultado-formulario>
-            </main>
-        </section>
+        <opportunity-resultado-formulario
+            v-if="!travado"
+            :estado="estado"
+            :estado-label="estadoLabel"
+            :estrutura="estrutura"
+            :respostas="respostas"
+            :respostas-automaticas="respostasAutomaticas"
+            :questoes-sem-fonte="questoesSemFonte"
+            :erros="errosFormulario"
+            :salvando="isSaving"
+            :salvo-em="salvoEm"
+            @salvar="salvarRespostas">
+        </opportunity-resultado-formulario>
     </div>
 </div>

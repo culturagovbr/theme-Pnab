@@ -35,12 +35,16 @@ app.component('opportunity-resultado-cultbr-card', {
             type: Entity,
             required: true,
         },
+        // Estado já carregado pela aba: evita refazer o GET que ela já fez para decidir se aparece.
+        preloaded: {
+            type: Object,
+            default: null,
+        },
     },
 
     data() {
         return {
             visivel: false,
-            expanded: false,
             isLoading: true,
             hasError: false,
             estado: null,
@@ -58,7 +62,14 @@ app.component('opportunity-resultado-cultbr-card', {
 
     created() {
         this.api = new API('aldirblanc', 'resultado-formulario', { cacheMode: 'no-store' });
-        this.load();
+
+        if (this.preloaded) {
+            this.aplicarEstado(this.preloaded);
+            this.visivel = true;
+            this.isLoading = false;
+        } else {
+            this.load();
+        }
     },
 
     computed: {
@@ -98,7 +109,6 @@ app.component('opportunity-resultado-cultbr-card', {
 
                 this.aplicarEstado(body);
                 this.visivel = true;
-                this.$nextTick(() => this.estenderTrilhaDoStepper());
             } catch (error) {
                 // Indisponibilidade não é "sem formulário": o card aparece com o erro e o tentar de novo.
                 this.visivel = true;
@@ -153,21 +163,6 @@ app.component('opportunity-resultado-cultbr-card', {
                     this.salvarRespostas(pendente);
                 }
             }
-        },
-
-        /** O stepper apaga a trilha na última fase; com o card presente, ela segue até ele. */
-        estenderTrilhaDoStepper() {
-            this.$el?.parentElement
-                ?.querySelector('.opportunity-phases-config')
-                ?.classList.add('com-resultado-cultbr');
-        },
-
-        toggle() {
-            if (this.travado) {
-                return;
-            }
-
-            this.expanded = !this.expanded;
         },
     },
 });
