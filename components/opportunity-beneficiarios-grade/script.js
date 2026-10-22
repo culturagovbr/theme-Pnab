@@ -55,7 +55,7 @@ app.component('opportunity-beneficiarios-grade', {
         },
 
         select() {
-            return 'id,number,proponentType,range,status';
+            return 'id,number,proponentType,range,status,singleUrl';
         },
 
         /** CPF e CNPJ ocupam a mesma coluna na tela: nunca vêm preenchidos juntos. */

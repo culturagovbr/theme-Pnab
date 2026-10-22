@@ -55,7 +55,7 @@ $this->import('
         <template #number="{entity}">
             <span class="beneficiarios-grade__identificacao">
                 <span class="beneficiarios-grade__marca" :class="{ 'beneficiarios-grade__marca--completa': !pendenciasDe(entity).length }" :title="situacaoDe(entity)"></span>
-                <span class="beneficiarios-grade__numero">{{ entity.number }}</span>
+                <a class="beneficiarios-grade__numero" :href="entity.singleUrl" target="_blank" rel="noopener">{{ entity.number }}</a>
             </span>
             <span class="beneficiarios-grade__estado">{{ estadoDe(entity) }}</span>
         </template>
