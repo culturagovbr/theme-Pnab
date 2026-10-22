@@ -18,6 +18,8 @@ app.component('opportunity-resultado-cultbr-tab', {
     },
 
     created() {
+        // Guardado antes do onMounted das abas principais, que sobrescreve o hash ao não achar esta aba ainda.
+        this.hashInicial = window.location.hash;
         this.api = new API('aldirblanc', 'resultado-formulario', { cacheMode: 'no-store' });
         this.verificar();
     },
@@ -45,6 +47,15 @@ app.component('opportunity-resultado-cultbr-tab', {
                 // Indisponibilidade não é "sem formulário": a aba aparece e o card mostra o erro e o tentar de novo.
                 this.estadoInicial = null;
                 this.visivel = true;
+            }
+
+            this.restaurarAbaPeloHash();
+        },
+
+        /** A aba se registra só depois do GET; re-setar o hash dispara o hashchange que agora a encontra. */
+        restaurarAbaPeloHash() {
+            if (this.visivel && this.hashInicial === '#resultado-cultbr' && window.location.hash !== '#resultado-cultbr') {
+                this.$nextTick(() => { window.location.hash = 'resultado-cultbr'; });
             }
         },
     },
