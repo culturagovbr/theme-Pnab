@@ -118,6 +118,13 @@
         gap: size(12);
     }
 
+    &__envio {
+        display: flex;
+        justify-content: flex-end;
+        gap: size(12);
+        margin-top: size(24);
+    }
+
     &__titulo {
         margin: 0;
         font-size: size(24);

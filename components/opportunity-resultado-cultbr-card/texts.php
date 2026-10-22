@@ -14,4 +14,9 @@ return [
     'erro_carregar' => i::__('Não foi possível carregar o formulário de resultado.'),
     'erro_salvar' => i::__('Não foi possível salvar o formulário.'),
     'tentar_novamente' => i::__('Tentar novamente'),
+    'enviar' => i::__('Enviar para o CultBR'),
+    'retificar' => i::__('Retificar no CultBR'),
+    'enviando' => i::__('Enviando...'),
+    'envio_agendado' => i::__('Envio agendado. O desfecho aparece na aba Logs CultBr.'),
+    'erro_enviar' => i::__('Não foi possível enviar o resultado.'),
 ];

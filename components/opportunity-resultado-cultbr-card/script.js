@@ -55,6 +55,7 @@ app.component('opportunity-resultado-cultbr-card', {
             envioHabilitado: false,
             errosFormulario: {},
             isSaving: false,
+            isEnviando: false,
             salvoEm: null,
             pendingSave: null,
         };
@@ -125,6 +126,38 @@ app.component('opportunity-resultado-cultbr-card', {
             this.respostasAutomaticas = body.respostasAutomaticas ?? {};
             this.questoesSemFonte = body.questoesSemFonte ?? [];
             this.envioHabilitado = Boolean(body.envioHabilitado);
+        },
+
+        /**
+         * Enviar e Retificar são a mesma chamada: publicado é imutável, e o retificado é um
+         * resultado novo que o servidor monta sozinho quando já existe um. O envio é enfileirado
+         * porque edital grande leva minutos para montar o corpo.
+         */
+        async enviar() {
+            if (this.isEnviando) {
+                return;
+            }
+
+            this.isEnviando = true;
+
+            try {
+                const url = this.api.createUrl('resultadoEnviar', {});
+                const response = await this.api.POST(url, { opportunityId: this.entity.id });
+                const body = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    const motivo = typeof body?.data === 'string' ? body.data : null;
+                    this.messages.error(motivo ?? this.translateMessage('erro_enviar'));
+                    return;
+                }
+
+                this.messages.success(this.translateMessage('envio_agendado'));
+                await this.load();
+            } catch (error) {
+                this.messages.error(this.translateMessage('erro_enviar'));
+            } finally {
+                this.isEnviando = false;
+            }
         },
 
         async salvarRespostas(valores) {
