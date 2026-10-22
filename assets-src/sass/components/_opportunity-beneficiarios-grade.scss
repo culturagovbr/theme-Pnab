@@ -1,0 +1,267 @@
+// Tela da grade de beneficiários do resultado (rota beneficiarios-do-resultado).
+// Mesma moldura da lista de inscrições: a grade usa a largura da janela, não a do cabeçalho.
+.opportunity-beneficiarios__container {
+    padding: size(40) size(16);
+}
+
+.beneficiarios-grade {
+    max-width: none;
+
+    // O conteúdo do mc-card é flex em linha; aqui as seções se empilham.
+    .mc-card__content {
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0;
+    }
+
+    &__cabecalho {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: size(16);
+        width: 100%;
+    }
+
+    &__alternar {
+        flex: 0 0 auto;
+        padding: size(8) size(12);
+        font-size: size(20);
+        line-height: 1;
+    }
+
+    &__identidade {
+        display: flex;
+        flex-direction: column;
+        gap: size(2);
+        min-width: 0;
+    }
+
+    &__titulo {
+        font-size: size(18);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    // Dado que se repete em toda linha vive no cabeçalho, não numa coluna da tabela.
+    &__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: size(4) size(10);
+        margin: 0;
+        font-size: size(13);
+        font-weight: 400;
+        color: var(--mc-gray-500);
+
+        span + span::before {
+            content: '·';
+            margin-right: size(10);
+        }
+    }
+
+    &__edital {
+        color: var(--mc-gray-700);
+    }
+
+    &__descricao,
+    &__vazio {
+        margin: 0 0 size(16);
+        font-size: size(13);
+        color: var(--mc-gray-500);
+    }
+
+    &__rolagem {
+        overflow: auto;
+        max-width: 100%;
+    }
+
+    &__tabela {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: auto;
+        min-width: 100%;
+
+        thead th {
+            padding: size(10);
+            text-align: left;
+            vertical-align: bottom;
+            white-space: nowrap;
+            font-size: size(11);
+            font-weight: 700;
+            letter-spacing: size(0.4);
+            text-transform: uppercase;
+            color: var(--mc-low-500);
+            background: #e6eaf5;
+            border-bottom: size(2) solid var(--mc-low-500);
+
+            &.is-obrigatoria::after {
+                content: ' *';
+                color: var(--mc-warning-500);
+            }
+        }
+
+        tbody th,
+        tbody td {
+            padding: size(4) size(10);
+            vertical-align: middle;
+            background: var(--mc-white);
+            border-bottom: size(1) solid var(--mc-gray-300);
+        }
+
+        tbody th {
+            background: #f2f4fa;
+        }
+
+        // Fundo da coluna fixa precisa ser opaco: com alfa, as colunas passam por baixo ao rolar.
+        tbody tr:hover td {
+            background: #f7f8fc;
+        }
+
+        tbody tr:hover th {
+            background: #e6eaf5;
+        }
+
+        td.is-numero { min-width: size(88); }
+        td.is-moeda { min-width: size(112); }
+        td.is-data { min-width: size(148); }
+        td.is-lista { min-width: size(200); }
+        td.is-texto { min-width: size(168); }
+    }
+
+    // A identificação da linha acompanha a rolagem horizontal; a borda a separa das colunas de dado.
+    &__fixa {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        border-right: size(2) solid var(--mc-low-500);
+    }
+
+    &__linha {
+        text-transform: none;
+        white-space: nowrap;
+        padding-right: size(20);
+    }
+
+    &__identificacao {
+        display: flex;
+        align-items: center;
+        gap: size(6);
+    }
+
+    &__marca {
+        flex: 0 0 auto;
+        width: size(6);
+        height: size(6);
+        border-radius: 50%;
+        background: var(--mc-warning-500);
+
+        &--completa {
+            background: var(--mc-success-500);
+        }
+    }
+
+    &__numero {
+        font-size: size(14);
+        font-weight: 700;
+        color: var(--mc-low-500);
+    }
+
+    &__estado {
+        display: block;
+        min-height: size(14);
+        padding-left: size(12);
+        font-size: size(11);
+        font-weight: 400;
+        color: var(--mc-gray-500);
+    }
+
+    &__automatico {
+        font-size: size(13);
+        white-space: nowrap;
+        color: var(--mc-gray-700);
+    }
+
+    // A altura e a tipografia do campo vêm de `.field input` do tema; a moldura só aparece ao usar a célula.
+    &__campo {
+        width: 100%;
+
+        input {
+            width: 100%;
+            min-width: 0;
+            // O campo do formulário tem 51px de altura; numa grade de 50 linhas isso é alto demais.
+            padding: size(6) size(10);
+            background: transparent;
+            border-color: transparent;
+            border-bottom-color: var(--mc-gray-300);
+            transition: border-color 120ms ease, background-color 120ms ease;
+
+            &:hover {
+                border-color: var(--mc-gray-300);
+            }
+
+            &:focus {
+                background: var(--mc-white);
+                border-color: var(--mc-primary-500);
+            }
+        }
+
+        // Só a linha de baixo muda: pintar a célula inteira polui a leitura de uma linha com 12 colunas.
+        &--pendente input {
+            border-bottom-color: var(--mc-warning-500);
+        }
+    }
+
+    &__rodape {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: size(8) size(24);
+        margin-top: size(16);
+    }
+
+    &__intervalo {
+        font-size: size(13);
+        color: var(--mc-gray-500);
+    }
+
+    &__botoes {
+        display: flex;
+        gap: size(8);
+    }
+
+    // Overlay no padrão do mc-teleport-multiple: a grade ocupa a janela e rola por dentro.
+    &--tela-cheia {
+        position: fixed;
+        inset: 0;
+        z-index: 2147482000;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        max-width: none;
+        border-radius: 0;
+
+        .mc-card__content {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .beneficiarios-grade__descricao {
+            display: none;
+        }
+
+        .beneficiarios-grade__rolagem {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .beneficiarios-grade__tabela thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+
+            &.beneficiarios-grade__fixa {
+                z-index: 3;
+            }
+        }
+    }
+}
