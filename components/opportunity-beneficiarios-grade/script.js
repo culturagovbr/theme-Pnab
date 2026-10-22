@@ -26,6 +26,8 @@ app.component('opportunity-beneficiarios-grade', {
             selectedRanges: [],
             celulasPorId: {},
             pendenciasPorId: {},
+            editando: null,
+            selecaoAtiva: [],
             editadas: {},
             salvando: {},
             salvoEm: {},
@@ -220,6 +222,62 @@ app.component('opportunity-beneficiarios-grade', {
             return this.pendenciasPorId[entity.id] ?? [];
         },
 
+        editandoCelula(entity, coluna) {
+            return this.editando?.id === entity.id && this.editando?.chave === coluna.chave;
+        },
+
+        /**
+         * A célula vive como texto e só vira campo ao ser usada: com dez colunas editáveis e rolagem
+         * infinita, manter um input por célula enche a página de controles que ninguém está usando.
+         */
+        abrirEdicao(entity, coluna, evento) {
+            if (this.editandoCelula(entity, coluna)) {
+                return;
+            }
+
+            this.editando = { id: entity.id, chave: coluna.chave };
+
+            // O multiselect edita o próprio array que recebe, então ele precisa ser estável entre renders.
+            if (coluna.opcoes) {
+                this.selecaoAtiva = this.selecionadas(entity, coluna);
+            }
+
+            const celula = evento.currentTarget.closest('td');
+            this.$nextTick(() => celula?.querySelector('input')?.focus());
+        },
+
+        encerrarEdicao() {
+            this.editando = null;
+        },
+
+        /** Enter grava na hora: esperar o autosave de cada célula atrasa quem preenche a linha inteira. */
+        confirmarCelula(entity, coluna, evento) {
+            if (coluna.tipo === 'data') {
+                this.definirData(entity, coluna, evento.target.value);
+            } else if (coluna.tipo !== 'moeda' && !coluna.opcoes) {
+                this.definirCelula(entity, coluna, evento.target.value);
+            }
+
+            clearTimeout(this.timeouts[entity.id]);
+            this.salvarLinha(entity.id);
+            this.encerrarEdicao();
+        },
+
+        sairDaCelula(entity, coluna, evento) {
+            if (coluna.tipo === 'data') {
+                this.apagarData(entity, coluna, evento.target.value);
+            }
+
+            this.encerrarEdicao();
+        },
+
+        /** CPF e CNPJ dividem uma coluna só, e a cobrança do servidor vem no nome da dupla. */
+        celulaPendente(entity, coluna) {
+            const chave = coluna.chave === 'cpf_responsavel_execucao' ? 'responsavel_execucao' : coluna.chave;
+
+            return this.pendenciasDe(entity).includes(chave);
+        },
+
         valorAutomatico(entity, coluna) {
             if (coluna.chave !== 'cpf_responsavel_execucao') {
                 return this.valorExibido(entity, coluna);
@@ -263,9 +321,69 @@ app.component('opportunity-beneficiarios-grade', {
                 return '';
             }
 
+            if (coluna.tipo === 'moeda') {
+                return this.formatarMoeda(valor);
+            }
+
             const comMascara = (item) => this.mascarar(coluna.chave, item);
 
             return Array.isArray(valor) ? valor.map(comMascara).join(', ') : comMascara(valor);
+        },
+
+        /** O campo monetário da aplicação usa esta mesma moeda e locale; a leitura precisa casar com ele. */
+        formatarMoeda(valor) {
+            const numero = Number(String(valor).replace(',', '.'));
+
+            if (!isFinite(numero)) {
+                return valor;
+            }
+
+            return new Intl.NumberFormat($MAPAS.config.locale, {
+                style: 'currency',
+                currency: $MAPAS.config.currency,
+            }).format(numero);
+        },
+
+        /** O multiselect indexa pelo rótulo, e vírgula no valor quebraria a lista do contrato. */
+        itensDaColuna(coluna) {
+            return Object.fromEntries((coluna.opcoes ?? []).map((opcao) => [opcao.replace(/,/g, '\\,'), opcao]));
+        },
+
+        selecionadas(entity, coluna) {
+            const valor = this.valorCru(entity, coluna);
+
+            return (Array.isArray(valor) ? valor : [valor]).filter((item) => item !== '');
+        },
+
+        /** A opção exclusiva da coluna (negar outras fontes) não convive com as demais nem com um valor. */
+        definirSelecao(entity, coluna) {
+            const exclusiva = coluna.opcaoExclusiva;
+            const negou = exclusiva !== null && this.selecaoAtiva.includes(exclusiva);
+
+            if (negou && this.selecaoAtiva.length > 1) {
+                this.selecaoAtiva.splice(0, this.selecaoAtiva.length, exclusiva);
+            }
+
+            this.definirCelula(entity, coluna, this.selecaoAtiva.join(', '));
+
+            if (negou) {
+                this.zerarValorDeOutrasFontes(entity);
+            }
+        },
+
+        zerarValorDeOutrasFontes(entity) {
+            const valor = this.colunas.find((coluna) => coluna.chave === 'valor_recursos_outras_fontes');
+
+            if (valor) {
+                this.definirCelula(entity, valor, '');
+            }
+        },
+
+        /** O que vai para dentro do campo é o valor sem máscara; a formatação é da célula em repouso. */
+        valorCru(entity, coluna) {
+            const valor = this.celulasDe(entity)[coluna.chave]?.valor;
+
+            return valor === null || valor === undefined ? '' : valor;
         },
 
         /** Máscara é de leitura: o que o validador do CultBr recebe continua só com os dígitos. */
@@ -289,11 +407,20 @@ app.component('opportunity-beneficiarios-grade', {
                 : valor;
         },
 
-        /** O gestor digita com ou sem pontuação; o que fica gravado é sempre só o dígito. */
-        semMascara(chave, valor) {
-            const soDigitos = ['cpfs_remunerados', 'cep_local_execucao'].includes(chave);
+        /** O contrato pede o valor como string de duas casas ("15000.00"), e o campo monetário entrega número. */
+        paraOContrato(coluna, valor) {
+            if (coluna.tipo !== 'moeda' || valor === '' || valor === null || valor === undefined) {
+                return valor;
+            }
 
-            return soDigitos ? String(valor).replace(/\D/g, '') : valor;
+            const numero = Number(valor);
+
+            return isFinite(numero) ? numero.toFixed(2) : valor;
+        },
+
+        /** O CultBr recebe o CPF só com dígitos e o CEP pontuado, como no payload de referência. */
+        semMascara(chave, valor) {
+            return chave === 'cpfs_remunerados' ? String(valor).replace(/\D/g, '') : valor;
         },
 
         /** O contrato do CultBr pede dd/mm/aaaa; o campo de data da aplicação fala ISO. */
@@ -322,7 +449,7 @@ app.component('opportunity-beneficiarios-grade', {
         definirCelula(entity, coluna, valorBruto) {
             const valor = coluna.tipo === 'lista'
                 ? valorBruto.split(',').map((parte) => this.semMascara(coluna.chave, parte.trim())).filter((parte) => parte !== '')
-                : this.semMascara(coluna.chave, valorBruto);
+                : this.paraOContrato(coluna, this.semMascara(coluna.chave, valorBruto));
 
             const id = entity.id;
             this.celulasPorId[id] = { ...this.celulasDe(entity), [coluna.chave]: { valor: valor === '' ? null : valor, fonte: 'gestor' } };

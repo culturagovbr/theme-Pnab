@@ -111,6 +111,37 @@
 
     &__automatico {
         white-space: nowrap;
+
+        // A coluna que o sistema resolve não tem campo para pintar; o vazio cobrado ganha a marca aqui.
+        &--pendente {
+            display: inline-block;
+            padding: size(2) size(10);
+            border-radius: var(--mc-border-radius-xs);
+            background: rgba(#b04706, 0.1);
+            color: var(--mc-warning-500);
+            font-weight: 600;
+        }
+    }
+
+    // A célula em repouso: ocupa a mesma caixa do campo, para a linha não pular quando ele aparece.
+    &__valor {
+        display: block;
+        min-height: size(27);
+        padding: size(4) size(8);
+        border: size(1) solid transparent;
+        border-radius: var(--mc-border-radius-xs);
+        cursor: text;
+
+        &:hover,
+        &:focus-visible {
+            border-color: var(--mc-gray-300);
+            outline: none;
+        }
+
+        &--pendente {
+            border-color: var(--mc-warning-500);
+            background: rgba(#b04706, 0.07);
+        }
     }
 
     // A altura e a tipografia do campo vêm de `.field input` do tema; a moldura só aparece ao usar a célula.
@@ -139,9 +170,9 @@
             }
         }
 
-        // Só a linha de baixo muda: pintar a célula inteira polui a leitura de uma linha com 12 colunas.
         &--pendente input {
-            border-bottom-color: var(--mc-warning-500);
+            border-color: var(--mc-warning-500);
+            background: rgba(#b04706, 0.07);
         }
     }
 

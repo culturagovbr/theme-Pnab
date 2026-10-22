@@ -6,6 +6,7 @@
 $this->import('
     entity-table
     mc-alert
+    mc-currency-input
     mc-icon
     mc-loading
     mc-multiselect
@@ -61,16 +62,23 @@ $this->import('
         </template>
 
         <template v-for="coluna in colunasVisiveis" #[coluna.chave]="{entity}" :key="coluna.chave">
-            <span v-if="!coluna.editavel" class="beneficiarios-grade__automatico">{{ valorAutomatico(entity, coluna) || '—' }}</span>
-            <div v-else class="field beneficiarios-grade__campo" :class="{ 'beneficiarios-grade__campo--pendente': pendenciasDe(entity).includes(coluna.chave) }">
+            <span v-if="!coluna.editavel" class="beneficiarios-grade__automatico" :class="{ 'beneficiarios-grade__automatico--pendente': celulaPendente(entity, coluna) }">{{ valorAutomatico(entity, coluna) || '—' }}</span>
+
+            <div v-else-if="editandoCelula(entity, coluna)" class="field beneficiarios-grade__campo" :class="{ 'beneficiarios-grade__campo--pendente': celulaPendente(entity, coluna) }">
                 <div class="field__input">
-                    <input v-if="coluna.tipo === 'numero'" type="number" min="0" :value="valorExibido(entity, coluna)" @input="definirCelula(entity, coluna, $event.target.value)">
-                    <input v-else-if="coluna.tipo === 'moeda'" type="number" step="0.01" min="0" :value="valorExibido(entity, coluna)" @input="definirCelula(entity, coluna, $event.target.value)">
-                    <input v-else-if="coluna.tipo === 'data'" type="date" :value="dataParaCampo(entity, coluna)" @change="definirData(entity, coluna, $event.target.value)" @blur="apagarData(entity, coluna, $event.target.value)">
-                    <input v-else-if="coluna.tipo === 'lista'" type="text" :title="translateMessage('lista_dica')" :value="valorExibido(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)">
-                    <input v-else type="text" :value="valorExibido(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)">
+                    <mc-multiselect v-if="coluna.opcoes" class="beneficiarios-grade__opcoes" :model="selecaoAtiva" :items="itensDaColuna(coluna)" :placeholder="coluna.label" @selected="definirSelecao(entity, coluna)" @removed="definirSelecao(entity, coluna)" hide-button></mc-multiselect>
+                    <mc-currency-input v-else-if="coluna.tipo === 'moeda'" :model-value="valorCru(entity, coluna)" @update:model-value="definirCelula(entity, coluna, $event)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)"></mc-currency-input>
+                    <input v-else-if="coluna.tipo === 'numero'" type="number" min="0" :value="valorCru(entity, coluna)" @input="definirCelula(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
+                    <input v-else-if="coluna.tipo === 'data'" type="date" :value="dataParaCampo(entity, coluna)" @change="definirData(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
+                    <input v-else-if="coluna.chave === 'cep_local_execucao'" v-maska data-maska="#####-###" type="text" inputmode="numeric" :value="valorExibido(entity, coluna)" @input="definirCelula(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
+                    <input v-else-if="coluna.chave === 'cpfs_remunerados'" type="text" :title="translateMessage('lista_dica')" :value="valorExibido(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
+                    <input v-else type="text" :value="valorExibido(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)" @blur="sairDaCelula(entity, coluna, $event)" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
                 </div>
             </div>
+
+            <span v-else class="beneficiarios-grade__valor" :class="{ 'beneficiarios-grade__valor--pendente': celulaPendente(entity, coluna) }" tabindex="0" role="button" :title="translateMessage('editar')" @click="abrirEdicao(entity, coluna, $event)" @focus="abrirEdicao(entity, coluna, $event)">
+                {{ valorExibido(entity, coluna) || '—' }}
+            </span>
         </template>
     </entity-table>
 </div>
