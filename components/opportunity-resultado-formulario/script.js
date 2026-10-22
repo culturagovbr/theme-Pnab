@@ -48,6 +48,15 @@ app.component('opportunity-resultado-formulario', {
             type: Date,
             default: null,
         },
+        // Status do envio, exibido como chip no canto do primeiro card.
+        estado: {
+            type: String,
+            default: null,
+        },
+        estadoLabel: {
+            type: String,
+            default: '',
+        },
     },
 
     data() {
@@ -84,6 +93,13 @@ app.component('opportunity-resultado-formulario', {
     computed: {
         etapas() {
             return (this.estrutura.secoes ?? []).flatMap((secao) => secao.etapas ?? []);
+        },
+
+        /** Cada etapa é um card (nasce fechado); a tabela de categorias fica dentro do card da própria etapa. */
+        cards() {
+            return this.etapas
+                .map((etapa) => ({ chave: 'etapa-' + etapa.id_etapa, titulo: etapa.nome, blocos: this.blocosDe(etapa) }))
+                .filter((card) => card.blocos.length);
         },
     },
 

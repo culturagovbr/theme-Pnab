@@ -135,19 +135,36 @@
     }
 }
 
-// Com o card presente, a trilha não termina mais na última fase: os segmentos que o stepper
-// apaga no fim (li e add-phase últimos de cada tipo) religam até chegar ao card.
-.opportunity-phases-config.com-resultado-cultbr {
-    ol.mc-stepper-vertical > li:last-of-type,
-    ol.mc-stepper-vertical > div.add-phase:last-of-type {
-        border-left: 3px solid red;
-    }
-}
-
 // Formulário dinâmico dentro do card (componente opportunity-resultado-formulario).
+// Cada etapa é um mc-accordion (nasce fechado); a aba empilha os accordions.
 .resultado-formulario {
-    &__etapa {
-        margin-bottom: size(24);
+    // O accordion do design system limita a 870px; aqui ele ocupa a largura inteira da aba.
+    .mc-accordion__header,
+    .mc-accordion__content {
+        max-width: none;
+    }
+
+    // O separador padrão do accordion (gray-100) some sobre o branco; aqui fica visível.
+    .mc-accordion__content {
+        border-top-color: var(--mc-gray-300, #c4c4c4);
+    }
+
+    &__card {
+        display: block;
+        margin-bottom: size(12);
+    }
+
+    &__card-cabecalho {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        width: 100%;
+    }
+
+    &__card-titulo {
+        font-size: size(16);
+        font-weight: 700;
     }
 
     &__etapa-titulo {

@@ -10,16 +10,22 @@
 use MapasCulturais\i;
 
 $this->import('
+    mc-accordion
     mc-currency-input
     mc-icon
 ');
 ?>
 <div class="resultado-formulario">
-    <section v-for="(etapa, indiceEtapa) in etapas" :key="etapa.id_etapa" class="resultado-formulario__etapa">
-        <h4 class="resultado-formulario__etapa-titulo">{{ etapa.nome }}</h4>
-
+    <mc-accordion v-for="(card, indiceCard) in cards" :key="card.chave" class="resultado-formulario__card">
+        <template #title>
+            <span class="resultado-formulario__card-cabecalho">
+                <span class="resultado-formulario__card-titulo">{{ card.titulo }}</span>
+                <span v-if="indiceCard === 0 && estadoLabel" class="resultado-cultbr-card__chip" :class="'resultado-cultbr-card__chip--' + estado">{{ estadoLabel }}</span>
+            </span>
+        </template>
+        <template #content>
         <div class="grid-12">
-            <template v-for="(bloco, indiceBloco) in blocosDe(etapa)" :key="bloco.automaticos ? 'autos-' + indiceBloco : bloco.questao.id_questao">
+            <template v-for="(bloco, indiceBloco) in card.blocos" :key="bloco.automaticos ? 'autos-' + indiceBloco : bloco.questao.id_questao">
 
             <!-- Calculado do próprio edital, empilhado numa coluna: o campo seguinte fica ao lado -->
             <div v-if="bloco.automaticos" class="field col-6 resultado-formulario__autos">
@@ -124,7 +130,8 @@ $this->import('
 
             </template>
         </div>
-    </section>
+        </template>
+    </mc-accordion>
 
     <div class="resultado-formulario__status" aria-live="polite">
         <template v-if="salvando">{{ translateMessage('salvando') }}</template>
