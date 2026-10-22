@@ -52,6 +52,12 @@
         }
     }
 
+    &__acoes {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: size(16);
+    }
+
     &__status {
         min-height: size(20);
         margin-top: size(12);

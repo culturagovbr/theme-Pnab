@@ -12,4 +12,5 @@ return [
     'tentar_novamente' => i::__('Tentar novamente'),
     'salvando' => i::__('Salvando…'),
     'salvo_as' => i::__('Salvo às'),
+    'abrir_grade' => i::__('Abrir lista de beneficiários'),
 ];

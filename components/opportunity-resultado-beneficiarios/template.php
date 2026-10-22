@@ -7,6 +7,7 @@
 $this->import('
     mc-card
     mc-alert
+    mc-link
     mc-loading
     mc-select
 ');
@@ -42,6 +43,12 @@ $this->import('
                             </mc-select>
                         </div>
                     </div>
+                </div>
+
+                <div class="resultado-beneficiarios__acoes">
+                    <mc-link class="button button--primary" :entity="entity" route="resultadoBeneficiarios" icon="list">
+                        {{ translateMessage('abrir_grade') }}
+                    </mc-link>
                 </div>
 
                 <div class="resultado-beneficiarios__status" aria-live="polite">
