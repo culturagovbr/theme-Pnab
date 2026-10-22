@@ -46,7 +46,7 @@ $this->import('
                 </div>
 
                 <div class="resultado-beneficiarios__acoes">
-                    <mc-link class="button button--primary" :entity="entity" route="resultadoBeneficiarios" icon="list">
+                    <mc-link class="button button--primary" :entity="entity" route="resultadoBeneficiarios" icon="list" target="_blank" rel="noopener">
                         {{ translateMessage('abrir_grade') }}
                     </mc-link>
                 </div>
