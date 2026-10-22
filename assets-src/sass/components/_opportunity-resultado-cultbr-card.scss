@@ -9,12 +9,54 @@
     margin-bottom: size(16);
 }
 
-// Casca da "Lista de beneficiários" (o de/para e a planilha entram depois).
+// "Lista de beneficiários": de/para das colunas da planilha (a planilha editável entra depois).
 .resultado-beneficiarios {
     &__titulo {
         font-size: size(18);
         font-weight: 700;
         margin: 0;
+    }
+
+    &__descricao {
+        margin: 0 0 size(16);
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__campos {
+        display: flex;
+        flex-direction: column;
+    }
+
+    // Cada linha é um .field.field--horizontal; o label ganha largura fixa para os selects alinharem.
+    &__linha {
+        align-items: center;
+        gap: size(16);
+        padding: size(8) 0;
+        border-bottom: size(1) solid var(--mc-gray-200, #ececec);
+
+        & > .field__title {
+            flex: 0 0 40%;
+            margin: 0;
+            font-weight: 600;
+            white-space: normal;
+        }
+
+        @media (max-width: size(600)) {
+            flex-direction: column;
+            align-items: stretch;
+            gap: size(4);
+
+            & > .field__title {
+                flex-basis: auto;
+            }
+        }
+    }
+
+    &__status {
+        min-height: size(20);
+        margin-top: size(12);
+        font-size: size(13);
+        color: var(--mc-gray-700, #555);
     }
 
     &__nota {

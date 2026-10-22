@@ -4,17 +4,51 @@
  * @var MapasCulturais\Themes\Pnab\Theme $this
  */
 
-use MapasCulturais\i;
-
-$this->import('mc-card');
+$this->import('
+    mc-card
+    mc-alert
+    mc-loading
+    mc-select
+');
 ?>
 <mc-card class="resultado-beneficiarios">
     <template #title>
-        <h3 class="resultado-beneficiarios__titulo"><?= i::__('Lista de beneficiários') ?></h3>
+        <h3 class="resultado-beneficiarios__titulo">{{ translateMessage('titulo') }}</h3>
     </template>
     <template #content>
-        <p class="resultado-beneficiarios__nota">
-            <?= i::__('Configure de onde vem cada coluna da planilha e abra a lista de beneficiários para revisar e completar os dados enviados ao CultBR.') ?>
-        </p>
+        <mc-loading :condition="isLoading"></mc-loading>
+
+        <template v-if="!isLoading">
+            <mc-alert v-if="hasError" type="danger">
+                <p>{{ translateMessage('erro_carregar') }}</p>
+                <button class="button button--sm button--text" @click="carregar">{{ translateMessage('tentar_novamente') }}</button>
+            </mc-alert>
+
+            <template v-else>
+                <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao') }}</p>
+
+                <p v-if="!campos.length" class="resultado-beneficiarios__nota">{{ translateMessage('sem_campos') }}</p>
+
+                <div class="resultado-beneficiarios__campos">
+                    <div v-for="coluna in colunas" :key="coluna.chave" class="field field--horizontal resultado-beneficiarios__linha">
+                        <label class="field__title">{{ coluna.label }}</label>
+                        <div class="field__input">
+                            <mc-select
+                                :default-value="mapeamento[coluna.chave] ?? ''"
+                                :options="opcoesSelect"
+                                :placeholder="translateMessage('nao_se_aplica')"
+                                show-filter
+                                @change-option="definir(coluna.chave, $event)">
+                            </mc-select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resultado-beneficiarios__status" aria-live="polite">
+                    <template v-if="isSaving">{{ translateMessage('salvando') }}</template>
+                    <template v-else-if="salvoEm">{{ translateMessage('salvo_as') }} {{ salvoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }}</template>
+                </div>
+            </template>
+        </template>
     </template>
 </mc-card>
