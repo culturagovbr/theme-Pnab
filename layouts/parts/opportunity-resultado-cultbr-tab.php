@@ -9,9 +9,11 @@
  */
 
 $this->import('
+    mc-tabs
     mc-tab
     mc-container
     opportunity-resultado-cultbr-card
+    opportunity-resultado-beneficiarios
     opportunity-resultado-cultbr-tab
 ');
 ?>

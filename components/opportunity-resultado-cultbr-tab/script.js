@@ -13,6 +13,7 @@ app.component('opportunity-resultado-cultbr-tab', {
         return {
             visivel: false,
             estadoInicial: null,
+            subAba: 'formulario',
         };
     },
 
@@ -22,6 +23,10 @@ app.component('opportunity-resultado-cultbr-tab', {
     },
 
     methods: {
+        selectSubAba(slug) {
+            this.subAba = slug;
+        },
+
         async verificar() {
             try {
                 const url = this.api.createUrl('resultadoFormulario', { opportunityId: this.entity.id });

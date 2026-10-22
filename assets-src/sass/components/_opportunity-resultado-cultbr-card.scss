@@ -4,6 +4,25 @@
     grid-column: 1 / -1;
 }
 
+// Sub-abas "Formulário do Resultado" | "Lista de beneficiários" dentro da aba de envio.
+.resultado-cultbr-tab__subabas {
+    margin-bottom: size(16);
+}
+
+// Casca da "Lista de beneficiários" (o de/para e a planilha entram depois).
+.resultado-beneficiarios {
+    &__titulo {
+        font-size: size(18);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    &__nota {
+        margin: 0;
+        color: var(--mc-gray-700, #555);
+    }
+}
+
 // Aba própria da integração: cor da marca CultBr, destacando-a das demais abas da oportunidade.
 .tabs-component__button.resultado-cultbr {
     a,
