@@ -188,7 +188,20 @@ app.component('opportunity-resultado-formulario', {
                 return this.formatoMoeda(valor);
             }
 
+            if (questao.tipo_questao === 'número') {
+                return this.formatoNumero(valor);
+            }
+
             return String(valor);
+        },
+
+        /** Só exibição: o payload leva o número cru, não o texto pontuado. */
+        formatoNumero(valor) {
+            const numero = Number(valor);
+
+            return Number.isFinite(numero) && valor !== null && valor !== ''
+                ? numero.toLocaleString('pt-BR')
+                : String(valor ?? '');
         },
 
         formatoMoeda(valor) {
@@ -206,7 +219,11 @@ app.component('opportunity-resultado-formulario', {
                 return '—';
             }
 
-            return coluna.type === 'currency' ? this.formatoMoeda(valor) : String(valor);
+            if (coluna.type === 'currency') {
+                return this.formatoMoeda(valor);
+            }
+
+            return coluna.type === 'number' ? this.formatoNumero(valor) : String(valor);
         },
 
         isDataPublicacao(questao) {
