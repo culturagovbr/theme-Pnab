@@ -111,6 +111,15 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
+         * Aba "Envio de Resultado ao CultBr", na gestão da oportunidade. O componente wrapper decide
+         * se ela aparece (edital com formulário no PAR + permissão); a edição já exige @control.
+         */
+        $app->hook('template(opportunity.edit.tabs):end', function () {
+            /** @var \MapasCulturais\Theme $this */
+            $this->part('opportunity-resultado-cultbr-tab');
+        });
+
+        /**
          * Na edição de agente, o campo "Tipo de Agente Coletivo" não é exibido:
          * uma vez configurado (na criação), o usuário não pode mais alterá-lo.
          */
@@ -854,6 +863,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $iconset['evaluation'] = 'material-symbols:reviews';
             $iconset['training'] = 'mdi:school';
             $iconset['validation'] = 'material-symbols:thumb-up';
+            $iconset['fullscreen'] = 'material-symbols:fullscreen';
+            $iconset['fullscreen-exit'] = 'material-symbols:fullscreen-exit';
         });
 
         /**

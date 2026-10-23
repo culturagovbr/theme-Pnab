@@ -1,0 +1,345 @@
+// Conteúdo da aba vive no mc-container (mesmo da aba Informações); como o .container é um grid de
+// duas colunas (main + aside), o nosso main atravessa as duas para usar a largura inteira.
+.resultado-cultbr-tab__conteudo {
+    grid-column: 1 / -1;
+}
+
+// Sub-abas "Formulário do Resultado" | "Lista de beneficiários" dentro da aba de envio.
+.resultado-cultbr-tab__subabas {
+    margin-bottom: size(16);
+}
+
+// "Lista de beneficiários": de/para das colunas da planilha (a planilha editável entra depois).
+.resultado-beneficiarios {
+    &__titulo {
+        font-size: size(18);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    &__descricao {
+        margin: 0 0 size(16);
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__campos {
+        display: flex;
+        flex-direction: column;
+    }
+
+    // Cada linha é um .field.field--horizontal; o label ganha largura fixa para os selects alinharem.
+    &__linha {
+        align-items: center;
+        gap: size(16);
+        padding: size(8) 0;
+        border-bottom: size(1) solid var(--mc-gray-200, #ececec);
+
+        & > .field__title {
+            flex: 0 0 40%;
+            margin: 0;
+            font-weight: 600;
+            white-space: normal;
+        }
+
+        @media (max-width: size(600)) {
+            flex-direction: column;
+            align-items: stretch;
+            gap: size(4);
+
+            & > .field__title {
+                flex-basis: auto;
+            }
+        }
+    }
+
+    &__acoes {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: size(16);
+    }
+
+    &__status {
+        min-height: size(20);
+        margin-top: size(12);
+        font-size: size(13);
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__nota {
+        margin: 0;
+        color: var(--mc-gray-700, #555);
+    }
+}
+
+// Aba própria da integração: cor da marca CultBr, destacando-a das demais abas da oportunidade.
+.tabs-component__button.resultado-cultbr {
+    a,
+    a span {
+        color: var(--mc-cultbr-500);
+    }
+
+    &.tabs-component__button--active::after {
+        background: var(--mc-cultbr-500);
+    }
+}
+
+// Card "Envio do resultado ao CultBR" (componente opportunity-resultado-cultbr-card): bloco da
+// aba própria "Envio de Resultado ao CultBr"; acento roxo da integração na borda esquerda da caixa.
+.resultado-cultbr-card {
+    $accent: #6d4ca3;
+
+    &__item {
+        margin-bottom: size(20);
+    }
+
+    &__box--loading {
+        // Mesma altura do card colapsado (padding 16 + linha do título 28): troca sem pulo.
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: size(60);
+        overflow: hidden;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    &__box {
+        background: #fff;
+        border-radius: size(4);
+        border-left: size(4) solid $accent;
+        padding: size(16);
+        max-width: 1096px;
+    }
+
+    &__aviso {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: size(12);
+    }
+
+    &__envio {
+        display: flex;
+        justify-content: flex-end;
+        gap: size(12);
+        margin-top: size(24);
+    }
+
+    &__titulo {
+        margin: 0;
+        font-size: size(24);
+        font-weight: 700;
+        line-height: size(28);
+        color: $accent;
+    }
+
+    &__subtitulo {
+        font-size: size(14);
+        font-weight: 600;
+        line-height: size(19);
+        color: var(--mc-gray-700);
+        text-transform: uppercase;
+    }
+
+    &__estado {
+        display: flex;
+        align-items: center;
+        gap: size(24);
+    }
+
+    &__chip {
+        display: inline-block;
+        padding: size(4) size(12);
+        border-radius: size(16);
+        font-size: size(13);
+        font-weight: 600;
+        background: var(--mc-gray-100, #f4f4f4);
+        color: var(--mc-gray-700, #555);
+        white-space: nowrap;
+
+        &--completo {
+            background: rgba(#6d4ca3, 0.12);
+            color: $accent;
+        }
+
+        &--enviado {
+            background: rgba(#1d8841, 0.12);
+            color: #1d8841;
+        }
+    }
+
+    &__expandir {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: size(4);
+        font-size: size(14);
+        font-weight: 700;
+        line-height: size(19);
+        color: var(--mc-primary-500);
+        white-space: nowrap;
+        min-width: size(82);
+        justify-content: flex-end;
+    }
+
+    &__body {
+        margin-top: size(16);
+        border-top: size(1) solid var(--mc-gray-200, #f0f0f0);
+        padding-top: size(16);
+    }
+
+    &__nota {
+        margin: 0;
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__acoes {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: size(16);
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+    }
+
+    &--travado &__box {
+        opacity: 0.9;
+    }
+}
+
+// Formulário dinâmico dentro do card (componente opportunity-resultado-formulario).
+// Cada etapa é um mc-accordion (nasce fechado); a aba empilha os accordions.
+.resultado-formulario {
+    // O accordion do design system limita a 870px; aqui ele ocupa a largura inteira da aba.
+    .mc-accordion__header,
+    .mc-accordion__content {
+        max-width: none;
+    }
+
+    // O separador padrão do accordion (gray-100) some sobre o branco; aqui fica visível.
+    .mc-accordion__content {
+        border-top-color: var(--mc-gray-300, #c4c4c4);
+    }
+
+    &__card {
+        display: block;
+        margin-bottom: size(12);
+    }
+
+    &__card-cabecalho {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        width: 100%;
+    }
+
+    &__card-titulo {
+        font-size: size(16);
+        font-weight: 700;
+    }
+
+    &__etapa-titulo {
+        font-size: size(18);
+        font-weight: 700;
+        margin: 0 0 size(16);
+        padding-bottom: size(8);
+        border-bottom: size(1) solid var(--mc-gray-200, #f0f0f0);
+    }
+
+    &__edital {
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__opcoes {
+        display: flex;
+        flex-direction: column;
+        gap: size(8);
+    }
+
+    &__outros {
+        margin-top: size(8);
+    }
+
+    &__tabela {
+        overflow-x: auto;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: size(12);
+        }
+
+        th {
+            text-align: left;
+            font-size: size(13);
+            text-transform: uppercase;
+            color: var(--mc-gray-700, #555);
+            padding: size(8);
+        }
+
+        td {
+            padding: size(4) size(8);
+
+            input {
+                width: 100%;
+                min-width: size(120);
+            }
+        }
+
+        &-remover {
+            white-space: nowrap;
+        }
+    }
+
+    &__auto {
+        font-size: size(16);
+        font-weight: 700;
+        color: var(--mc-low-500, #333);
+    }
+
+    &__auto-linha {
+        display: flex;
+        align-items: baseline;
+        gap: size(8);
+        padding: size(4) 0;
+    }
+
+    &__autos {
+        display: flex;
+        flex-direction: column;
+        gap: size(4);
+    }
+
+    &__auto-rotulo {
+        font-size: size(16);
+        font-weight: 700;
+        color: var(--mc-low-500, #333);
+    }
+
+    &__sem-fonte {
+        color: var(--mc-gray-700, #555);
+        font-style: italic;
+        padding: size(4) 0;
+    }
+
+    &__tabela--auto {
+        td {
+            padding: size(6) size(8);
+            font-weight: 600;
+        }
+    }
+
+    &__status {
+        min-height: size(20);
+        margin-top: size(4);
+        font-size: size(13);
+        color: var(--mc-gray-700, #555);
+    }
+
+    .field {
+        margin-bottom: size(12);
+    }
+}
