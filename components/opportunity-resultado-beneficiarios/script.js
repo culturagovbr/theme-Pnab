@@ -22,6 +22,8 @@ app.component('opportunity-resultado-beneficiarios', {
             campos: [],
             colunas: [],
             mapeamento: {},
+            tiposDeProponente: [],
+            documentoPorTipo: {},
             isSaving: false,
             pendingSave: false,
             salvoEm: null,
@@ -71,6 +73,8 @@ app.component('opportunity-resultado-beneficiarios', {
                 this.campos = body.campos ?? [];
                 this.colunas = body.colunas ?? [];
                 this.mapeamento = body.mapeamento ?? {};
+                this.tiposDeProponente = body.tiposDeProponente ?? [];
+                this.documentoPorTipo = body.documentoPorTipo ?? {};
             } catch (error) {
                 this.hasError = true;
             } finally {
@@ -79,9 +83,21 @@ app.component('opportunity-resultado-beneficiarios', {
         },
 
         definir(coluna, opcao) {
-            const valor = opcao?.value ?? '';
-            this.mapeamento[coluna] = valor === '' ? null : Number(valor);
+            this.mapeamento[coluna] = this.idDoCampo(opcao);
+            this.agendarSalvar();
+        },
 
+        definirDocumento(tipo, opcao) {
+            this.documentoPorTipo[tipo] = this.idDoCampo(opcao);
+            this.agendarSalvar();
+        },
+
+        idDoCampo(opcao) {
+            const valor = opcao?.value ?? '';
+            return valor === '' ? null : Number(valor);
+        },
+
+        agendarSalvar() {
             clearTimeout(this.autosaveTimeout);
             this.autosaveTimeout = setTimeout(() => this.salvar(), 1200);
         },
@@ -97,7 +113,11 @@ app.component('opportunity-resultado-beneficiarios', {
 
             try {
                 const url = this.api.createUrl('resultadoDePara', {});
-                const response = await this.api.POST(url, { opportunityId: this.entity.id, mapeamento: this.mapeamento });
+                const response = await this.api.POST(url, {
+                    opportunityId: this.entity.id,
+                    mapeamento: this.mapeamento,
+                    documentoPorTipo: this.documentoPorTipo,
+                });
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
@@ -108,6 +128,7 @@ app.component('opportunity-resultado-beneficiarios', {
                 // Com mudança mais nova em espera, aplicar o eco do servidor descartaria a edição em voo.
                 if (!this.pendingSave) {
                     this.mapeamento = body.mapeamento ?? this.mapeamento;
+                    this.documentoPorTipo = body.documentoPorTipo ?? this.documentoPorTipo;
                 }
                 this.salvoEm = new Date();
             } catch (error) {

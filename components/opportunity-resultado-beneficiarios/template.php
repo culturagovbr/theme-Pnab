@@ -45,6 +45,25 @@ $this->import('
                     </div>
                 </div>
 
+                <template v-if="tiposDeProponente.length">
+                    <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao_documento') }}</p>
+
+                    <div class="resultado-beneficiarios__campos">
+                        <div v-for="tipo in tiposDeProponente" :key="tipo" class="field field--horizontal resultado-beneficiarios__linha">
+                            <label class="field__title">{{ tipo }}</label>
+                            <div class="field__input">
+                                <mc-select
+                                    :default-value="documentoPorTipo[tipo] ?? ''"
+                                    :options="opcoesSelect"
+                                    :placeholder="translateMessage('nao_se_aplica')"
+                                    show-filter
+                                    @change-option="definirDocumento(tipo, $event)">
+                                </mc-select>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
                 <div class="resultado-beneficiarios__acoes">
                     <mc-link class="button button--primary" :entity="entity" route="resultadoBeneficiarios" icon="list" target="_blank" rel="noopener">
                         {{ translateMessage('abrir_grade') }}
