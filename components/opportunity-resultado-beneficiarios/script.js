@@ -41,18 +41,19 @@ app.component('opportunity-resultado-beneficiarios', {
     },
 
     computed: {
-        /** Opções do seletor com busca: "não se aplica" + cada campo da ficha (com a fase, se houver mais de uma). */
-        opcoesSelect() {
-            const fases = new Set(this.campos.map((campo) => campo.fase));
-            const comFase = fases.size > 1;
+        /** Campos agrupados pela etapa da ficha: o mesmo título se repete de uma etapa para outra. */
+        gruposDeCampos() {
+            const grupos = new Map();
 
-            return [
-                { value: '', label: this.translateMessage('nao_se_aplica') },
-                ...this.campos.map((campo) => ({
-                    value: campo.id,
-                    label: comFase ? `${campo.title} — ${campo.fase}` : campo.title,
-                })),
-            ];
+            for (const campo of this.campos) {
+                const titulo = this.tituloDoGrupo(campo);
+                if (!grupos.has(titulo)) {
+                    grupos.set(titulo, []);
+                }
+                grupos.get(titulo).push(campo);
+            }
+
+            return [...grupos].map(([titulo, campos]) => ({ titulo, campos }));
         },
     },
 
@@ -82,18 +83,24 @@ app.component('opportunity-resultado-beneficiarios', {
             }
         },
 
-        definir(coluna, opcao) {
-            this.mapeamento[coluna] = this.idDoCampo(opcao);
+        tituloDoGrupo(campo) {
+            const fases = new Set(this.campos.map((item) => item.fase));
+            const etapa = campo.etapa || this.translateMessage('sem_etapa');
+
+            return fases.size > 1 ? `${campo.fase} · ${etapa}` : etapa;
+        },
+
+        definir(coluna, valor) {
+            this.mapeamento[coluna] = this.idDoCampo(valor);
             this.agendarSalvar();
         },
 
-        definirDocumento(tipo, opcao) {
-            this.documentoPorTipo[tipo] = this.idDoCampo(opcao);
+        definirDocumento(tipo, valor) {
+            this.documentoPorTipo[tipo] = this.idDoCampo(valor);
             this.agendarSalvar();
         },
 
-        idDoCampo(opcao) {
-            const valor = opcao?.value ?? '';
+        idDoCampo(valor) {
             return valor === '' ? null : Number(valor);
         },
 

@@ -9,7 +9,6 @@ $this->import('
     mc-alert
     mc-link
     mc-loading
-    mc-select
 ');
 ?>
 <mc-card class="resultado-beneficiarios">
@@ -34,13 +33,14 @@ $this->import('
                     <div v-for="coluna in colunas" :key="coluna.chave" class="field field--horizontal resultado-beneficiarios__linha">
                         <label class="field__title">{{ coluna.label }}</label>
                         <div class="field__input">
-                            <mc-select
-                                :default-value="mapeamento[coluna.chave] ?? ''"
-                                :options="opcoesSelect"
-                                :placeholder="translateMessage('nao_se_aplica')"
-                                show-filter
-                                @change-option="definir(coluna.chave, $event)">
-                            </mc-select>
+                            <select class="primary__border--solid"
+                                :value="mapeamento[coluna.chave] ?? ''"
+                                @change="definir(coluna.chave, $event.target.value)">
+                                <option value="">{{ translateMessage('nao_se_aplica') }}</option>
+                                <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
+                                    <option v-for="campo in grupo.campos" :key="campo.id" :value="campo.id">{{ campo.title }}</option>
+                                </optgroup>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -52,13 +52,14 @@ $this->import('
                         <div v-for="tipo in tiposDeProponente" :key="tipo" class="field field--horizontal resultado-beneficiarios__linha">
                             <label class="field__title">{{ tipo }}</label>
                             <div class="field__input">
-                                <mc-select
-                                    :default-value="documentoPorTipo[tipo] ?? ''"
-                                    :options="opcoesSelect"
-                                    :placeholder="translateMessage('nao_se_aplica')"
-                                    show-filter
-                                    @change-option="definirDocumento(tipo, $event)">
-                                </mc-select>
+                                <select class="primary__border--solid"
+                                    :value="documentoPorTipo[tipo] ?? ''"
+                                    @change="definirDocumento(tipo, $event.target.value)">
+                                    <option value="">{{ translateMessage('nao_se_aplica') }}</option>
+                                    <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
+                                        <option v-for="campo in grupo.campos" :key="campo.id" :value="campo.id">{{ campo.title }}</option>
+                                    </optgroup>
+                                </select>
                             </div>
                         </div>
                     </div>
