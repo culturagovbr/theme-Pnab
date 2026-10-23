@@ -1,0 +1,194 @@
+// Mesma moldura da lista de inscrições: a grade usa a largura da janela, não a do cabeçalho.
+.opportunity-beneficiarios {
+    &__container {
+        padding: size(40) size(16);
+    }
+
+    // O breadcrumb se pinta para contrastar com a capa do edital, que esta tela não mostra.
+    .mc-breadcrumb__hasCover ul {
+        background: transparent;
+        color: #000;
+        padding: size(8) size(16) size(60);
+
+        li::after {
+            content: url('https://api.iconify.design/fe/arrow-right.svg?width=18&height=18');
+        }
+    }
+}
+
+// Grade de beneficiários do resultado: a tabela é a da aplicação, daqui saem só as células editáveis.
+.beneficiarios-grade {
+    // O entity-table impõe 150px de mínimo a toda coluna; aqui cada uma declara a sua largura.
+    .entity-table__table > thead > tr > th,
+    .entity-table__table > tbody > tr > td {
+        min-width: 0;
+    }
+
+    // O cabeçalho do design system é generoso demais para uma barra de dois filtros.
+    .entity-table__header {
+        padding: size(16) size(16) size(12);
+        gap: size(8);
+    }
+
+    // As colunas desta grade são fixas; esconder sem tirar do fluxo preserva a largura da coluna de índice.
+    .entity-table__show-columns {
+        visibility: hidden;
+    }
+
+    // Busca e filtros dividem a mesma linha; sozinha, a busca deixava metade da faixa vazia.
+    .entity-table__main-filter {
+        grid-template-columns: minmax(size(260), 1fr) auto;
+        align-items: center;
+        gap: size(12) size(16);
+
+        @media (max-width: size(900)) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    &__cabecalho {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        width: 100%;
+    }
+
+    &__titulo {
+        font-size: size(18);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    &__vazio {
+        margin: 0;
+        font-size: size(13);
+        color: var(--mc-gray-500);
+    }
+
+    &__acoes {
+        display: grid;
+        gap: size(12);
+        justify-items: start;
+    }
+
+    &__alternar {
+        padding: size(8) size(12);
+        font-size: size(20);
+        line-height: 1;
+    }
+
+    &__filtros {
+        display: flex;
+        gap: size(18);
+        flex-wrap: wrap;
+    }
+
+    &__identificacao {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: size(6);
+    }
+
+    &__marca {
+        flex: 0 0 auto;
+        width: size(6);
+        height: size(6);
+        border-radius: 50%;
+        background: var(--mc-warning-500);
+
+        &--completa {
+            background: var(--mc-success-500);
+        }
+    }
+
+    &__numero {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    &__estado {
+        display: block;
+        min-height: size(14);
+        font-size: size(11);
+        color: var(--mc-gray-500);
+    }
+
+    &__automatico {
+        white-space: nowrap;
+
+        // A coluna que o sistema resolve não tem campo para pintar; o vazio cobrado ganha a marca aqui.
+        &--pendente {
+            display: inline-block;
+            padding: size(2) size(10);
+            border-radius: var(--mc-border-radius-xs);
+            background: rgba(#b04706, 0.1);
+            color: var(--mc-warning-500);
+            font-weight: 600;
+        }
+    }
+
+    // A célula em repouso: ocupa a mesma caixa do campo, para a linha não pular quando ele aparece.
+    &__valor {
+        display: block;
+        min-height: size(27);
+        padding: size(4) size(8);
+        border: size(1) solid transparent;
+        border-radius: var(--mc-border-radius-xs);
+        cursor: text;
+
+        &:hover,
+        &:focus-visible {
+            border-color: var(--mc-gray-300);
+            outline: none;
+        }
+
+        &--pendente {
+            border-color: var(--mc-warning-500);
+            background: rgba(#b04706, 0.07);
+        }
+    }
+
+    // A altura e a tipografia do campo vêm de `.field input` do tema; a moldura só aparece ao usar a célula.
+    &__campo {
+        width: 100%;
+        margin: 0;
+
+        input {
+            width: 100%;
+            min-width: size(120);
+            // O campo do formulário tem 51px de altura; na linha da tabela isso é alto demais.
+            padding: size(4) size(8);
+            text-align: center;
+            background: transparent;
+            border-color: transparent;
+            border-bottom-color: var(--mc-gray-300);
+            transition: border-color 120ms ease, background-color 120ms ease;
+
+            &:hover {
+                border-color: var(--mc-gray-300);
+            }
+
+            &:focus {
+                background: var(--mc-white);
+                border-color: var(--mc-primary-500);
+            }
+        }
+
+        &--pendente input {
+            border-color: var(--mc-warning-500);
+            background: rgba(#b04706, 0.07);
+        }
+    }
+
+    // Overlay no padrão do mc-teleport-multiple: a grade ocupa a janela e rola por dentro.
+    &--tela-cheia {
+        position: fixed;
+        inset: 0;
+        z-index: 2147482000;
+        overflow: auto;
+        background: var(--mc-white);
+        padding: size(16);
+    }
+}

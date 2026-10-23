@@ -3,6 +3,8 @@
 use MapasCulturais\i;
 
 return [
+    'aba_oportunidades' => i::__('Oportunidades'),
+    'aba_resultados' => i::__('Resultados'),
     'lista_vazia' => i::__('Nenhum envio registrado para esta oportunidade.'),
     'erro_carregar' => i::__('Não foi possível carregar o histórico de envios.'),
     'tentativa' => i::__('Tentativa {atual}/{total}'),
