@@ -21,6 +21,7 @@ if (!$selectedEntity || !isset($selectedEntity['name'])) {
 $selectedEntity['hasParData'] = FederativeEntityService::hasParData((int) ($selectedEntity['id'] ?? 0));
 
 $this->jsObject['selectedFederativeEntity'] = $selectedEntity;
+$this->jsObject['config']['cultBrSyncDegraded'] = !empty($_SESSION['gestor_cult_sync_degraded']);
 
 $this->import('
     federative-entity-banner
