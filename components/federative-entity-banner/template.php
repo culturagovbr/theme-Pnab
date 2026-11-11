@@ -52,5 +52,8 @@ $this->import('
         <span
             v-if="!selectedEntityHasParData"
             class="selected-federative-entity-banner__par-badge"><?php i::_e('Dados do PAR ausentes ou em análise') ?></span>
+        <span
+            v-if="isSyncDegraded"
+            class="selected-federative-entity-banner__sync-badge"><?php i::_e('Dados do CultBR não atualizados nesta sessão') ?></span>
     </mc-alert>
 </div>

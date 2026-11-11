@@ -21,7 +21,10 @@ app.component('federative-entity-banner', {
         },
         selectedEntityHasParData() {
             return this.selectedEntity?.hasParData !== false
-        }
+        },
+        isSyncDegraded() {
+            return Boolean($MAPAS.config?.cultBrSyncDegraded)
+        },
     },
 
     mounted() {
