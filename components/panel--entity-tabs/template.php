@@ -111,7 +111,8 @@ $this->applyComponentHook('.sortOptions', [&$tabs]);
                                         </select>
                                     </div>
                                     <div v-else class="alert alert-warning panel-entity-tabs__par-action-warning">
-                                        <?= i::__('O Ente Federado não possui dados do PAR configurados. Entrar em contato com suporte.') ?>
+                                        <template v-if="parReason"><?= i::__('O Ente Federado não tem exercício do PAR habilitado. Situação no CultBR:') ?> {{ parReason }}</template>
+                                        <template v-else><?= i::__('O Ente Federado não possui dados do PAR configurados. Entrar em contato com suporte.') ?></template>
                                     </div>
                                     <div class="field">
                                         <label><?php i::_e('Ordenar por') ?></label>
@@ -234,7 +235,8 @@ $this->applyComponentHook('.sortOptions', [&$tabs]);
                                         </select>
                                     </div>
                                     <div v-else class="alert alert-warning panel-entity-tabs__par-action-warning">
-                                        <?= i::__('O Ente Federado não possui dados do PAR configurados. Entrar em contato com suporte.') ?>
+                                        <template v-if="parReason"><?= i::__('O Ente Federado não tem exercício do PAR habilitado. Situação no CultBR:') ?> {{ parReason }}</template>
+                                        <template v-else><?= i::__('O Ente Federado não possui dados do PAR configurados. Entrar em contato com suporte.') ?></template>
                                     </div>
                                     <div class="field">
                                         <label><?php i::_e('Ordenar por') ?></label>
