@@ -18,7 +18,7 @@ $this->import('
             <mc-icon v-else name="alert-circle" class="consolidating-data-page__error-icon"></mc-icon>
             <h1 class="consolidating-data-page__title" :class="{ 'consolidating-data-page__title--error': hasError }">
                 <span v-if="!hasError" style="white-space: pre-line">{{ statusMessage || '<?php i::_e('Estamos consolidando os seus dados...aguarde alguns instantes') ?>' }}</span>
-                <span v-else>{{ errorMessage || '<?php i::_e('Não foi possível consolidar seus dados. Você será desconectado para tentar novamente.') ?>' }}</span>
+                <span v-else>{{ errorMessage || '<?php i::_e('Não foi possível iniciar a sincronização. Tente novamente.') ?>' }}</span>
             </h1>
             <div v-if="hasError" class="consolidating-data-page__actions">
                 <button @click="tryAgain" class="button button--primary">

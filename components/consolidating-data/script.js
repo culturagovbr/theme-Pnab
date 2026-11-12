@@ -149,7 +149,7 @@ app.component('consolidating-data', {
 
         updateRetryCountdownMessage(maxAttempts) {
             this.statusMessage = [
-                'Não foi possível conectar à API CultBr.',
+                'Não foi possível iniciar a sincronização.',
                 `Nova tentativa em ${this.retryCountdown}....`,
                 `Tentativa ${this.startSyncAttempts + 1}/${maxAttempts}`,
             ].join('\n')
@@ -160,7 +160,7 @@ app.component('consolidating-data', {
                 return ''
             }
 
-            return 'Estamos nos conectando à API CultBr....'
+            return 'Tentando iniciar a sincronização novamente....'
         },
 
         async withMinimumDelay(promise, minimumDelay) {
