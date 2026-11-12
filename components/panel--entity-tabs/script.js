@@ -77,6 +77,11 @@ app.component('panel--entity-tabs', {
             parReason,
         }
     },
+    watch: {
+        'queries.mymodels.parAction'(acaoName) {
+            useParActionFilter().acaoName = acaoName || '';
+        },
+    },
     props: {
         type: String,
         user: {

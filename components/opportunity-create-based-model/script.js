@@ -2,12 +2,18 @@
  * Modal "Usar modelo" - versão Pnab.
  * PAR obrigatório quando há exercícios, salvo $MAPAS.config.parOptionalOnCreate (admin).
  */
+/** Ação do PAR filtrada em «Meus modelos», gravada pelo panel--entity-tabs. */
+const useParActionFilter = Pinia.defineStore('parActionFilter', {
+    state: () => ({ acaoName: '' }),
+});
+
 app.component('opportunity-create-based-model', {
     template: $TEMPLATES['opportunity-create-based-model'],
     setup() {
         const messages = useMessages();
         const text = Utils.getTexts('opportunity-create-based-model');
-        return { text, messages };
+        const parActionFilter = useParActionFilter();
+        return { text, messages, parActionFilter };
     },
     props: {
         entitydefault: {
