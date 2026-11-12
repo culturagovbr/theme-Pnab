@@ -1185,7 +1185,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 // Validação do instrumento PAR (obrigatório para o gestor). Vale só na
                 // oportunidade raiz (não em fases) e nunca bloqueia admin — nem quando ele
                 // também tem o papel de gestor. Só exige quando o ente tem exercícios do PAR
-                // — mesma regra do "usar modelo" (evita travar ente sem PAR). A ação ainda
+                // — mesma regra do "usar modelo" (evita travar ente sem PAR). A ação trocada
                 // precisa ser compatível com o modelo (parActions).
                 if (UserAccessService::isGestorCultBr() && !UserAccessService::isAdmin() && !$this->parent) {
                     $parExercicios = FederativeEntityService::getParExerciciosForSessionSelectedEntity();
@@ -1214,8 +1214,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                             }
                             if ($parAcaoId === '') {
                                 $errors['parAcaoId'] = [i::__('O campo "Ação" é obrigatório.')];
-                            } else {
-                                // Ação deve estar entre as permitidas pelo modelo (parActions).
+                            } elseif (array_key_exists('parAcaoId', $this->changedMetadata)) {
+                                // Só a ação trocada neste save: a já gravada pode ter saído da árvore do PAR no CultBR.
                                 $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
                                 if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
                                     $errors['parAcaoId'] = [i::__('A ação selecionada não é compatível com este modelo.')];
