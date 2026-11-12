@@ -15,7 +15,9 @@ app.component('consolidating-data', {
             startSyncAttempts: 0,
             statusMessage: '',
             retryCountdown: 0,
-            retryCountdownInterval: null
+            retryCountdownInterval: null,
+            startSyncFailed: false,
+            statusWaitStartedAt: null
         }
     },
 
@@ -57,27 +59,63 @@ app.component('consolidating-data', {
                     // Sync iniciado, começa a verificar o status
                     this.checkSyncStatus()
                 } else {
+                    this.startSyncFailed = true
                     this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS)
                 }
             } catch (error) {
                 console.error('Erro ao iniciar sincronização:', error)
+                this.startSyncFailed = true
                 this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS)
             }
         },
 
-        failNow(errorMessage) {
+        failNow() {
             this.syncStarted = false
             this.clearRetryCountdown()
             this.hasError = true
             this.statusMessage = ''
-            this.errorMessage = errorMessage || 'Não conseguimos estabelecer conexão com a API CultBr. Tente novamente mais tarde.'
+            this.errorMessage = 'Não foi possível iniciar a sincronização. Verifique sua conexão e tente novamente.'
         },
 
-        retryStartSync(maxAttempts, retryDelaySeconds, errorMessage) {
+        tryAgain() {
+            this.hasError = false
+            this.errorMessage = ''
+            this.startSyncAttempts = 0
+            this.startSyncFailed = false
+            this.statusWaitStartedAt = null
+            this.startSync()
+        },
+
+        isStuckAfterFailure() {
+            // Depois de uma falha HTTP do startSync, a sessão pode ficar "em andamento" até vencer (5 min).
+            const STUCK_AFTER_FAILURE_MS = 30000
+
+            return this.startSyncFailed && Date.now() - this.statusWaitStartedAt > STUCK_AFTER_FAILURE_MS
+        },
+
+        async enterDegraded() {
+            this.clearRetryCountdown()
+
+            try {
+                const response = await this.api.POST('enterDegraded')
+                const data = await response.json()
+
+                if (data.entered) {
+                    window.location.href = Utils.createUrl('panel', 'index')
+                    return
+                }
+            } catch (error) {
+                console.error('Erro ao entrar sem sincronização:', error)
+            }
+
+            this.failNow()
+        },
+
+        retryStartSync(maxAttempts, retryDelaySeconds) {
             this.syncStarted = false
 
             if (this.startSyncAttempts >= maxAttempts) {
-                this.failNow(errorMessage)
+                this.enterDegraded()
                 return
             }
 
@@ -147,6 +185,10 @@ app.component('consolidating-data', {
                 return
             }
 
+            if (this.statusWaitStartedAt === null) {
+                this.statusWaitStartedAt = Date.now()
+            }
+
             try {
                 this.checkingStatus = true
                 const response = await this.api.GET('checkSyncStatus')
@@ -154,6 +196,9 @@ app.component('consolidating-data', {
 
                 if (data.ready) {
                     window.location.href = Utils.createUrl('panel', 'index')
+                } else if (this.isStuckAfterFailure()) {
+                    this.checkingStatus = false
+                    this.enterDegraded()
                 } else {
                     // Sync ainda em andamento, tenta novamente após 2 segundos
                     this.checkingStatus = false

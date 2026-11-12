@@ -21,8 +21,11 @@ $this->import('
                 <span v-else>{{ errorMessage || '<?php i::_e('Não foi possível consolidar seus dados. Você será desconectado para tentar novamente.') ?>' }}</span>
             </h1>
             <div v-if="hasError" class="consolidating-data-page__actions">
-                <button @click="logoutOnError" class="button button--primary">
-                    <?php i::_e('Ir para o Login') ?>
+                <button @click="tryAgain" class="button button--primary">
+                    <?php i::_e('Tentar novamente') ?>
+                </button>
+                <button @click="logoutOnError" class="button button--text">
+                    <?php i::_e('Sair') ?>
                 </button>
             </div>
         </div>
