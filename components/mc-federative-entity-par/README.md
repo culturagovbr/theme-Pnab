@@ -20,6 +20,7 @@ No `script.js`, as strings da UI vêm de `Utils.getTexts('mc-federative-entity-p
 - **`modelValue`** — Objeto `{ parExercicioId, parMetaId, parAcaoId, parAtividadeId }` (strings; vazio = não selecionado). Usar `v-model`.
 - **`emptyHint`** — Mensagem opcional quando não há opções (substitui o texto padrão).
 - **`readonly`** — Só leitura: mostra rótulos resolvidos (ano, nomes), sem selects.
+- **`preferredAcaoName`** — Nome de uma ação já escolhida (ex.: o filtro de «Meus modelos»). Restringe exercícios, metas e ações aos caminhos até ela e preenche sozinho cada nível com uma única opção; a atividade fica sempre com o usuário. Ignorado se a ação não estiver na árvore.
 - **`loadParExercicios`** — Se `true` e a lista ainda estiver vazia após prop + PHP, faz `GET aldirblanc/parExercicios` (sem query: o servidor usa apenas o ente da sessão).
 
 ## Origem dos dados (ordem)

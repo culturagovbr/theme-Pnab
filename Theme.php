@@ -887,8 +887,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
             unset($_SESSION['gestor_cult_sync_started_at']);
-            unset($_SESSION['gestor_cult_sync_error']);
-            unset($_SESSION['gestor_cult_sync_error_message']);
+            unset($_SESSION['gestor_cult_sync_degraded']);
 
             // Limpa a seleção de entidade federativa
             unset($_SESSION['selectedFederativeEntity']);
@@ -909,12 +908,11 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
             unset($_SESSION['gestor_cult_sync_started_at']);
-            unset($_SESSION['gestor_cult_sync_error']);
-            unset($_SESSION['gestor_cult_sync_error_message']);
+            unset($_SESSION['gestor_cult_sync_degraded']);
         });
 
         /**
-         * Hook que bloqueia acesso quando há erro de consolidação
+         * Guarda de entrada: encaminha para a consolidação, para completar o perfil ou para a seleção de ente, nessa ordem
          * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity, federativeEntities, saveOpportunityPostGenerate, etc.
          * Não bloqueia admins (não há o que consolidar)
          * Não bloqueia admin em modo "login como usuário" (plugin AdminLoginAsUser): o $app->user vira o impersonado,
@@ -948,7 +946,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 return;
             }
 
-            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+            if ($controllerId === 'aldirblanc' && in_array($action, ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'enterDegraded', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -961,7 +959,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             $route = [$this->id, $this->action];
 
             // Ignora as rotas de consolidação, sync, seleção, complementar perfil, alteração, verificação de status e busca de entes federados
-            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'saveOpportunityPostGenerate'])) {
+            if ($route[0] === 'aldirblanc' && in_array($route[1], ['consolidatingData', 'startSync', 'selectFederativeEntity', 'completeProfile', 'changeFederativeEntity', 'checkSyncStatus', 'federativeEntities', 'parExercicios', 'parAcoes', 'logoutOnError', 'enterDegraded', 'saveOpportunityPostGenerate'])) {
                 return;
             }
 
@@ -970,33 +968,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // 1. Consolidação
             $syncStarted = isset($_SESSION['gestor_cult_sync_started']) && $_SESSION['gestor_cult_sync_started'] === true;
             $syncCompleted = isset($_SESSION['gestor_cult_sync_completed']) && $_SESSION['gestor_cult_sync_completed'] === true;
-            $hasError = isset($_SESSION['gestor_cult_sync_error']) &&
-                $_SESSION['gestor_cult_sync_error'] !== null &&
-                $_SESSION['gestor_cult_sync_error'] !== '';
 
             if (!$syncStarted && !$syncCompleted) {
                 $app->log->info("[Gestores CultBR] blockAccessOnError: sync não iniciado, redirecionando para consolidatingData | Usuário ID: {$app->user->id} | Rota: {$controllerId}.{$action}");
                 if (!$app->request->isAjax()) {
                     $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                 }
-                $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
-                return;
-            }
-
-            // Se há erro de sync, bloqueia e redireciona para consolidação
-            if ($syncCompleted && $hasError) {
-                $app->log->info("[Gestores CultBR] blockAccessOnError: sync concluído com erro, bloqueando acesso | Usuário ID: {$app->user->id} | Rota: {$controllerId}.{$action}");
-                if ($app->request->isAjax()) {
-                    header('Content-Type: application/json');
-                    http_response_code(403);
-                    echo json_encode([
-                        'error' => true,
-                        'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
-                        'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
-                    ]);
-                    exit;
-                }
-                $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                 $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
                 return;
             }
@@ -1035,7 +1012,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             // 3. Gestor sem ente: após consolidação ok, exige seleção de ente
-            if ($syncCompleted && !$hasError && UserAccessService::isGestorCultBr()) {
+            if ($syncCompleted && UserAccessService::isGestorCultBr()) {
                 if (!isset($_SESSION['selectedFederativeEntity'])) {
                     $app->log->info("[Gestores CultBR] blockAccessOnError: GestorCultBr sem Ente selecionado, redirecionando para selectFederativeEntity | Usuário ID: {$app->user->id} | Rota: {$controllerId}.{$action}");
                     if (!$app->request->isAjax()) {
@@ -1183,7 +1160,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                 // Validação do instrumento PAR (obrigatório para o gestor). Vale só na
                 // oportunidade raiz (não em fases) e nunca bloqueia admin — nem quando ele
                 // também tem o papel de gestor. Só exige quando o ente tem exercícios do PAR
-                // — mesma regra do "usar modelo" (evita travar ente sem PAR). A ação ainda
+                // — mesma regra do "usar modelo" (evita travar ente sem PAR). A ação trocada
                 // precisa ser compatível com o modelo (parActions).
                 if (UserAccessService::isGestorCultBr() && !UserAccessService::isAdmin() && !$this->parent) {
                     $parExercicios = FederativeEntityService::getParExerciciosForSessionSelectedEntity();
@@ -1212,8 +1189,8 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
                             }
                             if ($parAcaoId === '') {
                                 $errors['parAcaoId'] = [i::__('O campo "Ação" é obrigatório.')];
-                            } else {
-                                // Ação deve estar entre as permitidas pelo modelo (parActions).
+                            } elseif (array_key_exists('parAcaoId', $this->changedMetadata)) {
+                                // Só a ação trocada neste save: a já gravada pode ter saído da árvore do PAR no CultBR.
                                 $acaoNome = FederativeEntityService::getParActionNameByAcaoId($parAcaoId);
                                 if ($acaoNome === null || !in_array($acaoNome, $parActions, true)) {
                                     $errors['parAcaoId'] = [i::__('A ação selecionada não é compatível com este modelo.')];
