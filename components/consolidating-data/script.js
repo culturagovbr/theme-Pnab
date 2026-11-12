@@ -156,16 +156,7 @@ app.component('consolidating-data', {
                 const data = await response.json()
 
                 if (data.ready) {
-                    // Verifica se houve erro
-                    if (data.error && data.errorMessage) {
-                        // Mostra mensagem de erro
-                        this.hasError = true
-                        this.errorMessage = data.errorMessage
-                        this.checkingStatus = false
-                    } else {
-                        // Sync terminou com sucesso, redireciona para o painel
-                        window.location.href = Utils.createUrl('panel', 'index')
-                    }
+                    window.location.href = Utils.createUrl('panel', 'index')
                 } else {
                     // Sync ainda em andamento, tenta novamente após 2 segundos
                     this.checkingStatus = false
