@@ -9,7 +9,8 @@ $this->import('
     home-search
 ');
 
-$brand_logo_url = $this->asset('img/logo-site-vertical.png', false);
+$parallax_url = $this->asset('img/home/home-header/parallax.png', false);
+$brand_logo_url = $this->asset('img/home/home-header/home-header-logo.png', false);
 ?>
 
 <div :class="['home-header', {'home-header--withBanner' : banner}] ">
@@ -20,7 +21,7 @@ $brand_logo_url = $this->asset('img/logo-site-vertical.png', false);
                 <img
                     class="home-header__brand-logo"
                     src="<?= htmlspecialchars($brand_logo_url, ENT_QUOTES, 'UTF-8') ?>"
-                    alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR Editais — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
+                    alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
                     decoding="async"
                 />
             <?php endif; ?>
@@ -63,5 +64,15 @@ $brand_logo_url = $this->asset('img/logo-site-vertical.png', false);
         </div>
 
     </div>
+    <div class="home-header__background">
+        <div class="img">
+            <img :src="background" />
+        </div>
+    </div>
+    <?php if ($parallax_url) : ?>
+        <div class="home-header__parallax" aria-hidden="true">
+            <img src="<?= htmlspecialchars($parallax_url, ENT_QUOTES, 'UTF-8') ?>" alt="" width="1742" height="2497" decoding="async" />
+        </div>
+    <?php endif; ?>
     <!-- <home-search></home-search> -->
 </div>

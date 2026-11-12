@@ -10,15 +10,14 @@ return [
     */
     'app.siteName' => 'CultBR Editais',
     'app.siteDescription' => 'Aqui você encontra informações de editais e oportunidades do Ministério da Cultura.',
-    'logo.image' => './img/logo-site-vertical.png',
+    'logo.image' => './img/logo-site.png',
     'logo.hideLabel' => env('LOGO_HIDELABEL', true),
 
     /*
     Define o nome do asset da imagem do background no header da home - Substitui o background padrão do módulo
     ex: `img/home/home-header/home-header2.png` (pasta assets/img/home/home-header/home-header2.png do tema)
     */
-    // Período eleitoral: fundo ilustrado do header suprimido (original: img/home/home-header/home-header2.png).
-    'homeHeader.background' => '',
+    'homeHeader.background' => 'img/home/home-header/home-header2.png',
 
     // entidades habilitadas
     'app.enabled.agents'        => true,
