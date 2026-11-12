@@ -10,12 +10,12 @@ $entities = $entities ?? [];
 $esc = fn($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
 $formatCnpj = function (?string $document): string {
-    $numbers = preg_replace('/[^0-9]/', '', (string) $document);
-    if (strlen($numbers) !== 14) {
+    $characters = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) $document));
+    if (!preg_match('/^[A-Z0-9]{12}\d{2}$/', $characters)) {
         return (string) $document;
     }
 
-    return preg_replace('/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $numbers);
+    return preg_replace('/^(\w{2})(\w{3})(\w{3})(\w{4})(\d{2})$/', '$1.$2.$3/$4-$5', $characters);
 };
 
 $formatDate = function ($date): string {

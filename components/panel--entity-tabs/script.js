@@ -13,6 +13,7 @@ app.component('panel--entity-tabs', {
             ? pnabConfig.parActionOptions
             : [];
         const parActionFilterEnabled = Boolean(pnabConfig.isGestorCultBr);
+        const parReason = pnabConfig.parReason || null;
 
         if (this.type == 'opportunity') {
             query.isModel = 'OR(NULL(), EQ(0))';
@@ -73,7 +74,13 @@ app.component('panel--entity-tabs', {
             opportunitiesModels: [],
             parActionFilterEnabled,
             parActionOptions,
+            parReason,
         }
+    },
+    watch: {
+        'queries.mymodels.parAction'(acaoName) {
+            useParActionFilter().acaoName = acaoName || '';
+        },
     },
     props: {
         type: String,

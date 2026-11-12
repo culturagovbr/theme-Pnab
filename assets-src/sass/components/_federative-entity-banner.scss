@@ -36,7 +36,8 @@
         }
     }
 
-    &__par-badge {
+    &__par-badge,
+    &__sync-badge {
         display: block;
         width: fit-content;
         margin-top: size(6);

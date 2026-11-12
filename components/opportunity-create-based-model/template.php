@@ -38,6 +38,7 @@ $this->useOpportunityAPI();
                             ref="parInstrumentoRef"
                             load-par-exercicios
                             v-model="parSelectionModel"
+                            :preferred-acao-name="parActionFilter.acaoName"
                             :empty-hint="text('parEmpty')"
                         ></mc-federative-entity-par>
                     </div>

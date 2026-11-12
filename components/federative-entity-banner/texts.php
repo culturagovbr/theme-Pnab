@@ -7,4 +7,5 @@ return [
     'Atenção' => i::__('Atenção'),
     'Você está utilizando o sistema com o ente federado' => i::__('Você está utilizando o sistema com o ente federado'),
     'Dados do PAR ausentes ou em análise' => i::__('Dados do PAR ausentes ou em análise'),
+    'Dados do CultBR não atualizados nesta sessão' => i::__('Dados do CultBR não atualizados nesta sessão'),
 ];

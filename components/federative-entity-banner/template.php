@@ -51,6 +51,9 @@ $this->import('
         <?= i::__('<strong>Atenção</strong>: Você está utilizando o sistema com o ente federado ') . "<strong>{{ selectedEntityName }}</strong>" . " <span v-if=\"selectedEntityDocument\">(<code>{{ selectedEntityDocument }}</code>)</span>" ?>
         <span
             v-if="!selectedEntityHasParData"
-            class="selected-federative-entity-banner__par-badge"><?php i::_e('Dados do PAR ausentes ou em análise') ?></span>
+            class="selected-federative-entity-banner__par-badge"><template v-if="selectedEntityParReason">{{ selectedEntityParReason }}</template><template v-else><?php i::_e('Dados do PAR ausentes ou em análise') ?></template></span>
+        <span
+            v-if="isSyncDegraded"
+            class="selected-federative-entity-banner__sync-badge"><?php i::_e('Dados do CultBR não atualizados nesta sessão') ?></span>
     </mc-alert>
 </div>
