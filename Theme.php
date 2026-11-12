@@ -916,7 +916,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
         });
 
         /**
-         * Hook que bloqueia acesso quando há erro de consolidação
+         * Guarda de entrada: encaminha para a consolidação, para completar o perfil ou para a seleção de ente, nessa ordem
          * Captura todas as requisições GET e POST, exceto auth, consolidatingData, startSync, checkSyncStatus, logoutOnError, selectFederativeEntity, changeFederativeEntity, federativeEntities, saveOpportunityPostGenerate, etc.
          * Não bloqueia admins (não há o que consolidar)
          * Não bloqueia admin em modo "login como usuário" (plugin AdminLoginAsUser): o $app->user vira o impersonado,
@@ -972,33 +972,12 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             // 1. Consolidação
             $syncStarted = isset($_SESSION['gestor_cult_sync_started']) && $_SESSION['gestor_cult_sync_started'] === true;
             $syncCompleted = isset($_SESSION['gestor_cult_sync_completed']) && $_SESSION['gestor_cult_sync_completed'] === true;
-            $hasError = isset($_SESSION['gestor_cult_sync_error']) &&
-                $_SESSION['gestor_cult_sync_error'] !== null &&
-                $_SESSION['gestor_cult_sync_error'] !== '';
 
             if (!$syncStarted && !$syncCompleted) {
                 $app->log->info("[Gestores CultBR] blockAccessOnError: sync não iniciado, redirecionando para consolidatingData | Usuário ID: {$app->user->id} | Rota: {$controllerId}.{$action}");
                 if (!$app->request->isAjax()) {
                     $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                 }
-                $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
-                return;
-            }
-
-            // Se há erro de sync, bloqueia e redireciona para consolidação
-            if ($syncCompleted && $hasError) {
-                $app->log->info("[Gestores CultBR] blockAccessOnError: sync concluído com erro, bloqueando acesso | Usuário ID: {$app->user->id} | Rota: {$controllerId}.{$action}");
-                if ($app->request->isAjax()) {
-                    header('Content-Type: application/json');
-                    http_response_code(403);
-                    echo json_encode([
-                        'error' => true,
-                        'message' => 'Não foi possível consolidar seus dados. Você será desconectado.',
-                        'redirectTo' => $app->createUrl('aldirblanc', 'consolidatingData')
-                    ]);
-                    exit;
-                }
-                $_SESSION['federative_entity_redirect_uri'] = $_SERVER['REQUEST_URI'] ?? "";
                 $app->redirect($app->createUrl('aldirblanc', 'consolidatingData'));
                 return;
             }
@@ -1037,7 +1016,7 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
 
             // 3. Gestor sem ente: após consolidação ok, exige seleção de ente
-            if ($syncCompleted && !$hasError && UserAccessService::isGestorCultBr()) {
+            if ($syncCompleted && UserAccessService::isGestorCultBr()) {
                 if (!isset($_SESSION['selectedFederativeEntity'])) {
                     $app->log->info("[Gestores CultBR] blockAccessOnError: GestorCultBr sem Ente selecionado, redirecionando para selectFederativeEntity | Usuário ID: {$app->user->id} | Rota: {$controllerId}.{$action}");
                     if (!$app->request->isAjax()) {
