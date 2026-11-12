@@ -56,11 +56,8 @@ app.component('consolidating-data', {
                     this.statusMessage = ''
                     // Sync iniciado, começa a verificar o status
                     this.checkSyncStatus()
-                } else if (data.retryable === false) {
-                    // O backend já disse que repetir não resolve: esperar só adiaria a mesma falha.
-                    this.failNow(data.errorMessage)
                 } else {
-                    this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS, data.error ? data.errorMessage : undefined)
+                    this.retryStartSync(MAX_START_SYNC_ATTEMPTS, RETRY_DELAY_SECONDS)
                 }
             } catch (error) {
                 console.error('Erro ao iniciar sincronização:', error)
