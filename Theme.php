@@ -887,8 +887,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
             unset($_SESSION['gestor_cult_sync_started_at']);
-            unset($_SESSION['gestor_cult_sync_error']);
-            unset($_SESSION['gestor_cult_sync_error_message']);
             unset($_SESSION['gestor_cult_sync_degraded']);
 
             // Limpa a seleção de entidade federativa
@@ -910,8 +908,6 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             unset($_SESSION['gestor_cult_sync_started']);
             unset($_SESSION['gestor_cult_sync_completed']);
             unset($_SESSION['gestor_cult_sync_started_at']);
-            unset($_SESSION['gestor_cult_sync_error']);
-            unset($_SESSION['gestor_cult_sync_error_message']);
             unset($_SESSION['gestor_cult_sync_degraded']);
         });
 
