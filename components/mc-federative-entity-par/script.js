@@ -50,6 +50,11 @@ app.component('mc-federative-entity-par', {
             type: Array,
             default: () => [],
         },
+        /** Nome da ação já escolhida pelo usuário: restringe a cascata aos caminhos até ela e preenche o que for único. */
+        preferredAcaoName: {
+            type: String,
+            default: '',
+        },
         /**
          * Erros de validação do servidor por metadado (ex.: `entity.__validationErrors`).
          * Chaves esperadas: parExercicioId / parMetaId / parAcaoId / parAtividadeId.
@@ -87,6 +92,17 @@ app.component('mc-federative-entity-par', {
         this.maybeLoadParExercicios();
     },
 
+    watch: {
+        autoSelectionStep: {
+            handler(nextModel) {
+                if (nextModel) {
+                    this.$emit('update:modelValue', nextModel);
+                }
+            },
+            immediate: true,
+        },
+    },
+
     computed: {
         resolvedExercicios() {
             if (Array.isArray(this.exercicios) && this.exercicios.length > 0) {
@@ -118,6 +134,43 @@ app.component('mc-federative-entity-par', {
                         ? String(boundModel.parAtividadeId)
                         : '',
             };
+        },
+
+        preferredAcaoInTree() {
+            return (
+                this.preferredAcaoName.trim() !== '' &&
+                this.resolvedExercicios.some((exercicio) =>
+                    (exercicio.metas || []).some((meta) => this.metaHasPreferredAcao(meta))
+                )
+            );
+        },
+
+        parExercicios() {
+            if (!this.preferredAcaoInTree) {
+                return this.resolvedExercicios;
+            }
+            return this.resolvedExercicios.filter((exercicio) =>
+                (exercicio.metas || []).some((meta) => this.metaHasPreferredAcao(meta))
+            );
+        },
+
+        /** Próximo nível que a ação preferida resolve sozinha; a atividade fica sempre com o usuário. */
+        autoSelectionStep() {
+            if (this.readonly || !this.preferredAcaoInTree) {
+                return null;
+            }
+            const model = this.normalizedModel;
+            const levels = [
+                ['parExercicioId', this.parExercicios],
+                ['parMetaId', this.parMetas],
+                ['parAcaoId', this.parAcoes],
+            ];
+            for (const [key, options] of levels) {
+                if (!model[key]) {
+                    return options.length === 1 ? { ...model, [key]: String(options[0].id) } : null;
+                }
+            }
+            return null;
         },
 
         /** Exercício escolhido, mas a API não retornou nenhuma meta. */
@@ -228,10 +281,13 @@ app.component('mc-federative-entity-par', {
                     String(exercicioEntry.id) ===
                     String(this.normalizedModel.parExercicioId)
             );
-            return exercicioSelecionado &&
+            const metas = exercicioSelecionado &&
                 Array.isArray(exercicioSelecionado.metas)
                 ? exercicioSelecionado.metas
                 : [];
+            return this.preferredAcaoInTree
+                ? metas.filter((meta) => this.metaHasPreferredAcao(meta))
+                : metas;
         },
 
         parAcoes() {
@@ -247,6 +303,9 @@ app.component('mc-federative-entity-par', {
                 metaSelecionada && Array.isArray(metaSelecionada.acoes)
                     ? metaSelecionada.acoes
                     : [];
+            if (this.preferredAcaoInTree) {
+                return acoesDaMeta.filter((acao) => this.isPreferredAcao(acao));
+            }
             // Restringe às ações permitidas (parActions do modelo), quando informado.
             if (!this.allowedAcaoNames.length) {
                 return acoesDaMeta;
@@ -407,6 +466,14 @@ app.component('mc-federative-entity-par', {
             } catch (loadError) {
                 console.error(loadError);
             }
+        },
+
+        isPreferredAcao(acao) {
+            return String(acao?.nome ?? '').trim() === this.preferredAcaoName.trim();
+        },
+
+        metaHasPreferredAcao(meta) {
+            return (meta?.acoes || []).some((acao) => this.isPreferredAcao(acao));
         },
 
         clearErrors() {

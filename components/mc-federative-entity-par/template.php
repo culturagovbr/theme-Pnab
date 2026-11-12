@@ -49,7 +49,7 @@
                     <select v-model="parExercicioId" required>
                         <option value="">{{ translateMessage('selecionar') }}</option>
                         <option
-                            v-for="exercicio in resolvedExercicios"
+                            v-for="exercicio in parExercicios"
                             :key="exercicio.id"
                             :value="exercicio.id"
                         >{{ exercicio.ano }}</option>
