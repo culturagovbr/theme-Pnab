@@ -9,8 +9,7 @@ use MapasCulturais\i;
 $this->import('theme-logo');
 $config = $app->config['social-media'];
 
-// Período eleitoral: barra provisória sem marca do governo (original: img/logo-footer.png).
-$image_url_footer = $app->view->asset('img/aldir_horizontal_color.png', false);
+$image_url_footer = $app->view->asset('img/logo-footer.png', false);
 
 $entities = [
     'portal-cultbr' => [
@@ -35,7 +34,7 @@ $entities = [
         <?php $this->applyTemplateHook("main-footer-logo", "before") ?>
 
         <div class="main-footer__content--logo-group">
-            <div class="main-footer__logo-item"><img src="<?= $image_url_footer ?>" alt="Sistema Nacional de Cultura, Política Nacional Aldir Blanc de Fomento à Cultura e Ministério da Cultura" /></div>
+            <div class="main-footer__logo-item"><img src="<?= $image_url_footer ?>" alt="Logo PNAB" /></div>
         </div>
         <?php $this->applyTemplateHook("main-footer-logo", "after") ?>
 
