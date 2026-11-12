@@ -9,7 +9,7 @@ $this->import('
     home-search
 ');
 
-$brand_logo_url = $this->asset('img/logo-site-vertical.png', false);
+$brand_logo_url = $this->asset('img/home/home-header/home-header-logo.png', false);
 ?>
 
 <div :class="['home-header', {'home-header--withBanner' : banner}] ">
@@ -20,7 +20,7 @@ $brand_logo_url = $this->asset('img/logo-site-vertical.png', false);
                 <img
                     class="home-header__brand-logo"
                     src="<?= htmlspecialchars($brand_logo_url, ENT_QUOTES, 'UTF-8') ?>"
-                    alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR Editais — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
+                    alt="<?= htmlspecialchars($this->text('brandLogoAlt', i::__('Cult.BR — identidade visual')), ENT_QUOTES, 'UTF-8') ?>"
                     decoding="async"
                 />
             <?php endif; ?>
