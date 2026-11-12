@@ -22,6 +22,9 @@ app.component('federative-entity-banner', {
         selectedEntityHasParData() {
             return this.selectedEntity?.hasParData !== false
         },
+        selectedEntityParReason() {
+            return this.selectedEntity?.parReason || null
+        },
         isSyncDegraded() {
             return Boolean($MAPAS.config?.cultBrSyncDegraded)
         },
