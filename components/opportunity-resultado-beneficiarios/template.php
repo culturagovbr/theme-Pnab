@@ -24,46 +24,46 @@ $this->import('
                 <button class="button button--sm button--text" @click="carregar">{{ translateMessage('tentar_novamente') }}</button>
             </mc-alert>
 
+            <p v-else-if="!temPlanilha" class="resultado-beneficiarios__nota">{{ planilha?.motivo ?? translateMessage('sem_integracao') }}</p>
+
             <template v-else>
-                <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao') }}</p>
+                <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao', { modelo: planilha.nomeModelo }) }}</p>
 
                 <p v-if="!campos.length" class="resultado-beneficiarios__nota">{{ translateMessage('sem_campos') }}</p>
 
                 <div class="resultado-beneficiarios__campos">
-                    <div v-for="coluna in colunas" :key="coluna.chave" class="field field--horizontal resultado-beneficiarios__linha">
-                        <label class="field__title">{{ coluna.label }}</label>
-                        <div class="field__input">
-                            <select class="primary__border--solid"
-                                :value="mapeamento[coluna.chave] ?? ''"
-                                @change="definir(coluna.chave, $event.target.value)">
-                                <option value="">{{ translateMessage('nao_se_aplica') }}</option>
+                    <div v-for="coluna in colunas" :key="coluna.coluna" class="field field--horizontal resultado-beneficiarios__linha">
+                        <div class="field__title">
+                            <label :for="'de-para-' + coluna.coluna">{{ coluna.nome }}</label>
+                            <small class="resultado-beneficiarios__exigencia" :class="{ 'resultado-beneficiarios__exigencia--obrigatoria': coluna.obrigatoriedade === 'obrigatorio' }">{{ exigenciaDe(coluna) }}</small>
+                            <small v-if="coluna.observacao" class="resultado-beneficiarios__observacao">{{ coluna.observacao }}</small>
+                        </div>
+
+                        <div v-if="coluna.porTipoDeProponente" class="resultado-beneficiarios__tipos">
+                            <div v-for="tipo in tiposDeProponente" :key="tipo" class="field__input">
+                                <small>{{ tipo }}</small>
+                                <select class="primary__border--solid" :aria-label="coluna.nome + ' - ' + tipo" :value="fonteDe(coluna, tipo)" @change="definirPorTipo(coluna, tipo, $event.target.value)">
+                                    <option value="">{{ translateMessage('sem_fonte') }}</option>
+                                    <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
+                                        <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div v-else class="field__input">
+                            <select :id="'de-para-' + coluna.coluna" class="primary__border--solid" :value="fonteDe(coluna)" @change="definir(coluna, $event.target.value)">
+                                <option value="">{{ translateMessage('sem_fonte') }}</option>
+                                <optgroup :label="translateMessage('da_inscricao')">
+                                    <option v-for="dado in dadosDaInscricao" :key="dado.fonte" :value="dado.fonte">{{ dado.title }}</option>
+                                </optgroup>
                                 <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
-                                    <option v-for="campo in grupo.campos" :key="campo.id" :value="campo.id">{{ campo.title }}</option>
+                                    <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
                                 </optgroup>
                             </select>
                         </div>
                     </div>
                 </div>
-
-                <template v-if="tiposDeProponente.length">
-                    <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao_documento') }}</p>
-
-                    <div class="resultado-beneficiarios__campos">
-                        <div v-for="tipo in tiposDeProponente" :key="tipo" class="field field--horizontal resultado-beneficiarios__linha">
-                            <label class="field__title">{{ tipo }}</label>
-                            <div class="field__input">
-                                <select class="primary__border--solid"
-                                    :value="documentoPorTipo[tipo] ?? ''"
-                                    @change="definirDocumento(tipo, $event.target.value)">
-                                    <option value="">{{ translateMessage('nao_se_aplica') }}</option>
-                                    <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
-                                        <option v-for="campo in grupo.campos" :key="campo.id" :value="campo.id">{{ campo.title }}</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </template>
 
                 <div class="resultado-beneficiarios__acoes">
                     <mc-link class="button button--primary" :entity="entity" route="resultadoBeneficiarios" icon="list" target="_blank" rel="noopener">

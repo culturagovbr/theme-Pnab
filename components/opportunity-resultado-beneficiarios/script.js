@@ -1,4 +1,4 @@
-/** Lista de beneficiários: de/para das colunas da planilha → campos da ficha do edital, com autosave. */
+/** Lista de beneficiários: de onde vem cada coluna do modelo de planilha que o CultBR define, com autosave. */
 app.component('opportunity-resultado-beneficiarios', {
     template: $TEMPLATES['opportunity-resultado-beneficiarios'],
 
@@ -19,11 +19,12 @@ app.component('opportunity-resultado-beneficiarios', {
         return {
             isLoading: true,
             hasError: false,
+            planilha: null,
             campos: [],
             colunas: [],
+            dadosDaInscricao: [],
             mapeamento: {},
             tiposDeProponente: [],
-            documentoPorTipo: {},
             isSaving: false,
             pendingSave: false,
             salvoEm: null,
@@ -41,6 +42,10 @@ app.component('opportunity-resultado-beneficiarios', {
     },
 
     computed: {
+        temPlanilha() {
+            return this.planilha?.possui === true;
+        },
+
         /** Campos agrupados pela etapa da ficha: o mesmo título se repete de uma etapa para outra. */
         gruposDeCampos() {
             const grupos = new Map();
@@ -71,11 +76,12 @@ app.component('opportunity-resultado-beneficiarios', {
                     throw new Error(body?.data ?? this.translateMessage('erro_carregar'));
                 }
 
+                this.planilha = body.planilha ?? null;
                 this.campos = body.campos ?? [];
                 this.colunas = body.colunas ?? [];
+                this.dadosDaInscricao = body.dadosDaInscricao ?? [];
                 this.mapeamento = body.mapeamento ?? {};
                 this.tiposDeProponente = body.tiposDeProponente ?? [];
-                this.documentoPorTipo = body.documentoPorTipo ?? {};
             } catch (error) {
                 this.hasError = true;
             } finally {
@@ -90,18 +96,25 @@ app.component('opportunity-resultado-beneficiarios', {
             return fases.size > 1 ? `${campo.fase} · ${etapa}` : etapa;
         },
 
-        definir(coluna, valor) {
-            this.mapeamento[coluna] = this.idDoCampo(valor);
+        fonteDe(coluna, tipo = null) {
+            const fonte = this.mapeamento[coluna.coluna];
+
+            return (tipo === null ? fonte : fonte?.[tipo]) ?? '';
+        },
+
+        definir(coluna, fonte) {
+            this.mapeamento[coluna.coluna] = fonte || null;
             this.agendarSalvar();
         },
 
-        definirDocumento(tipo, valor) {
-            this.documentoPorTipo[tipo] = this.idDoCampo(valor);
+        /** Documento tem um campo por tipo de proponente. */
+        definirPorTipo(coluna, tipo, fonte) {
+            this.mapeamento[coluna.coluna] = { ...(this.mapeamento[coluna.coluna] ?? {}), [tipo]: fonte || null };
             this.agendarSalvar();
         },
 
-        idDoCampo(valor) {
-            return valor === '' ? null : Number(valor);
+        exigenciaDe(coluna) {
+            return coluna.condicao ?? this.translateMessage(coluna.obrigatoriedade === 'obrigatorio' ? 'obrigatoria' : 'opcional');
         },
 
         agendarSalvar() {
@@ -123,7 +136,6 @@ app.component('opportunity-resultado-beneficiarios', {
                 const response = await this.api.POST(url, {
                     opportunityId: this.entity.id,
                     mapeamento: this.mapeamento,
-                    documentoPorTipo: this.documentoPorTipo,
                 });
                 const body = await response.json().catch(() => ({}));
 
@@ -135,7 +147,6 @@ app.component('opportunity-resultado-beneficiarios', {
                 // Com mudança mais nova em espera, aplicar o eco do servidor descartaria a edição em voo.
                 if (!this.pendingSave) {
                     this.mapeamento = body.mapeamento ?? this.mapeamento;
-                    this.documentoPorTipo = body.documentoPorTipo ?? this.documentoPorTipo;
                 }
                 this.salvoEm = new Date();
             } catch (error) {

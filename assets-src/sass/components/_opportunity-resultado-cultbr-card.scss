@@ -52,6 +52,24 @@
         }
     }
 
+    &__exigencia,
+    &__observacao {
+        display: block;
+        font-weight: 400;
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__exigencia--obrigatoria {
+        font-weight: 600;
+    }
+
+    &__tipos {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: size(8);
+    }
+
     &__acoes {
         display: flex;
         justify-content: flex-end;
