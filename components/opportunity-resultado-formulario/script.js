@@ -21,7 +21,7 @@ globalThis.resultadoMascara = (nome) => FORMULARIO_MASCARAS[nome] ?? null;
 
 app.component('opportunity-resultado-formulario', {
     template: $TEMPLATES['opportunity-resultado-formulario'],
-    emits: ['salvar'],
+    emits: ['alterado', 'salvar'],
 
     setup() {
         const translateMessage = Utils.getTexts('opportunity-resultado-formulario');
@@ -70,26 +70,33 @@ app.component('opportunity-resultado-formulario', {
 
     data() {
         return {
-            // Cópia editável; o que está salvo continua sendo do card.
+            // Cópia editável: o que o gestor digita fica na tela mesmo quando o servidor recusa.
             valores: this.clonarRespostas(),
+            ultimoEnviado: JSON.stringify(this.clonarRespostas()),
             autosaveTimeout: null,
         };
     },
 
     watch: {
+        // O card só troca as respostas na abertura e quando a versão do formulário muda.
         respostas() {
+            clearTimeout(this.autosaveTimeout);
             this.valores = this.clonarRespostas();
+            this.ultimoEnviado = JSON.stringify(this.valores);
         },
 
-        // Autosave: como as fases, sem botão. O pós-save devolve o salvo igual ao local e não re-dispara.
+        // Autosave: como as fases, sem botão.
         valores: {
             deep: true,
             handler() {
-                if (JSON.stringify(this.valores) === JSON.stringify(this.clonarRespostas())) {
+                clearTimeout(this.autosaveTimeout);
+
+                if (JSON.stringify(this.valores) === this.ultimoEnviado) {
+                    this.$emit('alterado', false);
                     return;
                 }
 
-                clearTimeout(this.autosaveTimeout);
+                this.$emit('alterado', true);
                 this.autosaveTimeout = setTimeout(() => this.salvar(), 1500);
             },
         },
@@ -327,7 +334,9 @@ app.component('opportunity-resultado-formulario', {
         },
 
         salvar() {
-            this.$emit('salvar', this.valores);
+            this.ultimoEnviado = JSON.stringify(this.valores);
+            this.$emit('alterado', false);
+            this.$emit('salvar', JSON.parse(this.ultimoEnviado));
         },
     },
 });

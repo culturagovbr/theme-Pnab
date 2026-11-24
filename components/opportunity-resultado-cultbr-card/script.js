@@ -56,6 +56,10 @@ app.component('opportunity-resultado-cultbr-card', {
             respostasAutomaticas: {},
             questoesSemFonte: [],
             envioHabilitado: false,
+            pendencias: [],
+            bloqueios: [],
+            isFormularioAtualizado: false,
+            isAlterado: false,
             errosFormulario: {},
             isSaving: false,
             isEnviando: false,
@@ -87,6 +91,14 @@ app.component('opportunity-resultado-cultbr-card', {
 
         enviado() {
             return this.estado === RESULTADO_ESTADOS.enviado;
+        },
+
+        temErros() {
+            return Object.keys(this.errosFormulario).length > 0;
+        },
+
+        podeEnviar() {
+            return this.envioHabilitado && !this.temErros && !this.isAlterado && !this.isSaving && !this.isEnviando;
         },
 
         estadoLabel() {
@@ -126,14 +138,38 @@ app.component('opportunity-resultado-cultbr-card', {
             }
         },
 
+        /** Troca também as respostas da tela: só na abertura e quando a versão do formulário muda. */
         aplicarEstado(body) {
-            this.estado = body.estado;
-            this.motivo = body.motivo ?? null;
             this.estrutura = body.estrutura;
             this.respostas = body.respostas ?? {};
             this.respostasAutomaticas = body.respostasAutomaticas ?? {};
             this.questoesSemFonte = body.questoesSemFonte ?? [];
+            this.isFormularioAtualizado = this.isFormularioAtualizado || Boolean(body.versaoAlterada);
+            this.aplicarSituacao(body);
+        },
+
+        aplicarSituacao(body) {
+            this.estado = body.estado;
+            this.motivo = body.motivo ?? null;
             this.envioHabilitado = Boolean(body.envioHabilitado);
+            this.pendencias = body.pendencias ?? [];
+            this.bloqueios = body.bloqueios ?? [];
+            this.errosFormulario = body.erros ?? {};
+        },
+
+        isOutraVersao(body) {
+            return body.estrutura?.id_formulario_versao !== this.estrutura?.id_formulario_versao;
+        },
+
+        /** Atualiza a situação sem tocar no que o gestor está digitando. */
+        async relerSituacao() {
+            const url = this.api.createUrl('resultadoFormulario', { opportunityId: this.entity.id });
+            const response = await this.api.GET(url);
+            const body = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                this.aplicarSituacao({ ...body, erros: this.errosFormulario });
+            }
         },
 
         /**
@@ -154,13 +190,15 @@ app.component('opportunity-resultado-cultbr-card', {
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
-                    const motivo = typeof body?.data === 'string' ? body.data : null;
+                    const motivo = body?.data?.message ?? (typeof body?.data === 'string' ? body.data : null);
+                    this.pendencias = body?.data?.pendencias ?? this.pendencias;
+                    this.bloqueios = body?.data?.bloqueios ?? this.bloqueios;
                     this.messages.error(motivo ?? this.translateMessage('erro_enviar'));
                     return;
                 }
 
                 this.messages.success(this.translateMessage('envio_agendado'));
-                await this.load();
+                await this.relerSituacao();
             } catch (error) {
                 this.messages.error(this.translateMessage('erro_enviar'));
             } finally {
@@ -179,18 +217,27 @@ app.component('opportunity-resultado-cultbr-card', {
 
             try {
                 const url = this.api.createUrl('resultadoFormulario', {});
-                const response = await this.api.POST(url, { opportunityId: this.entity.id, respostas: valores });
+                const response = await this.api.POST(url, {
+                    opportunityId: this.entity.id,
+                    id_formulario_versao: this.estrutura.id_formulario_versao,
+                    respostas: valores,
+                });
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
-                    this.errosFormulario = body?.data?.respostas ?? {};
-                    const motivo = body?.data?.message ?? (typeof body?.data === 'string' ? body.data : null);
+                    const motivo = typeof body?.data === 'string' ? body.data : null;
                     this.messages.error(motivo ?? this.translateMessage('erro_salvar'));
                     return;
                 }
 
-                this.errosFormulario = {};
-                this.aplicarEstado(body);
+                if (this.isOutraVersao(body)) {
+                    // As respostas na fila são da versão que saiu.
+                    this.pendingSave = null;
+                    this.aplicarEstado(body);
+                    return;
+                }
+
+                this.aplicarSituacao(body);
                 // Autosave: sem toast a cada digitação — o formulário mostra "Salvo às HH:MM".
                 this.salvoEm = new Date();
             } catch (error) {
