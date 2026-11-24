@@ -45,6 +45,11 @@ app.component('opportunity-resultado-formulario', {
             type: Array,
             default: () => [],
         },
+        // Modelo de planilha do edital no CultBR; nulo antes de o edital chegar lá.
+        planilha: {
+            type: Object,
+            default: null,
+        },
         erros: {
             type: Object,
             default: () => ({}),
@@ -313,6 +318,19 @@ app.component('opportunity-resultado-formulario', {
 
         mascaraDe(questao) {
             return resultadoMascara(questao.mascara) ?? resultadoMascara(questao.config?.padraoValidacao);
+        },
+
+        avisoDaPlanilha() {
+            return this.planilha?.possui === false && this.planilha.motivo
+                ? this.translateMessage('sem_planilha', { motivo: this.planilha.motivo })
+                : this.translateMessage('planilha');
+        },
+
+        /** Com modelo de planilha, o CultBR ainda não recebe os documentos que a ação exige. */
+        isDependenteDoCultBr() {
+            return this.planilha?.possui === true && this.etapas
+                .flatMap((etapa) => this.questoesVisiveis(etapa))
+                .some((questao) => questao.requerida && this.tipoDoCampo(questao) === 'documento');
         },
 
         formatosDe(questao) {

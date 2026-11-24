@@ -58,6 +58,7 @@ app.component('opportunity-resultado-cultbr-card', {
             envioHabilitado: false,
             pendencias: [],
             bloqueios: [],
+            planilha: null,
             isFormularioAtualizado: false,
             isAlterado: false,
             errosFormulario: {},
@@ -154,6 +155,7 @@ app.component('opportunity-resultado-cultbr-card', {
             this.envioHabilitado = Boolean(body.envioHabilitado);
             this.pendencias = body.pendencias ?? [];
             this.bloqueios = body.bloqueios ?? [];
+            this.planilha = body.planilha ?? null;
             this.errosFormulario = body.erros ?? {};
         },
 

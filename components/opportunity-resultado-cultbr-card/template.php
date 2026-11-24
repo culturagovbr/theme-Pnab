@@ -36,6 +36,13 @@ $this->import('
 
         <mc-alert v-if="!travado && isFormularioAtualizado" type="warning">{{ translateMessage('formulario_atualizado') }}</mc-alert>
 
+        <mc-alert v-if="!travado && bloqueios.length" type="warning">
+            <p>{{ translateMessage('bloqueios') }}</p>
+            <ul>
+                <li v-for="bloqueio in bloqueios" :key="bloqueio.nome + bloqueio.motivo"><strong v-if="bloqueio.nome">{{ bloqueio.nome }}:</strong> {{ bloqueio.motivo }}</li>
+            </ul>
+        </mc-alert>
+
         <opportunity-resultado-formulario
             v-if="!travado"
             :estado="estado"
@@ -45,6 +52,7 @@ $this->import('
             :respostas-automaticas="respostasAutomaticas"
             :questoes-sem-fonte="questoesSemFonte"
             :erros="errosFormulario"
+            :planilha="planilha"
             :salvando="isSaving"
             :salvo-em="salvoEm"
             @alterado="isAlterado = $event"
@@ -52,13 +60,6 @@ $this->import('
         </opportunity-resultado-formulario>
 
         <template v-if="!travado">
-            <div v-if="bloqueios.length" class="resultado-cultbr-card__impedimentos">
-                <p>{{ translateMessage('bloqueios') }}</p>
-                <ul>
-                    <li v-for="bloqueio in bloqueios" :key="bloqueio.id_questao"><strong v-if="bloqueio.nome">{{ bloqueio.nome }}:</strong> {{ bloqueio.motivo }}</li>
-                </ul>
-            </div>
-
             <div v-if="pendencias.length" class="resultado-cultbr-card__impedimentos">
                 <p>{{ translateMessage('pendencias') }}</p>
                 <ul>

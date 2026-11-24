@@ -90,6 +90,10 @@
 
     &__item {
         margin-bottom: size(20);
+
+        > .alert {
+            margin-bottom: size(12);
+        }
     }
 
     &__box--loading {

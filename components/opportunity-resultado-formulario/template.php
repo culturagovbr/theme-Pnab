@@ -83,7 +83,9 @@ $this->import('
                     <input type="text" :id="'resultado-questao-' + questao.id_questao" :maxlength="limiteDe(questao)" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)">
                 </div>
 
-                <p v-else-if="tipoDoCampo(questao) === 'planilha'" class="resultado-formulario__aviso">{{ translateMessage('planilha') }}</p>
+                <p v-else-if="tipoDoCampo(questao) === 'planilha'" class="resultado-formulario__aviso">{{ avisoDaPlanilha() }}</p>
+
+                <p v-else-if="tipoDoCampo(questao) === 'documento' && isDependenteDoCultBr()" class="resultado-formulario__aviso">{{ translateMessage('documento_dependente') }}</p>
 
                 <div v-else-if="tipoDoCampo(questao) === 'documento'" class="resultado-formulario__aviso">
                     <p>{{ translateMessage('documento') }}</p>
