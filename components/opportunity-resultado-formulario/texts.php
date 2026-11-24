@@ -5,6 +5,8 @@ use MapasCulturais\i;
 return [
     'salvando' => i::__('Salvando...'),
     'salvo_as' => i::__('Salvo às'),
-    'outros' => i::__('Outros (descreva)'),
-    'adicionar_linha' => i::__('Adicionar linha'),
+    'planilha' => i::__('A planilha é montada a partir da Lista de beneficiários e não precisa ser anexada.'),
+    'documento' => i::__('O envio de documentos ainda não está disponível.'),
+    'formatos' => i::__('Formatos aceitos: {formatos}'),
+    'tipo_desconhecido' => i::__('Tipo de questão não suportado: {tipo}'),
 ];

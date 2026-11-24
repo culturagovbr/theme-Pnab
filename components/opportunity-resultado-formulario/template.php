@@ -12,7 +12,8 @@ use MapasCulturais\i;
 $this->import('
     mc-accordion
     mc-currency-input
-    mc-icon
+    opportunity-resultado-escolha
+    opportunity-resultado-tabela
 ');
 ?>
 <div class="resultado-formulario">
@@ -38,25 +39,14 @@ $this->import('
             <div v-else v-for="questao in [bloco.questao]" :key="questao.id_questao" class="field" :class="[{ error: erroDe(questao) }, campoLargo(questao) ? 'col-12' : 'col-6']">
                 <label class="field__title" :for="'resultado-questao-' + questao.id_questao">
                     {{ questao.nome }}
-                    <span v-if="questao.requerida" class="required">*<?php i::_e('obrigatório') ?></span>
+                    <span v-if="questao.requerida && tipoDoCampo(questao) !== 'planilha'" class="required">*<?php i::_e('obrigatório') ?></span>
                 </label>
                 <small v-if="questao.descricao" class="field__description">{{ questao.descricao }}</small>
 
-                <div v-if="tipoDoCampo(questao) === 'tabela-automatica'" class="resultado-formulario__tabela resultado-formulario__tabela--auto">
-                    <table>
-                        <thead>
-                            <tr><th v-for="coluna in colunasDe(questao)" :key="coluna.key">{{ coluna.label }}</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(linha, indice) in valorAutomatico(questao)" :key="indice">
-                                <td v-for="coluna in colunasDe(questao)" :key="coluna.key">{{ celulaAutomaticaFormatada(questao, linha, coluna) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <opportunity-resultado-tabela v-if="tipoDoCampo(questao) === 'tabela-automatica'" :questao="questao" :linhas="valorAutomatico(questao)" somente-leitura></opportunity-resultado-tabela>
 
                 <div v-else-if="tipoDoCampo(questao) === 'número'" class="field__input">
-                    <input type="number" :id="'resultado-questao-' + questao.id_questao" :value="numeroDe(questao)" :min="questao.valor_minimo ?? undefined" :max="questao.valor_maximo ?? undefined" :placeholder="questao.placeholder ?? ''" @input="definirTexto(questao, $event.target.value)">
+                    <input type="number" :id="'resultado-questao-' + questao.id_questao" :value="numeroDe(questao)" :min="minimoDe(questao)" :max="questao.valor_maximo ?? undefined" :step="passoDe(questao)" :placeholder="questao.placeholder ?? ''" @input="definirTexto(questao, $event.target.value)">
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'moeda'" class="field__input">
@@ -68,62 +58,37 @@ $this->import('
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'textarea'" class="field__input">
-                    <textarea :id="'resultado-questao-' + questao.id_questao" rows="4" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)"></textarea>
+                    <textarea :id="'resultado-questao-' + questao.id_questao" rows="4" :maxlength="limiteDe(questao)" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)"></textarea>
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'booleano'" class="field__input">
                     <select :id="'resultado-questao-' + questao.id_questao" :value="booleanoDe(questao)" @change="definirBooleano(questao, $event.target.value)">
                         <option value=""><?php i::_e('Selecione') ?></option>
-                        <option value="sim"><?php i::_e('Sim') ?></option>
-                        <option value="nao"><?php i::_e('Não') ?></option>
+                        <option value="sim">{{ questao.config?.labelSim || '<?= i::esc_attr__('Sim') ?>' }}</option>
+                        <option value="nao">{{ questao.config?.labelNao || '<?= i::esc_attr__('Não') ?>' }}</option>
                     </select>
                 </div>
 
-                <div v-else-if="tipoDoCampo(questao) === 'múltipla escolha'" class="field__group resultado-formulario__opcoes">
-                    <label v-for="item in itensDe(questao)" :key="item.id ?? item.valor" class="field__checkbox">
-                        <input type="checkbox" :checked="marcado(questao, item.valor)" @change="alternarItem(questao, item.valor)">
-                        <span>{{ item.label ?? item.valor }}</span>
-                    </label>
+                <opportunity-resultado-escolha v-else-if="tipoDoCampo(questao) === 'escolha'" :questao="questao" :valor="valorDe(questao)" @definir="definir(questao, $event)"></opportunity-resultado-escolha>
 
-                    <div v-if="questao.permite_inclusao_outros" class="resultado-formulario__outros">
-                        <label class="field__title">{{ translateMessage('outros') }}</label>
-                        <div class="field__input">
-                            <input type="text" :value="outrosDe(questao)" @change="definirOutros(questao, $event.target.value)">
-                        </div>
-                    </div>
+                <opportunity-resultado-tabela v-else-if="tipoDoCampo(questao) === 'tabela'" :questao="questao" :linhas="linhasDe(questao)" @definir="definir(questao, $event)"></opportunity-resultado-tabela>
+
+                <div v-else-if="tipoDoCampo(questao) === 'texto' && mascaraDe(questao)" class="field__input">
+                    <input type="text" :id="'resultado-questao-' + questao.id_questao" v-maska :data-maska="mascaraDe(questao)" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)">
                 </div>
 
-                <div v-else-if="tipoDoCampo(questao) === 'Tabela Dinâmica'" class="resultado-formulario__tabela">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th v-for="coluna in colunasDe(questao)" :key="coluna.key">{{ coluna.label }}</th>
-                                <th v-if="podeRemoverLinha(questao)"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(linha, indice) in linhasDe(questao)" :key="indice">
-                                <td v-for="coluna in colunasDe(questao)" :key="coluna.key">
-                                    <input v-if="coluna.type === 'number'" type="number" :disabled="coluna.readOnly" :min="coluna.min ?? undefined" :value="celulaDe(questao, indice, coluna.key)" @input="definirCelula(questao, indice, coluna.key, $event.target.value)">
-                                    <input v-else-if="coluna.type === 'currency'" type="number" step="0.01" :disabled="coluna.readOnly" :min="coluna.min ?? undefined" :value="celulaDe(questao, indice, coluna.key)" @input="definirCelula(questao, indice, coluna.key, $event.target.value)">
-                                    <input v-else type="text" :disabled="coluna.readOnly" :maxlength="coluna.max ?? undefined" :value="celulaDe(questao, indice, coluna.key)" @input="definirCelula(questao, indice, coluna.key, $event.target.value)">
-                                </td>
-                                <td v-if="podeRemoverLinha(questao)" class="resultado-formulario__tabela-remover">
-                                    <button type="button" class="button button--sm button--text" @click="removerLinha(questao, indice)"><?php i::_e('Remover') ?></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <button v-if="podeAdicionarLinha(questao)" type="button" class="button button--sm button--secondary" @click="adicionarLinha(questao)">
-                        {{ rotuloAdicionarLinha(questao) }}
-                    </button>
+                <div v-else-if="tipoDoCampo(questao) === 'texto'" class="field__input">
+                    <input type="text" :id="'resultado-questao-' + questao.id_questao" :maxlength="limiteDe(questao)" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)">
                 </div>
 
-                <!-- texto e qualquer tipo novo do PAR: campo de texto simples -->
-                <div v-else class="field__input">
-                    <input type="text" :id="'resultado-questao-' + questao.id_questao" :maxlength="questao.valor_maximo ?? undefined" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)">
+                <p v-else-if="tipoDoCampo(questao) === 'planilha'" class="resultado-formulario__aviso">{{ translateMessage('planilha') }}</p>
+
+                <div v-else-if="tipoDoCampo(questao) === 'documento'" class="resultado-formulario__aviso">
+                    <p>{{ translateMessage('documento') }}</p>
+                    <small v-if="formatosDe(questao)">{{ translateMessage('formatos', { formatos: formatosDe(questao) }) }}</small>
                 </div>
+
+                <p v-else class="resultado-formulario__aviso resultado-formulario__aviso--erro" role="alert">{{ translateMessage('tipo_desconhecido', { tipo: questao.tipo_questao }) }}</p>
 
                 <p v-if="erroDe(questao)" class="field__error" role="alert">{{ erroDe(questao) }}</p>
             </div>

@@ -4,11 +4,20 @@
  * que recebe os valores pelo evento `salvar`.
  */
 
-/** Questões sem campo nesta fase da integração. */
-const FORMULARIO_TIPOS_OCULTOS = ['anexo', 'visualização simplificada edital'];
+const FORMULARIO_TIPOS_DE_ANEXO = ['anexo', 'múltiplos anexos'];
+const FORMULARIO_TIPOS_DE_ESCOLHA = ['radio', 'checkbox', 'múltipla escolha'];
+const FORMULARIO_TIPOS_DE_TABELA = ['tabela', 'Tabela Dinâmica'];
+const FORMULARIO_TIPOS_SIMPLES = ['texto', 'textarea', 'número', 'moeda', 'data', 'booleano'];
 
-/** A data de publicação é automática em qualquer formulário do PAR — a tag a identifica. */
-const FORMULARIO_TAG_DATA_PUBLICACAO = 'data_publicacao';
+/** Máscaras que o PAR declara, no formato do v-maska; o CNPJ aceita letras. */
+const FORMULARIO_MASCARAS = {
+    cep: '#####-###',
+    cpf: '###.###.###-##',
+    cnpj: '**.***.***/****-##',
+    documento: JSON.stringify(['###.###.###-##', '**.***.***/****-##']),
+};
+
+globalThis.resultadoMascara = (nome) => FORMULARIO_MASCARAS[nome] ?? null;
 
 app.component('opportunity-resultado-formulario', {
     template: $TEMPLATES['opportunity-resultado-formulario'],
@@ -113,10 +122,7 @@ app.component('opportunity-resultado-formulario', {
 
         questoesVisiveis(etapa) {
             return (etapa.questoes ?? []).filter(
-                (questao) => !FORMULARIO_TIPOS_OCULTOS.includes(questao.tipo_questao)
-                    && !this.isDataPublicacao(questao)
-                    && !this.isSemFonte(questao)
-                    && this.dependenciaSatisfeita(questao),
+                (questao) => !this.isSemFonte(questao) && this.dependenciaSatisfeita(questao),
             );
         },
 
@@ -153,11 +159,31 @@ app.component('opportunity-resultado-formulario', {
         },
 
         tipoDoCampo(questao) {
+            const tipo = questao.tipo_questao;
+
             if (this.isAutomatica(questao)) {
-                return questao.tipo_questao === 'Tabela Dinâmica' ? 'tabela-automatica' : 'texto-automatico';
+                return FORMULARIO_TIPOS_DE_TABELA.includes(tipo) ? 'tabela-automatica' : 'texto-automatico';
             }
 
-            return questao.tipo_questao;
+            if (FORMULARIO_TIPOS_DE_ANEXO.includes(tipo)) {
+                return this.isPlanilha(questao) ? 'planilha' : 'documento';
+            }
+
+            if (FORMULARIO_TIPOS_DE_ESCOLHA.includes(tipo)) {
+                return 'escolha';
+            }
+
+            if (FORMULARIO_TIPOS_DE_TABELA.includes(tipo)) {
+                return 'tabela';
+            }
+
+            return FORMULARIO_TIPOS_SIMPLES.includes(tipo) ? tipo : 'desconhecido';
+        },
+
+        /** A planilha de contemplados sai da lista de beneficiários, nunca de um arquivo. */
+        isPlanilha(questao) {
+            return (questao.tag ?? '').includes('planilha')
+                && (questao.nome ?? '').toLowerCase().startsWith('planilha de resultados');
         },
 
         isAutomatica(questao) {
@@ -177,8 +203,7 @@ app.component('opportunity-resultado-formulario', {
         campoLargo(questao) {
             const tipo = this.tipoDoCampo(questao);
 
-            return ['textarea', 'múltipla escolha', 'Tabela Dinâmica', 'tabela-automatica',
-                'visualização simplificada edital'].includes(tipo);
+            return ['textarea', 'escolha', 'tabela', 'tabela-automatica', 'documento', 'planilha', 'desconhecido'].includes(tipo);
         },
 
         automaticoFormatado(questao) {
@@ -212,24 +237,6 @@ app.component('opportunity-resultado-formulario', {
                 : String(valor ?? '');
         },
 
-        celulaAutomaticaFormatada(questao, linha, coluna) {
-            const valor = linha[coluna.key];
-
-            if (valor === null || valor === undefined) {
-                return '—';
-            }
-
-            if (coluna.type === 'currency') {
-                return this.formatoMoeda(valor);
-            }
-
-            return coluna.type === 'number' ? this.formatoNumero(valor) : String(valor);
-        },
-
-        isDataPublicacao(questao) {
-            return (questao.tag ?? '').startsWith(FORMULARIO_TAG_DATA_PUBLICACAO);
-        },
-
         erroDe(questao) {
             return this.erros?.[questao.id_questao] ?? this.erros?.[String(questao.id_questao)] ?? null;
         },
@@ -252,8 +259,34 @@ app.component('opportunity-resultado-formulario', {
         },
 
         moedaDe(questao) {
-            const valor = Number(this.valorDe(questao));
-            return Number.isFinite(valor) ? valor : 0;
+            const valor = this.valorDe(questao);
+            return valor === null || valor === undefined || valor === '' ? null : Number(valor);
+        },
+
+        minimoDe(questao) {
+            return this.maisRestrito(Math.max, questao.valor_minimo, questao.config?.numericoMinimo);
+        },
+
+        passoDe(questao) {
+            return questao.config?.numericoSomenteInteiros ? 1 : 'any';
+        },
+
+        /** Em texto, o limite conta caracteres. */
+        limiteDe(questao) {
+            return this.maisRestrito(Math.min, questao.valor_maximo, questao.config?.limiteCaracteres);
+        },
+
+        maisRestrito(compara, ...limites) {
+            const declarados = limites.filter((limite) => limite !== null && limite !== undefined);
+            return declarados.length ? compara(...declarados.map(Number)) : undefined;
+        },
+
+        mascaraDe(questao) {
+            return resultadoMascara(questao.mascara) ?? resultadoMascara(questao.config?.padraoValidacao);
+        },
+
+        formatosDe(questao) {
+            return (questao.config?.formatos ?? []).join(', ');
         },
 
         booleanoDe(questao) {
@@ -265,80 +298,9 @@ app.component('opportunity-resultado-formulario', {
             this.definir(questao, opcao === 'sim' ? true : opcao === 'nao' ? false : null);
         },
 
-        itensDe(questao) {
-            return questao.opcao?.itens ?? [];
-        },
-
-        selecionados(questao) {
-            const valor = this.valorDe(questao);
-            return Array.isArray(valor) ? valor : valor ? [valor] : [];
-        },
-
-        marcado(questao, valor) {
-            return this.selecionados(questao).includes(valor);
-        },
-
-        alternarItem(questao, valor) {
-            const atual = new Set(this.selecionados(questao));
-            atual.has(valor) ? atual.delete(valor) : atual.add(valor);
-            this.definir(questao, [...atual]);
-        },
-
-        /** O que está selecionado fora do vocabulário é o texto livre de "outros". */
-        outrosDe(questao) {
-            const conhecidos = new Set(this.itensDe(questao).map((item) => item.valor));
-            return this.selecionados(questao).filter((valor) => !conhecidos.has(valor)).join('; ');
-        },
-
-        definirOutros(questao, texto) {
-            const conhecidos = new Set(this.itensDe(questao).map((item) => item.valor));
-            const doVocabulario = this.selecionados(questao).filter((valor) => conhecidos.has(valor));
-            this.definir(questao, texto ? [...doVocabulario, texto] : doVocabulario);
-        },
-
-        colunasDe(questao) {
-            return questao.config?.columns ?? [];
-        },
-
         linhasDe(questao) {
             const valor = this.valorDe(questao);
             return Array.isArray(valor) ? valor : [];
-        },
-
-        rotuloAdicionarLinha(questao) {
-            return questao.config?.buttonLabel || this.translateMessage('adicionar_linha');
-        },
-
-        podeAdicionarLinha(questao) {
-            return (questao.config?.actions ?? []).includes('create');
-        },
-
-        podeRemoverLinha(questao) {
-            return (questao.config?.actions ?? []).includes('delete');
-        },
-
-        adicionarLinha(questao) {
-            const linha = {};
-            for (const coluna of this.colunasDe(questao)) {
-                linha[coluna.key] = null;
-            }
-            this.definir(questao, [...this.linhasDe(questao), linha]);
-        },
-
-        removerLinha(questao, indice) {
-            this.definir(questao, this.linhasDe(questao).filter((_, i) => i !== indice));
-        },
-
-        definirCelula(questao, indice, chave, valor) {
-            const linhas = this.linhasDe(questao).map(
-                (linha, i) => (i === indice ? { ...linha, [chave]: valor === '' ? null : valor } : linha),
-            );
-            this.definir(questao, linhas);
-        },
-
-        celulaDe(questao, indice, chave) {
-            const valor = this.linhasDe(questao)[indice]?.[chave];
-            return valor === null || valor === undefined ? '' : valor;
         },
 
         salvar() {

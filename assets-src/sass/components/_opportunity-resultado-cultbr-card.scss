@@ -259,8 +259,35 @@
         gap: size(8);
     }
 
-    &__outros {
-        margin-top: size(8);
+    &__opcao {
+        display: flex;
+        flex-direction: column;
+        gap: size(4);
+
+        .field__description {
+            padding-left: size(24);
+        }
+    }
+
+    &__complemento {
+        padding-left: size(24);
+    }
+
+    &__aviso {
+        margin: 0;
+        padding: size(12) size(16);
+        border-radius: size(4);
+        background: var(--mc-gray-100, #f4f4f4);
+        color: var(--mc-gray-700, #555);
+
+        p {
+            margin: 0;
+        }
+
+        &--erro {
+            background: rgba(#c5161d, 0.08);
+            color: #c5161d;
+        }
     }
 
     &__tabela {
@@ -283,7 +310,8 @@
         td {
             padding: size(4) size(8);
 
-            input {
+            input,
+            select {
                 width: 100%;
                 min-width: size(120);
             }
