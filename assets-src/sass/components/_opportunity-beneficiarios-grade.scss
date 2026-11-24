@@ -115,20 +115,6 @@
         color: var(--mc-gray-500);
     }
 
-    &__automatico {
-        white-space: nowrap;
-
-        // A coluna que o sistema resolve não tem campo para pintar; o vazio cobrado ganha a marca aqui.
-        &--pendente {
-            display: inline-block;
-            padding: size(2) size(10);
-            border-radius: var(--mc-border-radius-xs);
-            background: rgba(#b04706, 0.1);
-            color: var(--mc-warning-500);
-            font-weight: 600;
-        }
-    }
-
     // A célula em repouso: ocupa a mesma caixa do campo, para a linha não pular quando ele aparece.
     &__valor {
         display: block;
@@ -147,6 +133,11 @@
         &--pendente {
             border-color: var(--mc-warning-500);
             background: rgba(#b04706, 0.07);
+        }
+
+        // Documento, CEP e valor não quebram no hífen.
+        &--inteiro {
+            white-space: nowrap;
         }
     }
 

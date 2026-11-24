@@ -14,9 +14,7 @@ return [
     'completa' => i::__('Completa'),
     'uma_pendencia' => i::__('1 pendência'),
     'varias_pendencias' => i::__(':quantas pendências'),
-    'documento' => i::__('CPF / CNPJ do responsável'),
     'editar' => i::__('Clique para editar'),
     'salvando' => i::__('Salvando…'),
     'salvo' => i::__('Salvo'),
-    'lista_dica' => i::__('Separe por vírgula'),
 ];
