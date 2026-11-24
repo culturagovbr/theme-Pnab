@@ -12,6 +12,7 @@ use MapasCulturais\i;
 $this->import('
     mc-accordion
     mc-currency-input
+    opportunity-resultado-anexo
     opportunity-resultado-escolha
     opportunity-resultado-tabela
 ');
@@ -87,10 +88,7 @@ $this->import('
 
                 <p v-else-if="tipoDoCampo(questao) === 'documento' && isDependenteDoCultBr()" class="resultado-formulario__aviso">{{ translateMessage('documento_dependente') }}</p>
 
-                <div v-else-if="tipoDoCampo(questao) === 'documento'" class="resultado-formulario__aviso">
-                    <p>{{ translateMessage('documento') }}</p>
-                    <small v-if="formatosDe(questao)">{{ translateMessage('formatos', { formatos: formatosDe(questao) }) }}</small>
-                </div>
+                <opportunity-resultado-anexo v-else-if="tipoDoCampo(questao) === 'documento'" :questao="questao" :arquivos="arquivosDe(questao)" :enviando="anexando === questao.id_questao" :bloqueado="anexando !== null" @anexar="$emit('anexar', questao, $event)" @retirar="$emit('retirar', questao, $event)"></opportunity-resultado-anexo>
 
                 <p v-else class="resultado-formulario__aviso resultado-formulario__aviso--erro" role="alert">{{ translateMessage('tipo_desconhecido', { tipo: questao.tipo_questao }) }}</p>
 

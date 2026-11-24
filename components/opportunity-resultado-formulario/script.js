@@ -21,7 +21,7 @@ globalThis.resultadoMascara = (nome) => FORMULARIO_MASCARAS[nome] ?? null;
 
 app.component('opportunity-resultado-formulario', {
     template: $TEMPLATES['opportunity-resultado-formulario'],
-    emits: ['alterado', 'salvar'],
+    emits: ['alterado', 'salvar', 'anexar', 'retirar'],
 
     setup() {
         const translateMessage = Utils.getTexts('opportunity-resultado-formulario');
@@ -44,6 +44,16 @@ app.component('opportunity-resultado-formulario', {
         questoesSemFonte: {
             type: Array,
             default: () => [],
+        },
+        // Arquivos de cada questão de documento, por id_questao.
+        anexos: {
+            type: Object,
+            default: () => ({}),
+        },
+        // Questão com arquivo em trânsito.
+        anexando: {
+            type: Number,
+            default: null,
         },
         // Modelo de planilha do edital no CultBR; nulo antes de o edital chegar lá.
         planilha: {
@@ -333,8 +343,8 @@ app.component('opportunity-resultado-formulario', {
                 .some((questao) => questao.requerida && this.tipoDoCampo(questao) === 'documento');
         },
 
-        formatosDe(questao) {
-            return (questao.config?.formatos ?? []).join(', ');
+        arquivosDe(questao) {
+            return this.anexos?.[questao.id_questao] ?? [];
         },
 
         booleanoDe(questao) {

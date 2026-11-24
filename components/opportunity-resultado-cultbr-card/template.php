@@ -63,11 +63,15 @@ $this->import('
             :respostas="respostas"
             :respostas-automaticas="respostasAutomaticas"
             :questoes-sem-fonte="questoesSemFonte"
-            :erros="errosFormulario"
+            :erros="errosDosCampos"
+            :anexos="anexos"
+            :anexando="anexando"
             :planilha="planilha"
             :salvando="isSaving"
             :salvo-em="salvoEm"
             @alterado="isAlterado = $event"
+            @anexar="anexar"
+            @retirar="retirar"
             @salvar="salvarRespostas">
         </opportunity-resultado-formulario>
 

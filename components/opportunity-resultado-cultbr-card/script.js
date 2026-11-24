@@ -78,6 +78,9 @@ app.component('opportunity-resultado-cultbr-card', {
             pendencias: [],
             bloqueios: [],
             planilha: null,
+            anexos: {},
+            anexando: null,
+            errosDosAnexos: {},
             ultimoEnvio: null,
             releituraTimeout: null,
             isFormularioAtualizado: false,
@@ -92,6 +95,7 @@ app.component('opportunity-resultado-cultbr-card', {
 
     created() {
         this.api = new API('aldirblanc', 'resultado-formulario', { cacheMode: 'no-store' });
+        this.gravacao = Promise.resolve();
 
         if (this.preloaded) {
             this.aplicarEstado(this.preloaded);
@@ -123,9 +127,14 @@ app.component('opportunity-resultado-cultbr-card', {
             return Object.keys(this.errosFormulario).length > 0;
         },
 
+        /** O arquivo recusado não foi guardado: aparece no campo, mas não impede o envio. */
+        errosDosCampos() {
+            return { ...this.errosFormulario, ...this.errosDosAnexos };
+        },
+
         podeEnviar() {
             return this.envioHabilitado && !this.isEnvioNoPrazo && !this.temErros
-                && !this.isAlterado && !this.isSaving && !this.isEnviando;
+                && !this.isAlterado && !this.isSaving && !this.isEnviando && this.anexando === null;
         },
 
         /** Enquanto o envio anterior pode estar sendo processado, não cabe outro. */
@@ -215,6 +224,7 @@ app.component('opportunity-resultado-cultbr-card', {
             this.pendencias = body.pendencias ?? [];
             this.bloqueios = body.bloqueios ?? [];
             this.planilha = body.planilha ?? null;
+            this.anexos = body.anexos ?? {};
             this.ultimoEnvio = body.ultimoEnvio ?? null;
             this.errosFormulario = body.erros ?? {};
             this.agendarReleitura();
@@ -306,6 +316,60 @@ app.component('opportunity-resultado-cultbr-card', {
             }
         },
 
+        /** Respostas e arquivos gravam o mesmo registro no servidor: uma gravação por vez. */
+        gravar(url, dados) {
+            const resposta = this.gravacao.then(() => this.api.POST(url, dados));
+            this.gravacao = resposta.catch(() => {});
+            return resposta;
+        },
+
+        anexar(questao, arquivo) {
+            const dados = new FormData();
+            dados.append('id_formulario_versao', this.estrutura.id_formulario_versao);
+            dados.append('id_questao', questao.id_questao);
+            dados.append('arquivo', arquivo);
+
+            return this.alterarAnexos(questao, this.api.createUrl('resultadoAnexo', { opportunityId: this.entity.id }), dados);
+        },
+
+        retirar(questao, idArquivo) {
+            return this.alterarAnexos(questao, this.api.createUrl('resultadoAnexoRetirar', {}), {
+                opportunityId: this.entity.id,
+                id_formulario_versao: this.estrutura.id_formulario_versao,
+                id_questao: questao.id_questao,
+                id_arquivo: idArquivo,
+            });
+        },
+
+        async alterarAnexos(questao, url, dados) {
+            this.anexando = questao.id_questao;
+            delete this.errosDosAnexos[questao.id_questao];
+
+            try {
+                const response = await this.gravar(url, dados);
+                const body = await response.json().catch(() => ({}));
+
+                if (!response.ok || !body.estrutura) {
+                    const motivo = typeof body?.data === 'string' ? body.data : null;
+                    this.errosDosAnexos[questao.id_questao] = motivo ?? this.translateMessage('erro_anexo');
+                    return;
+                }
+
+                if (this.isOutraVersao(body)) {
+                    this.pendingSave = null;
+                    this.errosDosAnexos = {};
+                    this.aplicarEstado(body);
+                    return;
+                }
+
+                this.aplicarSituacao({ ...body, erros: this.errosFormulario });
+            } catch (error) {
+                this.errosDosAnexos[questao.id_questao] = this.translateMessage('erro_anexo');
+            } finally {
+                this.anexando = null;
+            }
+        },
+
         async salvarRespostas(valores) {
             if (this.isSaving) {
                 // Digitação durante o save em voo: guarda a versão mais nova e salva ao terminar.
@@ -317,7 +381,7 @@ app.component('opportunity-resultado-cultbr-card', {
 
             try {
                 const url = this.api.createUrl('resultadoFormulario', {});
-                const response = await this.api.POST(url, {
+                const response = await this.gravar(url, {
                     opportunityId: this.entity.id,
                     id_formulario_versao: this.estrutura.id_formulario_versao,
                     respostas: valores,
