@@ -144,6 +144,8 @@ app.component('opportunity-resultado-beneficiarios', {
         },
 
         async salvar() {
+            this.autosaveTimeout = null;
+
             if (this.isSaving) {
                 // Mudança durante o save em voo: salva de novo ao terminar, com o estado mais novo.
                 this.pendingSave = true;
@@ -167,7 +169,7 @@ app.component('opportunity-resultado-beneficiarios', {
                 }
 
                 // Com mudança mais nova em espera, aplicar o eco do servidor descartaria a edição em voo.
-                if (!this.pendingSave) {
+                if (!this.pendingSave && !this.autosaveTimeout) {
                     this.aplicar(body);
                 }
                 this.salvoEm = new Date();
