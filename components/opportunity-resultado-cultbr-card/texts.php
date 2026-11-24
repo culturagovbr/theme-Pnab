@@ -35,6 +35,11 @@ return [
     'envio_nao_enviado' => i::__('O pedido de {data} não foi enviado.'),
     'tipo_final' => i::__('Resultado final'),
     'tipo_retificado' => i::__('Resultado final retificado'),
+    'pendentes_um' => i::__('1 contemplado com pendência.'),
+    'pendentes_varios' => i::__('{total} contemplados com pendência.'),
+    'pendentes_listadas' => i::__('Estes são os {listadas} primeiros.'),
+    'abrir_lista' => i::__('Abrir a lista de beneficiários'),
+    'recusa_inscricao' => i::__('Inscrição {inscricao}, {coluna}'),
     'recusa_linha' => i::__('Linha {linha}, coluna {coluna}'),
     'erro_enviar' => i::__('Não foi possível enviar o resultado.'),
 ];

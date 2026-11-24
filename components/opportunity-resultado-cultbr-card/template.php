@@ -11,6 +11,7 @@
 $this->import('
     mc-alert
     mc-icon
+    mc-link
     mc-loading
     opportunity-resultado-formulario
 ');
@@ -40,9 +41,11 @@ $this->import('
             <strong>{{ translateMessage('situacao_do_envio') }}</strong>
             <p>{{ envioTexto }}</p>
             <p v-if="ultimoEnvio.mensagem">{{ ultimoEnvio.mensagem }}</p>
+            <p v-if="ultimoEnvio.totalPendentes">{{ pendentesTexto }}</p>
             <ul v-if="ultimoEnvio.recusas.length">
                 <li v-for="(recusa, indice) in ultimoEnvio.recusas" :key="indice"><strong>{{ rotuloDaRecusa(recusa) }}</strong><template v-if="recusa.descricao">: {{ recusa.descricao }}</template></li>
             </ul>
+            <mc-link v-if="temRecusaDeLinha" :entity="entity" route="resultadoBeneficiarios" target="_blank" rel="noopener">{{ translateMessage('abrir_lista') }}</mc-link>
         </mc-alert>
 
         <mc-alert v-if="!travado && bloqueios.length" type="warning">

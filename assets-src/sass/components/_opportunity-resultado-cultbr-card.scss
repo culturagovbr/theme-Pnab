@@ -148,6 +148,12 @@
         gap: size(12);
     }
 
+    // O alerta já define a cor do texto; a do link do tema some no vermelho.
+    &__situacao a {
+        color: inherit;
+        text-decoration: underline;
+    }
+
     &__impedimentos {
         margin-top: size(16);
         color: var(--mc-gray-700, #555);

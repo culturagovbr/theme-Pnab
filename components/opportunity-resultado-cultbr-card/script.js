@@ -148,6 +148,19 @@ app.component('opportunity-resultado-cultbr-card', {
             });
         },
 
+        /** Recusa ou pendência de linha se resolve na lista de beneficiários. */
+        temRecusaDeLinha() {
+            return this.ultimoEnvio.recusas.some((recusa) => recusa.tipo === 'linha');
+        },
+
+        pendentesTexto() {
+            const total = this.ultimoEnvio.totalPendentes;
+            const listadas = new Set(this.ultimoEnvio.recusas.map((recusa) => recusa.inscricao)).size;
+            const contagem = this.translateMessage(total === 1 ? 'pendentes_um' : 'pendentes_varios', { total });
+
+            return total > listadas ? `${contagem} ${this.translateMessage('pendentes_listadas', { listadas })}` : contagem;
+        },
+
         estadoLabel() {
             const key = RESULTADO_ESTADO_KEYS[this.estado];
             return key ? this.translateMessage(key) : '';
@@ -226,9 +239,13 @@ app.component('opportunity-resultado-cultbr-card', {
         },
 
         rotuloDaRecusa(recusa) {
-            return recusa.tipo === 'linha'
-                ? this.translateMessage('recusa_linha', { linha: recusa.indice + 1, coluna: recusa.coluna })
-                : recusa.nome;
+            if (recusa.tipo !== 'linha') {
+                return recusa.nome;
+            }
+
+            return recusa.inscricao
+                ? this.translateMessage('recusa_inscricao', { inscricao: recusa.inscricao, coluna: recusa.coluna })
+                : this.translateMessage('recusa_linha', { linha: recusa.indice + 1, coluna: recusa.coluna });
         },
 
         isOutraVersao(body) {
