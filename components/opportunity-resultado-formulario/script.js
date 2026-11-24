@@ -122,7 +122,7 @@ app.component('opportunity-resultado-formulario', {
 
         questoesVisiveis(etapa) {
             return (etapa.questoes ?? []).filter(
-                (questao) => !this.isSemFonte(questao) && this.dependenciaSatisfeita(questao),
+                (questao) => !this.isSemFonte(questao) && this.isVisivel(questao),
             );
         },
 
@@ -147,15 +147,34 @@ app.component('opportunity-resultado-formulario', {
             return blocos;
         },
 
-        dependenciaSatisfeita(questao) {
-            if (!questao.depende_de) {
-                return true;
+        /** Todas as regras precisam casar; a regra que o servidor não conhece não esconde nada. */
+        isVisivel(questao) {
+            return (questao.config?.regras?.itens ?? []).every((regra) => !this.isRegraSuportada(regra) || this.casa(regra));
+        },
+
+        isRegraSuportada(regra) {
+            return regra.tipo === 'visibilidade'
+                && JSON.stringify(regra.efeito) === JSON.stringify({ mostrar: true })
+                && ['eq', 'includes'].includes(regra.quando?.operador)
+                && this.fonteDe(regra) !== undefined;
+        },
+
+        fonteDe(regra) {
+            return this.etapas
+                .flatMap((etapa) => etapa.questoes ?? [])
+                .find((questao) => questao.id_questao_etapa === regra.quando.fonteIdQuestaoEtapa);
+        },
+
+        casa(regra) {
+            const fonte = this.fonteDe(regra);
+            const resposta = this.valorAutomatico(fonte) ?? this.valorDe(fonte) ?? null;
+            const marcado = (escolha) => (escolha !== null && typeof escolha === 'object' ? escolha.id : escolha);
+
+            if (regra.quando.operador === 'eq') {
+                return marcado(resposta) === regra.quando.valor;
             }
 
-            const valor = this.valores[questao.depende_de];
-
-            return !(valor === undefined || valor === null || valor === ''
-                || (Array.isArray(valor) && !valor.length));
+            return Array.isArray(resposta) && resposta.map(marcado).includes(regra.quando.valor);
         },
 
         tipoDoCampo(questao) {
