@@ -273,6 +273,11 @@
         padding-left: size(24);
     }
 
+    &__espelho {
+        margin: 0;
+        color: var(--mc-gray-700, #555);
+    }
+
     &__aviso {
         margin: 0;
         padding: size(12) size(16);

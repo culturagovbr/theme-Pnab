@@ -39,11 +39,13 @@ $this->import('
             <div v-else v-for="questao in [bloco.questao]" :key="questao.id_questao" class="field" :class="[{ error: erroDe(questao) }, campoLargo(questao) ? 'col-12' : 'col-6']">
                 <label class="field__title" :for="'resultado-questao-' + questao.id_questao">
                     {{ questao.nome }}
-                    <span v-if="questao.requerida && tipoDoCampo(questao) !== 'planilha'" class="required">*<?php i::_e('obrigatório') ?></span>
+                    <span v-if="questao.requerida && !['planilha', 'espelho'].includes(tipoDoCampo(questao))" class="required">*<?php i::_e('obrigatório') ?></span>
                 </label>
                 <small v-if="questao.descricao" class="field__description">{{ questao.descricao }}</small>
 
                 <opportunity-resultado-tabela v-if="tipoDoCampo(questao) === 'tabela-automatica'" :questao="questao" :linhas="valorAutomatico(questao)" somente-leitura></opportunity-resultado-tabela>
+
+                <p v-else-if="tipoDoCampo(questao) === 'espelho'" class="resultado-formulario__espelho">{{ valorDe(questao) ?? translateMessage('espelho') }}</p>
 
                 <div v-else-if="tipoDoCampo(questao) === 'número'" class="field__input">
                     <input type="number" :id="'resultado-questao-' + questao.id_questao" :value="numeroDe(questao)" :min="minimoDe(questao)" :max="questao.valor_maximo ?? undefined" :step="passoDe(questao)" :placeholder="questao.placeholder ?? ''" @input="definirTexto(questao, $event.target.value)">

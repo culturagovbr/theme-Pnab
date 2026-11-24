@@ -184,6 +184,10 @@ app.component('opportunity-resultado-formulario', {
                 return FORMULARIO_TIPOS_DE_TABELA.includes(tipo) ? 'tabela-automatica' : 'texto-automatico';
             }
 
+            if (questao.somente_leitura) {
+                return 'espelho';
+            }
+
             if (FORMULARIO_TIPOS_DE_ANEXO.includes(tipo)) {
                 return this.isPlanilha(questao) ? 'planilha' : 'documento';
             }
