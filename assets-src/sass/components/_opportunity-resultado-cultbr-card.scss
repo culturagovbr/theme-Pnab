@@ -346,6 +346,64 @@
         }
     }
 
+    &__anexo {
+        display: grid;
+        justify-items: start;
+        gap: size(8);
+    }
+
+    &__arquivos {
+        display: grid;
+        gap: size(4);
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    &__arquivo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        padding: size(4) size(12);
+        border-radius: size(4);
+        background: var(--mc-gray-100, #f4f4f4);
+    }
+
+    &__arquivo-nome {
+        display: flex;
+        align-items: center;
+        gap: size(8);
+        min-width: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    &__anexar {
+        position: relative;
+        cursor: pointer;
+
+        // O campo cobre o botão: clique, foco e teclado são os dele.
+        input[type='file'] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            opacity: 0;
+            cursor: inherit;
+        }
+
+        &:focus-within {
+            outline: size(2) solid currentColor;
+            outline-offset: size(2);
+        }
+
+        &--bloqueado {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
     &__tabela {
         overflow-x: auto;
 
