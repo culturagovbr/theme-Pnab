@@ -6,6 +6,7 @@
 /** Estados devolvidos pelo endpoint; sem-formulario esconde o card por regra de negócio. */
 const RESULTADO_ESTADOS = {
     semFormulario: 'sem-formulario',
+    acaoSemResultado: 'acao-sem-resultado',
     aguardandoPublicacao: 'aguardando-publicacao',
     pendente: 'pendente',
     completo: 'completo',
@@ -14,6 +15,7 @@ const RESULTADO_ESTADOS = {
 
 /** Rótulo de cada estado visível no chip do card. */
 const RESULTADO_ESTADO_KEYS = {
+    'acao-sem-resultado': 'estado_acao_sem_resultado',
     'aguardando-publicacao': 'estado_aguardando_publicacao',
     'pendente': 'estado_pendente',
     'completo': 'estado_completo',
@@ -48,6 +50,7 @@ app.component('opportunity-resultado-cultbr-card', {
             isLoading: true,
             hasError: false,
             estado: null,
+            motivo: null,
             estrutura: null,
             respostas: {},
             respostasAutomaticas: {},
@@ -75,7 +78,11 @@ app.component('opportunity-resultado-cultbr-card', {
 
     computed: {
         travado() {
-            return this.estado === RESULTADO_ESTADOS.aguardandoPublicacao;
+            return [RESULTADO_ESTADOS.aguardandoPublicacao, RESULTADO_ESTADOS.acaoSemResultado].includes(this.estado);
+        },
+
+        travadoAviso() {
+            return this.motivo ?? this.translateMessage('travado_aviso');
         },
 
         enviado() {
@@ -121,6 +128,7 @@ app.component('opportunity-resultado-cultbr-card', {
 
         aplicarEstado(body) {
             this.estado = body.estado;
+            this.motivo = body.motivo ?? null;
             this.estrutura = body.estrutura;
             this.respostas = body.respostas ?? {};
             this.respostasAutomaticas = body.respostasAutomaticas ?? {};

@@ -29,10 +29,9 @@ $this->import('
     </template>
 
     <div v-if="!isLoading && !hasError" class="resultado-cultbr-card__item">
-        <!-- Aguardando publicação: ainda sem formulário; o aviso carrega o status. -->
         <div v-if="travado" class="resultado-cultbr-card__aviso">
             <span v-if="estadoLabel" class="resultado-cultbr-card__chip" :class="'resultado-cultbr-card__chip--' + estado">{{ estadoLabel }}</span>
-            <p class="resultado-cultbr-card__nota">{{ translateMessage('travado_aviso') }}</p>
+            <p class="resultado-cultbr-card__nota">{{ travadoAviso }}</p>
         </div>
 
         <opportunity-resultado-formulario

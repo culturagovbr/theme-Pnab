@@ -4,6 +4,7 @@ use MapasCulturais\i;
 
 return [
     'titulo' => i::__('Envio do resultado ao CultBR'),
+    'estado_acao_sem_resultado' => i::__('Não recebe resultado'),
     'estado_aguardando_publicacao' => i::__('Aguardando a publicação final'),
     'estado_pendente' => i::__('Preenchimento pendente'),
     'estado_completo' => i::__('Pronto para envio'),

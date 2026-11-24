@@ -24,6 +24,12 @@ app.component('opportunity-resultado-cultbr-tab', {
         this.verificar();
     },
 
+    computed: {
+        isAcaoSemResultado() {
+            return this.estadoInicial?.estado === 'acao-sem-resultado';
+        },
+    },
+
     methods: {
         selectSubAba(slug) {
             this.subAba = slug;
