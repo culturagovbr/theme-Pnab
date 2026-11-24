@@ -34,6 +34,8 @@ $this->import('
             <p class="resultado-cultbr-card__nota">{{ travadoAviso }}</p>
         </div>
 
+        <mc-alert v-if="!travado && isFormularioAtualizado" type="warning">{{ translateMessage('formulario_atualizado') }}</mc-alert>
+
         <opportunity-resultado-formulario
             v-if="!travado"
             :estado="estado"
@@ -45,14 +47,33 @@ $this->import('
             :erros="errosFormulario"
             :salvando="isSaving"
             :salvo-em="salvoEm"
+            @alterado="isAlterado = $event"
             @salvar="salvarRespostas">
         </opportunity-resultado-formulario>
 
+        <template v-if="!travado">
+            <div v-if="bloqueios.length" class="resultado-cultbr-card__impedimentos">
+                <p>{{ translateMessage('bloqueios') }}</p>
+                <ul>
+                    <li v-for="bloqueio in bloqueios" :key="bloqueio.id_questao"><strong v-if="bloqueio.nome">{{ bloqueio.nome }}:</strong> {{ bloqueio.motivo }}</li>
+                </ul>
+            </div>
+
+            <div v-if="pendencias.length" class="resultado-cultbr-card__impedimentos">
+                <p>{{ translateMessage('pendencias') }}</p>
+                <ul>
+                    <li v-for="pendencia in pendencias" :key="pendencia.id_questao"><strong v-if="pendencia.nome">{{ pendencia.nome }}:</strong> {{ pendencia.motivo }}</li>
+                </ul>
+            </div>
+
+            <p v-if="temErros" class="resultado-cultbr-card__nota">{{ translateMessage('erros_no_formulario') }}</p>
+        </template>
+
         <div v-if="!travado" class="resultado-cultbr-card__envio">
-            <button v-if="!enviado" class="button button--primary" :disabled="isEnviando" @click="enviar">
+            <button v-if="!enviado" class="button button--primary" :disabled="!podeEnviar" @click="enviar">
                 {{ isEnviando ? translateMessage('enviando') : translateMessage('enviar') }}
             </button>
-            <button v-else class="button button--primary" :disabled="isEnviando" @click="enviar">
+            <button v-else class="button button--primary" :disabled="!podeEnviar" @click="enviar">
                 {{ isEnviando ? translateMessage('enviando') : translateMessage('retificar') }}
             </button>
         </div>

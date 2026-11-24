@@ -118,6 +118,21 @@
         gap: size(12);
     }
 
+    &__impedimentos {
+        margin-top: size(16);
+        color: var(--mc-gray-700, #555);
+
+        p {
+            margin: 0 0 size(4);
+            font-weight: 600;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: size(20);
+        }
+    }
+
     &__envio {
         display: flex;
         justify-content: flex-end;
