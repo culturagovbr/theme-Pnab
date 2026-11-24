@@ -24,6 +24,8 @@ app.component('opportunity-resultado-beneficiarios', {
             colunas: [],
             dadosDaInscricao: [],
             mapeamento: {},
+            equivalencias: {},
+            valoresSemOpcao: {},
             tiposDeProponente: [],
             isSaving: false,
             pendingSave: false,
@@ -80,7 +82,7 @@ app.component('opportunity-resultado-beneficiarios', {
                 this.campos = body.campos ?? [];
                 this.colunas = body.colunas ?? [];
                 this.dadosDaInscricao = body.dadosDaInscricao ?? [];
-                this.mapeamento = body.mapeamento ?? {};
+                this.aplicar(body);
                 this.tiposDeProponente = body.tiposDeProponente ?? [];
             } catch (error) {
                 this.hasError = true;
@@ -94,6 +96,25 @@ app.component('opportunity-resultado-beneficiarios', {
             const etapa = campo.etapa || this.translateMessage('sem_etapa');
 
             return fases.size > 1 ? `${campo.fase} · ${etapa}` : etapa;
+        },
+
+        aplicar(body) {
+            this.mapeamento = body.mapeamento ?? {};
+            this.equivalencias = body.equivalencias ?? {};
+            this.valoresSemOpcao = body.valoresSemOpcao ?? {};
+        },
+
+        valoresDe(coluna) {
+            return this.valoresSemOpcao[coluna.coluna] ?? [];
+        },
+
+        equivalenciaDe(coluna, valor) {
+            return this.equivalencias[coluna.coluna]?.[valor] ?? '';
+        },
+
+        definirEquivalencia(coluna, valor, opcao) {
+            this.equivalencias[coluna.coluna] = { ...(this.equivalencias[coluna.coluna] ?? {}), [valor]: opcao || null };
+            this.agendarSalvar();
         },
 
         fonteDe(coluna, tipo = null) {
@@ -136,6 +157,7 @@ app.component('opportunity-resultado-beneficiarios', {
                 const response = await this.api.POST(url, {
                     opportunityId: this.entity.id,
                     mapeamento: this.mapeamento,
+                    equivalencias: this.equivalencias,
                 });
                 const body = await response.json().catch(() => ({}));
 
@@ -146,7 +168,7 @@ app.component('opportunity-resultado-beneficiarios', {
 
                 // Com mudança mais nova em espera, aplicar o eco do servidor descartaria a edição em voo.
                 if (!this.pendingSave) {
-                    this.mapeamento = body.mapeamento ?? this.mapeamento;
+                    this.aplicar(body);
                 }
                 this.salvoEm = new Date();
             } catch (error) {

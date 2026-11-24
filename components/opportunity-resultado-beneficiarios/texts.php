@@ -7,6 +7,8 @@ return [
     'descricao' => i::__('Indique de onde vem cada coluna da planilha que o CultBR pede para este edital ({modelo}). O que ficar sem fonte é preenchido na lista de beneficiários.'),
     'sem_integracao' => i::__('Este edital ainda não está integrado ao CultBR.'),
     'sem_fonte' => i::__('Preencher na lista'),
+    'equivalencias' => i::__('Valores que não são opção do CultBR. Indique a que opção cada um corresponde:'),
+    'sem_equivalencia' => i::__('Resolver na lista'),
     'da_inscricao' => i::__('Dados da inscrição'),
     'obrigatoria' => i::__('Obrigatória'),
     'opcional' => i::__('Opcional'),

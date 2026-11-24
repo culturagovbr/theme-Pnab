@@ -70,6 +70,14 @@
         gap: size(8);
     }
 
+    &__equivalencias {
+        display: grid;
+        gap: size(8);
+        margin-top: size(8);
+        padding-left: size(16);
+        border-left: size(2) solid var(--mc-gray-300);
+    }
+
     &__acoes {
         display: flex;
         justify-content: flex-end;

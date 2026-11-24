@@ -61,6 +61,17 @@ $this->import('
                                     <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
                                 </optgroup>
                             </select>
+
+                            <div v-if="valoresDe(coluna).length" class="resultado-beneficiarios__equivalencias">
+                                <small>{{ translateMessage('equivalencias') }}</small>
+                                <div v-for="valor in valoresDe(coluna)" :key="valor" class="field__input resultado-beneficiarios__equivalencia">
+                                    <small>{{ valor }}</small>
+                                    <select class="primary__border--solid" :aria-label="coluna.nome + ' - ' + valor" :value="equivalenciaDe(coluna, valor)" @change="definirEquivalencia(coluna, valor, $event.target.value)">
+                                        <option value="">{{ translateMessage('sem_equivalencia') }}</option>
+                                        <option v-for="opcao in coluna.opcoes" :key="opcao" :value="opcao">{{ opcao }}</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
