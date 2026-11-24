@@ -22,6 +22,25 @@ const RESULTADO_ESTADO_KEYS = {
     'enviado': 'estado_enviado',
 };
 
+/** Alerta de cada situação do último envio. */
+const RESULTADO_ENVIO_ALERTAS = {
+    'aguardando': 'helper',
+    'enviando': 'helper',
+    'publicado': 'success',
+    'simulado': 'helper',
+    'nada-mudou': 'helper',
+    'sem-confirmacao': 'warning',
+    'recusado': 'danger',
+    'nao-enviado': 'danger',
+};
+
+const RESULTADO_ENVIO_EM_ANDAMENTO = ['aguardando', 'enviando'];
+
+const RESULTADO_TIPO_RETIFICADO = 3;
+
+/** Intervalo da releitura enquanto o envio está em andamento. */
+const RESULTADO_RELEITURA_MS = 5000;
+
 app.component('opportunity-resultado-cultbr-card', {
     template: $TEMPLATES['opportunity-resultado-cultbr-card'],
     emits: [],
@@ -59,6 +78,8 @@ app.component('opportunity-resultado-cultbr-card', {
             pendencias: [],
             bloqueios: [],
             planilha: null,
+            ultimoEnvio: null,
+            releituraTimeout: null,
             isFormularioAtualizado: false,
             isAlterado: false,
             errosFormulario: {},
@@ -81,6 +102,10 @@ app.component('opportunity-resultado-cultbr-card', {
         }
     },
 
+    unmounted() {
+        clearTimeout(this.releituraTimeout);
+    },
+
     computed: {
         travado() {
             return [RESULTADO_ESTADOS.aguardandoPublicacao, RESULTADO_ESTADOS.acaoSemResultado].includes(this.estado);
@@ -99,7 +124,28 @@ app.component('opportunity-resultado-cultbr-card', {
         },
 
         podeEnviar() {
-            return this.envioHabilitado && !this.temErros && !this.isAlterado && !this.isSaving && !this.isEnviando;
+            return this.envioHabilitado && !this.isEnvioNoPrazo && !this.temErros
+                && !this.isAlterado && !this.isSaving && !this.isEnviando;
+        },
+
+        /** Enquanto o envio anterior pode estar sendo processado, não cabe outro. */
+        isEnvioNoPrazo() {
+            return Boolean(this.ultimoEnvio?.novoPedidoEm);
+        },
+
+        envioAlerta() {
+            return RESULTADO_ENVIO_ALERTAS[this.ultimoEnvio?.situacao] ?? null;
+        },
+
+        envioTexto() {
+            const { situacao, em, tipo, novoPedidoEm } = this.ultimoEnvio;
+            const chave = situacao === 'sem-confirmacao' && novoPedidoEm ? 'sem-confirmacao-no-prazo' : situacao;
+
+            return this.translateMessage('envio_' + chave.replaceAll('-', '_'), {
+                data: this.dataHora(em),
+                hora: novoPedidoEm ? this.hora(novoPedidoEm) : '',
+                tipo: this.translateMessage(tipo === RESULTADO_TIPO_RETIFICADO ? 'tipo_retificado' : 'tipo_final'),
+            });
         },
 
         estadoLabel() {
@@ -156,7 +202,33 @@ app.component('opportunity-resultado-cultbr-card', {
             this.pendencias = body.pendencias ?? [];
             this.bloqueios = body.bloqueios ?? [];
             this.planilha = body.planilha ?? null;
+            this.ultimoEnvio = body.ultimoEnvio ?? null;
             this.errosFormulario = body.erros ?? {};
+            this.agendarReleitura();
+        },
+
+        agendarReleitura() {
+            clearTimeout(this.releituraTimeout);
+
+            if (this.ultimoEnvio?.novoPedidoEm) {
+                const atePrazo = Math.max(new Date(this.ultimoEnvio.novoPedidoEm) - Date.now(), 0) + 1000;
+                const espera = RESULTADO_ENVIO_EM_ANDAMENTO.includes(this.ultimoEnvio.situacao) ? RESULTADO_RELEITURA_MS : atePrazo;
+                this.releituraTimeout = setTimeout(() => this.relerSituacao(), espera);
+            }
+        },
+
+        dataHora(iso) {
+            return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        },
+
+        hora(iso) {
+            return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        },
+
+        rotuloDaRecusa(recusa) {
+            return recusa.tipo === 'linha'
+                ? this.translateMessage('recusa_linha', { linha: recusa.indice + 1, coluna: recusa.coluna })
+                : recusa.nome;
         },
 
         isOutraVersao(body) {
@@ -165,13 +237,21 @@ app.component('opportunity-resultado-cultbr-card', {
 
         /** Atualiza a situação sem tocar no que o gestor está digitando. */
         async relerSituacao() {
-            const url = this.api.createUrl('resultadoFormulario', { opportunityId: this.entity.id });
-            const response = await this.api.GET(url);
-            const body = await response.json().catch(() => ({}));
+            try {
+                const url = this.api.createUrl('resultadoFormulario', { opportunityId: this.entity.id });
+                const response = await this.api.GET(url);
+                const body = await response.json();
 
-            if (response.ok) {
-                this.aplicarSituacao({ ...body, erros: this.errosFormulario });
+                if (response.ok) {
+                    this.aplicarSituacao({ ...body, erros: this.errosFormulario });
+                    return;
+                }
+            } catch (error) {
+                console.error(error);
             }
+
+            // A releitura que falhou não encerra o acompanhamento.
+            this.agendarReleitura();
         },
 
         /**
@@ -196,6 +276,7 @@ app.component('opportunity-resultado-cultbr-card', {
                     this.pendencias = body?.data?.pendencias ?? this.pendencias;
                     this.bloqueios = body?.data?.bloqueios ?? this.bloqueios;
                     this.messages.error(motivo ?? this.translateMessage('erro_enviar'));
+                    await this.relerSituacao();
                     return;
                 }
 

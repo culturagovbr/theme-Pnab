@@ -36,6 +36,15 @@ $this->import('
 
         <mc-alert v-if="!travado && isFormularioAtualizado" type="warning">{{ translateMessage('formulario_atualizado') }}</mc-alert>
 
+        <mc-alert v-if="!travado && envioAlerta" :key="ultimoEnvio.situacao" :type="envioAlerta" class="resultado-cultbr-card__situacao">
+            <strong>{{ translateMessage('situacao_do_envio') }}</strong>
+            <p>{{ envioTexto }}</p>
+            <p v-if="ultimoEnvio.mensagem">{{ ultimoEnvio.mensagem }}</p>
+            <ul v-if="ultimoEnvio.recusas.length">
+                <li v-for="(recusa, indice) in ultimoEnvio.recusas" :key="indice"><strong>{{ rotuloDaRecusa(recusa) }}</strong><template v-if="recusa.descricao">: {{ recusa.descricao }}</template></li>
+            </ul>
+        </mc-alert>
+
         <mc-alert v-if="!travado && bloqueios.length" type="warning">
             <p>{{ translateMessage('bloqueios') }}</p>
             <ul>
