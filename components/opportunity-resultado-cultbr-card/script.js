@@ -139,6 +139,19 @@ app.component('opportunity-resultado-cultbr-card', {
                 && !this.isAlterado && !this.isSaving && !this.isEnviando && this.anexando === null;
         },
 
+        /** O pedido está na fila ou saindo para o CultBR, dentro do prazo. */
+        isEnvioEmAndamento() {
+            return RESULTADO_ENVIO_EM_ANDAMENTO.includes(this.ultimoEnvio?.situacao) && this.isEnvioNoPrazo;
+        },
+
+        rotuloDoEnvio() {
+            if (this.isEnviando || this.isEnvioEmAndamento) {
+                return this.translateMessage('em_andamento');
+            }
+
+            return this.translateMessage(this.enviado ? 'retificar' : 'enviar');
+        },
+
         /** Enquanto o envio anterior pode estar sendo processado, não cabe outro. */
         isEnvioNoPrazo() {
             return Boolean(this.ultimoEnvio?.novoPedidoEm);

@@ -23,7 +23,7 @@ return [
     'erros_no_formulario' => i::__('Há respostas recusadas no formulário. Corrija os campos indicados para enviar.'),
     'enviar' => i::__('Enviar para o CultBR'),
     'retificar' => i::__('Retificar no CultBR'),
-    'enviando' => i::__('Enviando...'),
+    'em_andamento' => i::__('Envio ao CultBR em andamento'),
     'envio_agendado' => i::__('Envio agendado. Acompanhe a situação nesta aba.'),
     'situacao_do_envio' => i::__('Situação do envio'),
     'envio_aguardando' => i::__('O envio está na fila.'),
