@@ -63,6 +63,10 @@ app.component('opportunity-resultado-beneficiarios', {
 
             return [...grupos].map(([titulo, campos]) => ({ titulo, campos }));
         },
+
+        idsDosCampos() {
+            return new Set(this.campos.map((campo) => `campo:${campo.id}`));
+        },
     },
 
     methods: {
@@ -103,6 +107,9 @@ app.component('opportunity-resultado-beneficiarios', {
             this.mapeamento = body.mapeamento ?? {};
             this.equivalencias = body.equivalencias ?? {};
             this.valoresSemOpcao = body.valoresSemOpcao ?? {};
+        /** Campo ligado no de/para que não está mais na ficha do edital. */
+        isCampoAusente(fonte) {
+            return typeof fonte === 'string' && fonte.startsWith('campo:') && !this.idsDosCampos.has(fonte);
         },
 
         recusaDe(coluna, tipo) {

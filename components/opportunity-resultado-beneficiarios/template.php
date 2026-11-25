@@ -44,10 +44,12 @@ $this->import('
                                 <small>{{ tipo }}</small>
                                 <select class="primary__border--solid" :aria-label="coluna.nome + ' - ' + tipo" :value="fonteDe(coluna, tipo)" @change="definirPorTipo(coluna, tipo, $event.target.value)">
                                     <option value="">{{ translateMessage('sem_fonte') }}</option>
+                                    <option v-if="isCampoAusente(fonteDe(coluna, tipo))" :value="fonteDe(coluna, tipo)">{{ translateMessage('campo_ausente') }}</option>
                                     <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
                                         <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
                                     </optgroup>
                                 </select>
+                                <small v-if="isCampoAusente(fonteDe(coluna, tipo))" class="field__error" role="alert">{{ translateMessage('campo_ausente_aviso') }}</small>
                                 <small v-if="recusaDe(coluna, tipo)" class="field__error" role="alert">{{ recusaDe(coluna, tipo) }}</small>
                             </div>
                         </div>
@@ -55,6 +57,7 @@ $this->import('
                         <div v-else class="field__input">
                             <select :id="'de-para-' + coluna.coluna" class="primary__border--solid" :value="fonteDe(coluna)" @change="definir(coluna, $event.target.value)">
                                 <option value="">{{ translateMessage('sem_fonte') }}</option>
+                                <option v-if="isCampoAusente(fonteDe(coluna))" :value="fonteDe(coluna)">{{ translateMessage('campo_ausente') }}</option>
                                 <optgroup :label="translateMessage('da_inscricao')">
                                     <option v-for="dado in dadosDaInscricao" :key="dado.fonte" :value="dado.fonte">{{ dado.title }}</option>
                                 </optgroup>
@@ -62,6 +65,7 @@ $this->import('
                                     <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
                                 </optgroup>
                             </select>
+                            <small v-if="isCampoAusente(fonteDe(coluna))" class="field__error" role="alert">{{ translateMessage('campo_ausente_aviso') }}</small>
 
                             <div v-if="valoresDe(coluna).length" class="resultado-beneficiarios__equivalencias">
                                 <small>{{ translateMessage('equivalencias') }}</small>

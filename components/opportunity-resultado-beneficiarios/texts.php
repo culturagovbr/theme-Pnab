@@ -20,4 +20,6 @@ return [
     'salvando' => i::__('Salvando…'),
     'salvo_as' => i::__('Salvo às'),
     'abrir_grade' => i::__('Abrir lista de beneficiários'),
+    'campo_ausente' => i::__('Campo que não existe mais na ficha'),
+    'campo_ausente_aviso' => i::__('O campo ligado não existe mais na ficha. Escolha outro.'),
 ];
