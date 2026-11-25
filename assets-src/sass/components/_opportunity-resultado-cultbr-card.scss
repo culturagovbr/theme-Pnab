@@ -149,9 +149,17 @@
     }
 
     // O alerta já define a cor do texto; a do link do tema some no vermelho.
-    &__situacao a {
-        color: inherit;
-        text-decoration: underline;
+    &__situacao {
+        a {
+            color: inherit;
+            text-decoration: underline;
+        }
+
+        // No Pnab o tom claro do alerta de ajuda é o mesmo azul forte do ícone.
+        &.helper,
+        &.helper .alert__message .iconify {
+            color: var(--mc-white);
+        }
     }
 
     &__impedimentos {
