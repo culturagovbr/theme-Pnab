@@ -78,6 +78,7 @@ $this->import('
             <span v-else class="beneficiarios-grade__valor" :class="{ 'beneficiarios-grade__valor--pendente': pendenciaDe(entity, coluna), 'beneficiarios-grade__valor--inteiro': coluna.tipo !== 'lista' && coluna.tipo !== 'texto' }" tabindex="0" role="button" :title="dicaDaCelula(entity, coluna)" @click="abrirEdicao(entity, coluna, $event)" @focus="abrirEdicao(entity, coluna, $event)">
                 {{ valorExibido(entity, coluna) || '—' }}
             </span>
+            <small v-if="pendenciaDe(entity, coluna)" class="field__error beneficiarios-grade__motivo" role="alert">{{ pendenciaDe(entity, coluna) }}</small>
         </template>
     </entity-table>
 </div>

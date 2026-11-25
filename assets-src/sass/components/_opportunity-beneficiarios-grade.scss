@@ -141,6 +141,14 @@
         }
     }
 
+    &__motivo {
+        display: block;
+        margin-top: size(2);
+        font-size: size(11);
+        line-height: 1.3;
+        white-space: normal;
+    }
+
     // A altura e a tipografia do campo vêm de `.field input` do tema; a moldura só aparece ao usar a célula.
     &__campo {
         width: 100%;
