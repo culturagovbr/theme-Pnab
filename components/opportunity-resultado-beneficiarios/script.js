@@ -107,6 +107,8 @@ app.component('opportunity-resultado-beneficiarios', {
             this.mapeamento = body.mapeamento ?? {};
             this.equivalencias = body.equivalencias ?? {};
             this.valoresSemOpcao = body.valoresSemOpcao ?? {};
+        },
+
         /** Campo ligado no de/para que não está mais na ficha do edital. */
         isCampoAusente(fonte) {
             return typeof fonte === 'string' && fonte.startsWith('campo:') && !this.idsDosCampos.has(fonte);
