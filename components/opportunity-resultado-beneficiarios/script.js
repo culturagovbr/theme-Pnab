@@ -26,6 +26,7 @@ app.component('opportunity-resultado-beneficiarios', {
             mapeamento: {},
             equivalencias: {},
             valoresSemOpcao: {},
+            recusas: {},
             tiposDeProponente: [],
             isSaving: false,
             pendingSave: false,
@@ -104,6 +105,10 @@ app.component('opportunity-resultado-beneficiarios', {
             this.valoresSemOpcao = body.valoresSemOpcao ?? {};
         },
 
+        recusaDe(coluna, tipo) {
+            return this.recusas[`${coluna.coluna}.${tipo}`] ?? null;
+        },
+
         valoresDe(coluna) {
             return this.valoresSemOpcao[coluna.coluna] ?? [];
         },
@@ -167,6 +172,8 @@ app.component('opportunity-resultado-beneficiarios', {
                     this.messages.error(body?.data?.message ?? body?.data ?? this.translateMessage('erro_salvar'));
                     return;
                 }
+
+                this.recusas = body.recusas ?? {};
 
                 // Com mudança mais nova em espera, aplicar o eco do servidor descartaria a edição em voo.
                 if (!this.pendingSave && !this.autosaveTimeout) {

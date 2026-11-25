@@ -48,6 +48,7 @@ $this->import('
                                         <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
                                     </optgroup>
                                 </select>
+                                <small v-if="recusaDe(coluna, tipo)" class="field__error" role="alert">{{ recusaDe(coluna, tipo) }}</small>
                             </div>
                         </div>
 
