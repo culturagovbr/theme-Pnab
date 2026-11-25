@@ -7,6 +7,7 @@
 const RESULTADO_ESTADOS = {
     semFormulario: 'sem-formulario',
     acaoSemResultado: 'acao-sem-resultado',
+    editalNaoPublicado: 'edital-nao-publicado',
     aguardandoPublicacao: 'aguardando-publicacao',
     pendente: 'pendente',
     completo: 'completo',
@@ -16,6 +17,7 @@ const RESULTADO_ESTADOS = {
 /** Rótulo de cada estado visível no chip do card. */
 const RESULTADO_ESTADO_KEYS = {
     'acao-sem-resultado': 'estado_acao_sem_resultado',
+    'edital-nao-publicado': 'estado_edital_nao_publicado',
     'aguardando-publicacao': 'estado_aguardando_publicacao',
     'pendente': 'estado_pendente',
     'completo': 'estado_completo',
@@ -112,7 +114,7 @@ app.component('opportunity-resultado-cultbr-card', {
 
     computed: {
         travado() {
-            return [RESULTADO_ESTADOS.aguardandoPublicacao, RESULTADO_ESTADOS.acaoSemResultado].includes(this.estado);
+            return [RESULTADO_ESTADOS.aguardandoPublicacao, RESULTADO_ESTADOS.acaoSemResultado, RESULTADO_ESTADOS.editalNaoPublicado].includes(this.estado);
         },
 
         travadoAviso() {
