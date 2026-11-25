@@ -40,7 +40,7 @@ $this->import('
             <div v-else v-for="questao in [bloco.questao]" :key="questao.id_questao" class="field" :class="[{ error: erroDe(questao) }, campoLargo(questao) ? 'col-12' : 'col-6']">
                 <label class="field__title" :for="'resultado-questao-' + questao.id_questao">
                     {{ questao.nome }}
-                    <span v-if="questao.requerida && !['planilha', 'espelho'].includes(tipoDoCampo(questao))" class="required">*<?php i::_e('obrigatório') ?></span>
+                    <span v-if="isObrigatoriaNaTela(questao)" class="required">*<?php i::_e('obrigatório') ?></span>
                 </label>
                 <small v-if="questao.descricao" class="field__description">{{ questao.descricao }}</small>
 
@@ -86,7 +86,10 @@ $this->import('
 
                 <p v-else-if="tipoDoCampo(questao) === 'planilha'" class="resultado-formulario__aviso">{{ avisoDaPlanilha() }}</p>
 
-                <p v-else-if="tipoDoCampo(questao) === 'documento' && isDependenteDoCultBr()" class="resultado-formulario__aviso">{{ translateMessage('documento_dependente') }}</p>
+                <template v-else-if="isDocumentoIndisponivel(questao)">
+                    <p class="resultado-formulario__aviso">{{ translateMessage('documento_dependente') }}</p>
+                    <opportunity-resultado-anexo v-if="arquivosDe(questao).length" :questao="questao" :arquivos="arquivosDe(questao)" :aceita-novo="false" :bloqueado="anexando !== null" @retirar="$emit('retirar', questao, $event)"></opportunity-resultado-anexo>
+                </template>
 
                 <opportunity-resultado-anexo v-else-if="tipoDoCampo(questao) === 'documento'" :questao="questao" :arquivos="arquivosDe(questao)" :enviando="anexando === questao.id_questao" :bloqueado="anexando !== null" @anexar="$emit('anexar', questao, $event)" @retirar="$emit('retirar', questao, $event)"></opportunity-resultado-anexo>
 

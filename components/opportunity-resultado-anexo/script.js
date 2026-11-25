@@ -31,6 +31,11 @@ app.component('opportunity-resultado-anexo', {
             type: Boolean,
             default: false,
         },
+        // Falso quando a questão só lista e retira o que já foi anexado.
+        aceitaNovo: {
+            type: Boolean,
+            default: true,
+        },
     },
 
     data() {
@@ -45,7 +50,7 @@ app.component('opportunity-resultado-anexo', {
         },
 
         podeAnexar() {
-            return this.isMultipla || !this.arquivos.length;
+            return this.aceitaNovo && (this.isMultipla || !this.arquivos.length);
         },
 
         formatos() {

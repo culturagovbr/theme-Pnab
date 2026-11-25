@@ -336,11 +336,16 @@ app.component('opportunity-resultado-formulario', {
                 : this.translateMessage('planilha');
         },
 
-        /** Com modelo de planilha, o CultBR ainda não recebe os documentos que a ação exige. */
-        isDependenteDoCultBr() {
-            return this.planilha?.possui === true && this.etapas
-                .flatMap((etapa) => this.questoesVisiveis(etapa))
-                .some((questao) => questao.requerida && this.tipoDoCampo(questao) === 'documento');
+        /** Com modelo de planilha, nenhum documento recebe arquivo: o CultBR não recebe os dois juntos. */
+        isDocumentoIndisponivel(questao) {
+            return this.planilha?.possui === true && this.tipoDoCampo(questao) === 'documento';
+        },
+
+        /** O que a tela não deixa responder não aparece como obrigatório. */
+        isObrigatoriaNaTela(questao) {
+            return questao.requerida
+                && !['planilha', 'espelho'].includes(this.tipoDoCampo(questao))
+                && !this.isDocumentoIndisponivel(questao);
         },
 
         arquivosDe(questao) {
