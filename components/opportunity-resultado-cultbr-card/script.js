@@ -131,7 +131,18 @@ app.component('opportunity-resultado-cultbr-card', {
 
         /** O arquivo recusado não foi guardado: aparece no campo, mas não impede o envio. */
         errosDosCampos() {
-            return { ...this.errosFormulario, ...this.errosDosAnexos };
+            return { ...this.recusasDasQuestoes, ...this.errosFormulario, ...this.errosDosAnexos };
+        },
+
+        /** O que o CultBR recusou no último envio, por questão, até a resposta ser alterada. */
+        recusasDasQuestoes() {
+            if (this.ultimoEnvio?.situacao !== 'recusado') {
+                return {};
+            }
+
+            const recusadas = this.ultimoEnvio.recusas.filter((recusa) => recusa.tipo === 'questao' && recusa.id_questao && !recusa.alterada);
+
+            return Object.fromEntries(recusadas.map((recusa) => [recusa.id_questao, recusa.descricao || this.translateMessage('recusada_pelo_cultbr')]));
         },
 
         podeEnviar() {

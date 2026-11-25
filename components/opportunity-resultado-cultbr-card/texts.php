@@ -44,4 +44,5 @@ return [
     'recusa_inscricao' => i::__('Inscrição {inscricao}, {coluna}'),
     'recusa_linha' => i::__('Linha {linha}, coluna {coluna}'),
     'erro_enviar' => i::__('Não foi possível enviar o resultado.'),
+    'recusada_pelo_cultbr' => i::__('Resposta recusada pelo CultBR.'),
 ];
