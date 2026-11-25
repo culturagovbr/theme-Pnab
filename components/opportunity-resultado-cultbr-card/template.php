@@ -87,10 +87,10 @@ $this->import('
         </template>
 
         <div v-if="!travado" class="resultado-cultbr-card__envio">
-            <button v-if="!enviado" class="button button--primary" :disabled="!podeEnviar" @click="enviar">
+            <button v-if="!enviado" class="button button--primary" :class="{ disabled: !podeEnviar }" :disabled="!podeEnviar" @click="enviar">
                 {{ isEnviando ? translateMessage('enviando') : translateMessage('enviar') }}
             </button>
-            <button v-else class="button button--primary" :disabled="!podeEnviar" @click="enviar">
+            <button v-else class="button button--primary" :class="{ disabled: !podeEnviar }" :disabled="!podeEnviar" @click="enviar">
                 {{ isEnviando ? translateMessage('enviando') : translateMessage('retificar') }}
             </button>
         </div>
