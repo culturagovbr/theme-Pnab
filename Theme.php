@@ -38,11 +38,25 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
     /** Metadados que só existem em agente coletivo com personalidade jurídica. */
     protected const AGENT_COLETIVO_METADATA_PESSOA_JURIDICA = ['nomeSocial', 'nomeCompleto', 'cnpj', 'dataDeNascimento'];
 
+    /** A cópia é salva antes e depois de receber os metadados: o envio dela espera a requisição terminar. */
+    private bool $isDuplicandoEdital = false;
+
     /** Opções de "outras modalidades" que exigem sublista de subcategorias (fonte única para PHP e frontend) */
     public const OPTIONS_OTHER_MODALITIES_WITH_SUBLIST = ['bonus_agentes', 'bonus_tematicas', 'categoria_especifica', 'edital_especifico'];
 
     /** Tamanho máximo do campo nome da fonte em "Recursos de outras fontes". */
     private const RECURSOS_OUTRAS_FONTES_NOME_FONTE_MAX_LENGTH = 255;
+
+    /** Durante a duplicação, salvar a cópia não a envia ao CultBR. */
+    public function marcaDuplicacaoDeEdital(bool $isDuplicando): void
+    {
+        $this->isDuplicandoEdital = $isDuplicando;
+    }
+
+    public function isDuplicandoEdital(): bool
+    {
+        return $this->isDuplicandoEdital;
+    }
 
     static function getThemeFolder()
     {
@@ -283,9 +297,16 @@ class Theme extends \MapasCulturais\Themes\BaseV2\Theme
             }
         });
 
+        $app->hook('ALL(opportunity.duplicate):before', function () use ($theme) {
+            $theme->marcaDuplicacaoDeEdital(true);
+        });
+        $app->hook('mapasculturais.run:after', function () use ($theme) {
+            $theme->marcaDuplicacaoDeEdital(false);
+        });
+
         /** Qualquer save de oportunidade elegível enfileira o envio; o fluxo «usar modelo» dispara pelo save(true). */
-        $app->hook('entity(Opportunity).update:finish', function () use ($app) {
-            if (!(new OpportunityService())->isEligibleForSync($this)) {
+        $app->hook('entity(Opportunity).update:finish', function () use ($app, $theme) {
+            if ($theme->isDuplicandoEdital() || !(new OpportunityService())->isEligibleForSync($this)) {
                 return;
             }
 
