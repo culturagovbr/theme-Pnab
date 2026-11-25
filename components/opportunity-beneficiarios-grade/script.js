@@ -376,10 +376,12 @@ app.component('opportunity-beneficiarios-grade', {
 
         definirCelula(entity, coluna, valorBruto) {
             // O campo monetário entrega número, e o contrato pede "15000.00".
-            const valor = coluna.tipo === 'monetario' ? this.numero(valorBruto)?.toFixed(2) ?? '' : valorBruto;
+            const digitado = coluna.tipo === 'monetario' ? this.numero(valorBruto)?.toFixed(2) ?? '' : valorBruto;
+            // Célula esvaziada vai como nula: volta ao valor da ficha.
+            const valor = digitado === '' ? null : digitado;
 
             const id = entity.id;
-            this.celulasPorId[id] = { ...this.celulasDe(entity), [coluna.coluna]: { valor: valor === '' ? null : valor, fonte: 'gestor' } };
+            this.celulasPorId[id] = { ...this.celulasDe(entity), [coluna.coluna]: { valor, fonte: 'gestor' } };
             this.editadas[id] = { ...(this.paraRegravar[id] ?? {}), ...(this.editadas[id] ?? {}), [coluna.coluna]: valor };
             delete this.paraRegravar[id];
 
