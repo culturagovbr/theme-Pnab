@@ -35,12 +35,11 @@ app.component('opportunity-resultado-escolha', {
             return this.questao.opcao?.itens ?? [];
         },
 
+        /** A gravada que não é opção da questão não tem caixa para desmarcar: sai na próxima escolha. */
         escolhas() {
-            if (Array.isArray(this.valor)) {
-                return this.valor;
-            }
+            const gravadas = Array.isArray(this.valor) ? this.valor : [this.valor];
 
-            return this.valor ? [this.valor] : [];
+            return gravadas.filter((escolha) => this.itens.some((item) => item.id === this.idDe(escolha)));
         },
 
         limite() {
