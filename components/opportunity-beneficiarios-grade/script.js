@@ -39,6 +39,8 @@ app.component('opportunity-beneficiarios-grade', {
             pendenciasPorId: {},
             editando: null,
             editadas: {},
+            naoGravadas: {},
+            paraRegravar: {},
             salvando: {},
             salvoEm: {},
             timeouts: {},
@@ -273,6 +275,10 @@ app.component('opportunity-beneficiarios-grade', {
             return this.pendenciasDe(entity)[coluna.coluna] ?? null;
         },
 
+        naoGravadaDe(entity, coluna) {
+            return this.naoGravadas[entity.id]?.[coluna.coluna] ?? null;
+        },
+
         dicaDaCelula(entity, coluna) {
             return this.pendenciaDe(entity, coluna) ?? coluna.condicao ?? this.translateMessage('editar');
         },
@@ -297,6 +303,10 @@ app.component('opportunity-beneficiarios-grade', {
         estadoDe(entity) {
             if (this.salvando[entity.id]) {
                 return this.translateMessage('salvando');
+            }
+
+            if (this.naoGravadas[entity.id]) {
+                return this.translateMessage('nao_gravado');
             }
 
             if (this.salvoEm[entity.id]) {
@@ -370,7 +380,8 @@ app.component('opportunity-beneficiarios-grade', {
 
             const id = entity.id;
             this.celulasPorId[id] = { ...this.celulasDe(entity), [coluna.coluna]: { valor: valor === '' ? null : valor, fonte: 'gestor' } };
-            this.editadas[id] = { ...(this.editadas[id] ?? {}), [coluna.coluna]: valor };
+            this.editadas[id] = { ...(this.paraRegravar[id] ?? {}), ...(this.editadas[id] ?? {}), [coluna.coluna]: valor };
+            delete this.paraRegravar[id];
 
             clearTimeout(this.timeouts[id]);
             this.timeouts[id] = setTimeout(() => this.salvarLinha(id), 1200);
@@ -395,16 +406,15 @@ app.component('opportunity-beneficiarios-grade', {
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
-                    this.messages.error(body?.data?.message ?? body?.data ?? this.translateMessage('erro_salvar'));
-                    // A célula foi pintada antes da resposta; recusada, a tela não pode seguir mostrando o que não gravou.
-                    await this.carregarCelulas([registrationId]);
+                    this.marcarNaoGravadas(registrationId, celulas, body?.data?.message ?? body?.data);
                     return;
                 }
 
+                delete this.naoGravadas[registrationId];
                 this.aplicarLinha(registrationId, body.linha);
                 this.salvoEm[registrationId] = new Date();
             } catch (error) {
-                this.messages.error(this.translateMessage('erro_salvar'));
+                this.marcarNaoGravadas(registrationId, celulas);
             } finally {
                 delete this.salvando[registrationId];
 
@@ -412,6 +422,17 @@ app.component('opportunity-beneficiarios-grade', {
                     this.salvarLinha(registrationId);
                 }
             }
+        },
+
+        /** O digitado fica na célula, marcado, e volta na próxima gravação da linha. */
+        marcarNaoGravadas(registrationId, celulas, motivo = null) {
+            const texto = typeof motivo === 'string' && motivo ? motivo : this.translateMessage('erro_salvar');
+            const marcadas = Object.fromEntries(Object.keys(celulas).map((coluna) => [coluna, texto]));
+
+            this.messages.error(texto);
+            this.naoGravadas[registrationId] = { ...(this.naoGravadas[registrationId] ?? {}), ...marcadas };
+            this.paraRegravar[registrationId] = { ...(this.paraRegravar[registrationId] ?? {}), ...celulas };
+            delete this.salvoEm[registrationId];
         },
 
         /** Com edição mais nova em espera, o eco do servidor descartaria o que o gestor acabou de digitar. */

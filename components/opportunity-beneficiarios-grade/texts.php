@@ -17,4 +17,5 @@ return [
     'editar' => i::__('Clique para editar'),
     'salvando' => i::__('Salvando…'),
     'salvo' => i::__('Salvo'),
+    'nao_gravado' => i::__('Não gravado'),
 ];
