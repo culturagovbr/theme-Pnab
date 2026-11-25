@@ -43,7 +43,7 @@ $this->import('
             <p v-if="ultimoEnvio.mensagem">{{ ultimoEnvio.mensagem }}</p>
             <p v-if="ultimoEnvio.totalPendentes">{{ pendentesTexto }}</p>
             <ul v-if="ultimoEnvio.recusas.length">
-                <li v-for="(recusa, indice) in ultimoEnvio.recusas" :key="indice"><strong>{{ rotuloDaRecusa(recusa) }}</strong><template v-if="recusa.descricao">: {{ recusa.descricao }}</template></li>
+                <li v-for="(recusa, indice) in ultimoEnvio.recusas" :key="indice"><strong>{{ recusa.descricao ? comSeparador(rotuloDaRecusa(recusa)) : rotuloDaRecusa(recusa) }}</strong> {{ recusa.descricao }}</li>
             </ul>
             <mc-link v-if="temRecusaDeLinha" :entity="entity" route="resultadoBeneficiarios" target="_blank" rel="noopener">{{ translateMessage('abrir_lista') }}</mc-link>
         </mc-alert>
@@ -51,7 +51,7 @@ $this->import('
         <mc-alert v-if="!travado && bloqueios.length" type="warning">
             <p>{{ translateMessage('bloqueios') }}</p>
             <ul>
-                <li v-for="bloqueio in bloqueios" :key="bloqueio.nome + bloqueio.motivo"><strong v-if="bloqueio.nome">{{ bloqueio.nome }}:</strong> {{ bloqueio.motivo }}</li>
+                <li v-for="bloqueio in bloqueios" :key="bloqueio.nome + bloqueio.motivo"><strong v-if="bloqueio.nome">{{ comSeparador(bloqueio.nome) }}</strong> {{ bloqueio.motivo }}</li>
             </ul>
         </mc-alert>
 
@@ -79,7 +79,7 @@ $this->import('
             <div v-if="pendencias.length" class="resultado-cultbr-card__impedimentos">
                 <p>{{ translateMessage('pendencias') }}</p>
                 <ul>
-                    <li v-for="pendencia in pendencias" :key="pendencia.id_questao"><strong v-if="pendencia.nome">{{ pendencia.nome }}:</strong> {{ pendencia.motivo }}</li>
+                    <li v-for="pendencia in pendencias" :key="pendencia.id_questao"><strong v-if="pendencia.nome">{{ comSeparador(pendencia.nome) }}</strong> {{ pendencia.motivo }}</li>
                 </ul>
             </div>
 

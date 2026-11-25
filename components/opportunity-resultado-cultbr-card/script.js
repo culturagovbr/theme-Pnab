@@ -274,6 +274,11 @@ app.component('opportunity-resultado-cultbr-card', {
             return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         },
 
+        /** O rótulo que já termina em pontuação não ganha dois-pontos. */
+        comSeparador(rotulo) {
+            return /[?!.:]$/.test(rotulo.trim()) ? rotulo : `${rotulo}:`;
+        },
+
         rotuloDaRecusa(recusa) {
             if (recusa.tipo !== 'linha') {
                 return recusa.nome;
