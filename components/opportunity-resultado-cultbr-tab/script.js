@@ -13,6 +13,7 @@ app.component('opportunity-resultado-cultbr-tab', {
         return {
             visivel: false,
             estadoInicial: null,
+            isEstadoInicialUsado: false,
             subAba: 'formulario',
         };
     },
