@@ -16,6 +16,11 @@ $this->import('
 <div class="beneficiarios-grade" :class="{ 'beneficiarios-grade--tela-cheia': telaCheia }">
     <mc-loading :condition="isLoading"></mc-loading>
 
+    <mc-alert v-if="temNaoGravadas" type="danger">
+        <p>{{ translateMessage('celulas_nao_gravadas') }}</p>
+        <button class="button button--sm button--text" @click="regravar">{{ translateMessage('tentar_novamente') }}</button>
+    </mc-alert>
+
     <mc-alert v-if="erro" type="danger">
         <p>{{ erro }}</p>
         <button class="button button--sm button--text" @click="carregarColunas">{{ translateMessage('tentar_novamente') }}</button>

@@ -69,6 +69,10 @@ app.component('opportunity-beneficiarios-grade', {
     },
 
     computed: {
+        temNaoGravadas() {
+            return Object.keys(this.paraRegravar).length > 0;
+        },
+
         proponentTypes() {
             return this.opcoesDe(this.entity.registrationProponentTypes, (tipo) => tipo);
         },
@@ -414,9 +418,19 @@ app.component('opportunity-beneficiarios-grade', {
         },
 
         gravarAntesDeSair(event) {
-            if (Object.keys(this.editadas).length || Object.keys(this.salvando).length) {
+            if (Object.keys(this.editadas).length || Object.keys(this.salvando).length || this.temNaoGravadas) {
                 this.gravarPendentes();
+                this.regravar();
                 event.preventDefault();
+            }
+        },
+
+        /** As células que não gravaram vão de novo, com o que está na tela. */
+        regravar() {
+            for (const id of Object.keys(this.paraRegravar)) {
+                this.editadas[id] = { ...this.paraRegravar[id], ...(this.editadas[id] ?? {}) };
+                delete this.paraRegravar[id];
+                this.salvarLinha(Number(id));
             }
         },
 
@@ -462,7 +476,6 @@ app.component('opportunity-beneficiarios-grade', {
             const texto = typeof motivo === 'string' && motivo ? motivo : this.translateMessage('erro_salvar');
             const marcadas = Object.fromEntries(Object.keys(celulas).map((coluna) => [coluna, texto]));
 
-            this.messages.error(texto);
             this.naoGravadas[registrationId] = { ...(this.naoGravadas[registrationId] ?? {}), ...marcadas };
             this.paraRegravar[registrationId] = { ...(this.paraRegravar[registrationId] ?? {}), ...celulas };
             delete this.salvoEm[registrationId];
