@@ -145,8 +145,9 @@ app.component('opportunity-resultado-formulario', {
         },
     },
 
-    unmounted() {
-        clearTimeout(this.autosaveTimeout);
+    // trocar de aba principal desmonta o formulário
+    beforeUnmount() {
+        this.salvar();
     },
 
     computed: {

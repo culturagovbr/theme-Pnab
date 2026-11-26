@@ -43,6 +43,9 @@ const RESULTADO_TIPO_RETIFICADO = 3;
 /** Intervalo da releitura enquanto o envio está em andamento. */
 const RESULTADO_RELEITURA_MS = 5000;
 
+/** Gravação de respostas por edital: o card remontado a espera antes de ler o estado. */
+const RESULTADO_GRAVACOES = new Map();
+
 app.component('opportunity-resultado-cultbr-card', {
     template: $TEMPLATES['opportunity-resultado-cultbr-card'],
     emits: [],
@@ -111,6 +114,8 @@ app.component('opportunity-resultado-cultbr-card', {
     },
 
     unmounted() {
+        // a gravação que o formulário mandou ao sair ainda responde a este card
+        this.isDesmontado = true;
         clearTimeout(this.releituraTimeout);
     },
 
@@ -210,6 +215,7 @@ app.component('opportunity-resultado-cultbr-card', {
             this.hasError = false;
 
             try {
+                await RESULTADO_GRAVACOES.get(this.entity.id);
                 const url = this.api.createUrl('resultadoFormulario', { opportunityId: this.entity.id });
                 const response = await this.api.GET(url);
                 const body = await response.json().catch(() => ({}));
@@ -263,7 +269,7 @@ app.component('opportunity-resultado-cultbr-card', {
         agendarReleitura() {
             clearTimeout(this.releituraTimeout);
 
-            if (this.ultimoEnvio?.novoPedidoEm) {
+            if (this.ultimoEnvio?.novoPedidoEm && !this.isDesmontado) {
                 const atePrazo = Math.max(new Date(this.ultimoEnvio.novoPedidoEm) - Date.now(), 0) + 1000;
                 const espera = RESULTADO_ENVIO_EM_ANDAMENTO.includes(this.ultimoEnvio.situacao) ? RESULTADO_RELEITURA_MS : atePrazo;
                 this.releituraTimeout = setTimeout(() => this.relerSituacao(), espera);
@@ -405,13 +411,18 @@ app.component('opportunity-resultado-cultbr-card', {
             }
         },
 
-        async salvarRespostas(valores) {
+        salvarRespostas(valores) {
             if (this.isSaving) {
                 // Digitação durante o save em voo: junta ao que espera e salva ao terminar.
                 this.pendingSave = { ...(this.pendingSave ?? {}), ...valores };
                 return;
             }
 
+            const gravacao = this.gravarRespostas(valores);
+            RESULTADO_GRAVACOES.set(this.entity.id, gravacao);
+        },
+
+        async gravarRespostas(valores) {
             this.isSaving = true;
 
             try {
@@ -447,7 +458,7 @@ app.component('opportunity-resultado-cultbr-card', {
                 if (this.pendingSave) {
                     const pendente = this.pendingSave;
                     this.pendingSave = null;
-                    this.salvarRespostas(pendente);
+                    await this.gravarRespostas(pendente);
                 }
             }
         },
