@@ -47,12 +47,10 @@ app.component('opportunity-resultado-beneficiarios', {
         window.addEventListener('beforeunload', this.gravarAntesDeSair);
     },
 
+    // trocar de aba principal desmonta o de/para
     beforeUnmount() {
         window.removeEventListener('beforeunload', this.gravarAntesDeSair);
-    },
-
-    unmounted() {
-        clearTimeout(this.autosaveTimeout);
+        this.gravarPendentes();
     },
 
     computed: {

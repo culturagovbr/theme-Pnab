@@ -60,6 +60,7 @@ app.component('opportunity-beneficiarios-grade', {
 
     beforeUnmount() {
         window.removeEventListener('beforeunload', this.gravarAntesDeSair);
+        this.gravarPendentes();
     },
 
     unmounted() {
