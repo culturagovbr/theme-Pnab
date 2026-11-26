@@ -308,6 +308,13 @@ app.component('opportunity-resultado-formulario', {
             return valor === null || valor === undefined || valor === '' ? null : Number(valor);
         },
 
+        // o campo de moeda lê texto sem dígito como zero
+        esvaziaSemDigito(event) {
+            if (!/\d/.test(event.target.value)) {
+                event.target.value = '';
+            }
+        },
+
         minimoDe(questao) {
             return this.maisRestrito(Math.max, questao.valor_minimo, questao.config?.numericoMinimo);
         },

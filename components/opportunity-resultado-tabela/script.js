@@ -159,6 +159,13 @@ app.component('opportunity-resultado-tabela', {
             return valor === null || valor === undefined || valor === '' ? null : Number(valor);
         },
 
+        // o campo de moeda lê texto sem dígito como zero
+        esvaziaSemDigito(event) {
+            if (!/\d/.test(event.target.value)) {
+                event.target.value = '';
+            }
+        },
+
         definir(indice, coluna, valor) {
             const novo = valor === '' ? null : valor;
 

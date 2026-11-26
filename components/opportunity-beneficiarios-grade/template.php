@@ -69,7 +69,7 @@ $this->import('
                         <option value="">&mdash;</option>
                         <option v-for="opcao in coluna.opcoes" :key="opcao" :value="opcao">{{ opcao }}</option>
                     </mc-select>
-                    <mc-currency-input v-else-if="coluna.tipo === 'monetario'" :model-value="numero(valorCru(entity, coluna))" @update:model-value="definirCelula(entity, coluna, $event)" @blur="encerrarEdicao" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)"></mc-currency-input>
+                    <mc-currency-input v-else-if="coluna.tipo === 'monetario'" :model-value="numero(valorCru(entity, coluna))" @input="esvaziaSemDigito" @update:model-value="definirCelula(entity, coluna, $event)" @blur="encerrarEdicao" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)"></mc-currency-input>
                     <input v-else-if="coluna.tipo === 'cep'" v-maska data-maska="#####-###" type="text" inputmode="numeric" :value="valorExibido(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)" @blur="encerrarEdicao" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
                     <input v-else type="text" :value="valorExibido(entity, coluna)" @change="definirCelula(entity, coluna, $event.target.value)" @blur="encerrarEdicao" @keydown.enter.prevent="confirmarCelula(entity, coluna, $event)" @keydown.escape="encerrarEdicao">
                 </div>

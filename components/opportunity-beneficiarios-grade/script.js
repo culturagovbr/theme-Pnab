@@ -359,6 +359,13 @@ app.component('opportunity-beneficiarios-grade', {
             return valor === '' || valor === null || !isFinite(Number(valor)) ? null : Number(valor);
         },
 
+        // o campo de moeda lê texto sem dígito como zero
+        esvaziaSemDigito(event) {
+            if (!/\d/.test(event.target.value)) {
+                event.target.value = '';
+            }
+        },
+
         /** Máscara é de leitura; a letra do CNPJ alfanumérico faz parte do documento. */
         mascarar(tipo, valor) {
             const limpo = String(valor).replace(/[.\-/\s]/g, '');

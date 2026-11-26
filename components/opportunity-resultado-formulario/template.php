@@ -53,7 +53,7 @@ $this->import('
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'moeda'" class="field__input">
-                    <mc-currency-input :model-value="moedaDe(questao)" @update:model-value="definir(questao, $event)"></mc-currency-input>
+                    <mc-currency-input :model-value="moedaDe(questao)" @input="esvaziaSemDigito" @update:model-value="definir(questao, $event)"></mc-currency-input>
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'data'" class="field__input">

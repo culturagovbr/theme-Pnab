@@ -27,7 +27,7 @@ $this->import('
                 <td v-for="coluna in colunas" :key="coluna.id">
                     <span v-if="campo(coluna) === 'fixo'">{{ exibicao(coluna, linha) }}</span>
                     <input v-else-if="campo(coluna) === 'numero'" type="number" :aria-label="coluna.nome" :min="coluna.minimo ?? undefined" :max="coluna.maximo ?? undefined" :placeholder="coluna.placeholder" :value="valorDe(coluna, linha)" @input="definir(indice, coluna, $event.target.value)">
-                    <mc-currency-input v-else-if="campo(coluna) === 'moeda'" :aria-label="coluna.nome" :model-value="moedaDe(coluna, linha)" @update:model-value="definir(indice, coluna, $event)"></mc-currency-input>
+                    <mc-currency-input v-else-if="campo(coluna) === 'moeda'" :aria-label="coluna.nome" :model-value="moedaDe(coluna, linha)" @input="esvaziaSemDigito" @update:model-value="definir(indice, coluna, $event)"></mc-currency-input>
                     <select v-else-if="campo(coluna) === 'lista'" :aria-label="coluna.nome" :value="valorDe(coluna, linha)" @change="definir(indice, coluna, $event.target.value)">
                         <option value=""><?php i::_e('Selecione') ?></option>
                         <option v-for="opcao in coluna.opcoes" :key="opcao" :value="opcao">{{ opcao }}</option>
