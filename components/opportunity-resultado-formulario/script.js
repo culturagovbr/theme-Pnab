@@ -115,9 +115,14 @@ app.component('opportunity-resultado-formulario', {
         // O card só troca as respostas na abertura e quando a versão do formulário muda.
         respostas() {
             clearTimeout(this.autosaveTimeout);
+            const anteriores = Object.keys(this.valores);
             this.valores = this.clonarRespostas();
             this.gravados = formularioJsonPorQuestao(this.valores);
             this.doServidor = { ...this.gravados };
+
+            for (const id of new Set([...anteriores, ...Object.keys(this.valores)])) {
+                this.versoes[id] = (this.versoes[id] ?? 0) + 1;
+            }
         },
 
         respostasGravadas(respostas) {
