@@ -54,6 +54,14 @@ app.component('opportunity-beneficiarios-grade', {
         this.carregarColunas();
     },
 
+    mounted() {
+        window.addEventListener('beforeunload', this.gravarAntesDeSair);
+    },
+
+    beforeUnmount() {
+        window.removeEventListener('beforeunload', this.gravarAntesDeSair);
+    },
+
     unmounted() {
         Object.values(this.timeouts).forEach((timeout) => clearTimeout(timeout));
         this.encerrarTelaCheia();
@@ -394,6 +402,21 @@ app.component('opportunity-beneficiarios-grade', {
 
             clearTimeout(this.timeouts[id]);
             this.timeouts[id] = setTimeout(() => this.salvarLinha(id), 1200);
+        },
+
+        /** As linhas que esperavam o salvamento automático gravam agora. */
+        gravarPendentes() {
+            for (const id of Object.keys(this.editadas)) {
+                clearTimeout(this.timeouts[id]);
+                this.salvarLinha(Number(id));
+            }
+        },
+
+        gravarAntesDeSair(event) {
+            if (Object.keys(this.editadas).length || Object.keys(this.salvando).length) {
+                this.gravarPendentes();
+                event.preventDefault();
+            }
         },
 
         async salvarLinha(registrationId) {

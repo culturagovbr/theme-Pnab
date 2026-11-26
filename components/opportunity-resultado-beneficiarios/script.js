@@ -43,6 +43,14 @@ app.component('opportunity-resultado-beneficiarios', {
         this.carregar();
     },
 
+    mounted() {
+        window.addEventListener('beforeunload', this.gravarAntesDeSair);
+    },
+
+    beforeUnmount() {
+        window.removeEventListener('beforeunload', this.gravarAntesDeSair);
+    },
+
     unmounted() {
         clearTimeout(this.autosaveTimeout);
     },
@@ -156,6 +164,24 @@ app.component('opportunity-resultado-beneficiarios', {
 
         exigenciaDe(coluna) {
             return coluna.condicao ?? this.translateMessage(coluna.obrigatoriedade === 'obrigatorio' ? 'obrigatoria' : 'opcional');
+        },
+
+        isAlteradoSemGravar() {
+            return this.colunasAlteradas.size > 0 || this.equivalenciasAlteradas.size > 0;
+        },
+
+        gravarPendentes() {
+            if (this.isAlteradoSemGravar()) {
+                clearTimeout(this.autosaveTimeout);
+                this.salvar();
+            }
+        },
+
+        gravarAntesDeSair(event) {
+            if (this.isAlteradoSemGravar() || this.isSaving) {
+                this.gravarPendentes();
+                event.preventDefault();
+            }
         },
 
         agendarSalvar() {

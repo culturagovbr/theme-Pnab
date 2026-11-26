@@ -145,8 +145,13 @@ app.component('opportunity-resultado-formulario', {
         },
     },
 
+    mounted() {
+        window.addEventListener('beforeunload', this.gravarAntesDeSair);
+    },
+
     // trocar de aba principal desmonta o formulário
     beforeUnmount() {
+        window.removeEventListener('beforeunload', this.gravarAntesDeSair);
         this.salvar();
     },
 
@@ -431,6 +436,13 @@ app.component('opportunity-resultado-formulario', {
             }
 
             this.doServidor = novas;
+        },
+
+        gravarAntesDeSair(event) {
+            if (this.pendentes.length || this.salvando) {
+                this.salvar();
+                event.preventDefault();
+            }
         },
 
         /** Só o que mudou: o formulário inteiro passaria por cima da edição de outra guia. */
