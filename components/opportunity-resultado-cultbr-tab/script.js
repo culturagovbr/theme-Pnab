@@ -14,6 +14,7 @@ app.component('opportunity-resultado-cultbr-tab', {
             visivel: false,
             estadoInicial: null,
             isEstadoInicialUsado: false,
+            isDeParaPendente: false,
             subAba: 'formulario',
         };
     },

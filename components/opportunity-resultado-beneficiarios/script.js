@@ -1,11 +1,11 @@
 /** Lista de beneficiários: de onde vem cada coluna do modelo de planilha que o CultBR define, com autosave. */
 app.component('opportunity-resultado-beneficiarios', {
     template: $TEMPLATES['opportunity-resultado-beneficiarios'],
+    emits: ['pendente'],
 
     setup() {
         const translateMessage = Utils.getTexts('opportunity-resultado-beneficiarios');
-        const messages = useMessages();
-        return { translateMessage, messages };
+        return { translateMessage };
     },
 
     props: {
@@ -32,6 +32,7 @@ app.component('opportunity-resultado-beneficiarios', {
             pendingSave: false,
             salvoEm: null,
             autosaveTimeout: null,
+            falhaAoSalvar: null,
         };
     },
 
@@ -51,9 +52,21 @@ app.component('opportunity-resultado-beneficiarios', {
     beforeUnmount() {
         window.removeEventListener('beforeunload', this.gravarAntesDeSair);
         this.gravarPendentes();
+        this.$emit('pendente', false);
+    },
+
+    watch: {
+        isGravacaoPendente(isPendente) {
+            this.$emit('pendente', isPendente);
+        },
     },
 
     computed: {
+        /** Escolha esperando o salvamento automático, a caminho ou que não gravou: o envio espera. */
+        isGravacaoPendente() {
+            return this.isSaving || this.autosaveTimeout !== null || this.falhaAoSalvar !== null;
+        },
+
         temPlanilha() {
             return this.planilha?.possui === true;
         },
@@ -218,10 +231,11 @@ app.component('opportunity-resultado-beneficiarios', {
 
                 if (!response.ok) {
                     naoGravou();
-                    this.messages.error(body?.data?.message ?? body?.data ?? this.translateMessage('erro_salvar'));
+                    this.falhaAoSalvar = body?.data?.message ?? (typeof body?.data === 'string' ? body.data : null) ?? this.translateMessage('nao_gravado');
                     return;
                 }
 
+                this.falhaAoSalvar = null;
                 this.recusas = body.recusas ?? {};
 
                 // Com mudança mais nova em espera, aplicar o eco do servidor descartaria a edição em voo.
@@ -231,7 +245,7 @@ app.component('opportunity-resultado-beneficiarios', {
                 this.salvoEm = new Date();
             } catch (error) {
                 naoGravou();
-                this.messages.error(this.translateMessage('erro_salvar'));
+                this.falhaAoSalvar = this.translateMessage('nao_gravado');
             } finally {
                 this.isSaving = false;
 

@@ -87,6 +87,11 @@ $this->import('
                     </mc-link>
                 </div>
 
+                <mc-alert v-if="falhaAoSalvar" type="danger" class="resultado-beneficiarios__falha">
+                    <p>{{ falhaAoSalvar }}</p>
+                    <button class="button button--sm button--text" :disabled="isSaving" @click="salvar">{{ translateMessage('tentar_novamente') }}</button>
+                </mc-alert>
+
                 <div class="resultado-beneficiarios__status" aria-live="polite">
                     <template v-if="isSaving">{{ translateMessage('salvando') }}</template>
                     <template v-else-if="salvoEm">{{ translateMessage('salvo_as') }} {{ salvoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }}</template>

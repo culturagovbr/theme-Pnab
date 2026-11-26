@@ -16,6 +16,7 @@ return [
     'sem_campos' => i::__('Este edital não tem campos de ficha para mapear.'),
     'erro_carregar' => i::__('Não foi possível carregar os campos da ficha.'),
     'erro_salvar' => i::__('Não foi possível salvar o de/para.'),
+    'nao_gravado' => i::__('Não foi possível salvar o de/para agora. A escolha na tela ainda não foi gravada, e o envio fica bloqueado até gravar.'),
     'tentar_novamente' => i::__('Tentar novamente'),
     'salvando' => i::__('Salvando…'),
     'salvo_as' => i::__('Salvo às'),

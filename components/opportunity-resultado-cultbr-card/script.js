@@ -66,6 +66,11 @@ app.component('opportunity-resultado-cultbr-card', {
             type: Object,
             default: null,
         },
+        // O de/para da lista de beneficiários tem escolha que não gravou.
+        outraGravacaoPendente: {
+            type: Boolean,
+            default: false,
+        },
     },
 
     data() {
@@ -157,7 +162,7 @@ app.component('opportunity-resultado-cultbr-card', {
         podeEnviar() {
             return this.envioHabilitado && !this.isEnvioNoPrazo && !this.temErros
                 && !this.isAlterado && !this.isSaving && !this.isEnviando && this.anexando === null
-                && !this.falhaAoSalvar;
+                && !this.falhaAoSalvar && !this.outraGravacaoPendente;
         },
 
         /** O pedido está na fila ou saindo para o CultBR, dentro do prazo. */

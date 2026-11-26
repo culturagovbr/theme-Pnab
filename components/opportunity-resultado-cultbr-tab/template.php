@@ -16,10 +16,10 @@ use MapasCulturais\i;
 
             <!-- v-show (não v-if): alternar as sub-abas preserva o autosave em andamento do formulário. -->
             <div v-show="subAba === 'formulario'">
-                <opportunity-resultado-cultbr-card :entity="entity" :preloaded="isEstadoInicialUsado ? null : estadoInicial" @vue:mounted="isEstadoInicialUsado = true"></opportunity-resultado-cultbr-card>
+                <opportunity-resultado-cultbr-card :entity="entity" :preloaded="isEstadoInicialUsado ? null : estadoInicial" :outra-gravacao-pendente="isDeParaPendente" @vue:mounted="isEstadoInicialUsado = true"></opportunity-resultado-cultbr-card>
             </div>
             <div v-if="!isAcaoSemResultado" v-show="subAba === 'beneficiarios'">
-                <opportunity-resultado-beneficiarios :entity="entity"></opportunity-resultado-beneficiarios>
+                <opportunity-resultado-beneficiarios :entity="entity" @pendente="isDeParaPendente = $event"></opportunity-resultado-beneficiarios>
             </div>
         </main>
     </mc-container>
