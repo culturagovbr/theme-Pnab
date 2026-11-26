@@ -61,6 +61,7 @@ $this->import('
             :estado-label="estadoLabel"
             :estrutura="estrutura"
             :respostas="respostas"
+            :respostas-gravadas="respostasGravadas"
             :respostas-automaticas="respostasAutomaticas"
             :questoes-sem-fonte="questoesSemFonte"
             :erros="errosDosCampos"

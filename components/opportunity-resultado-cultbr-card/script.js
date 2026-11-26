@@ -84,6 +84,7 @@ app.component('opportunity-resultado-cultbr-card', {
             anexando: null,
             errosDosAnexos: {},
             ultimoEnvio: null,
+            respostasGravadas: null,
             releituraTimeout: null,
             isFormularioAtualizado: false,
             isAlterado: false,
@@ -253,6 +254,7 @@ app.component('opportunity-resultado-cultbr-card', {
             this.anexos = body.anexos ?? {};
             this.ultimoEnvio = body.ultimoEnvio ?? null;
             this.errosFormulario = body.erros ?? {};
+            this.respostasGravadas = body.respostas ?? null;
             this.agendarReleitura();
         },
 
@@ -403,8 +405,8 @@ app.component('opportunity-resultado-cultbr-card', {
 
         async salvarRespostas(valores) {
             if (this.isSaving) {
-                // Digitação durante o save em voo: guarda a versão mais nova e salva ao terminar.
-                this.pendingSave = valores;
+                // Digitação durante o save em voo: junta ao que espera e salva ao terminar.
+                this.pendingSave = { ...(this.pendingSave ?? {}), ...valores };
                 return;
             }
 

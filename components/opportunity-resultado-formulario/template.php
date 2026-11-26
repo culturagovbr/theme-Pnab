@@ -53,7 +53,7 @@ $this->import('
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'moeda'" class="field__input">
-                    <mc-currency-input :model-value="moedaDe(questao)" @input="esvaziaSemDigito" @update:model-value="definir(questao, $event)"></mc-currency-input>
+                    <mc-currency-input :key="'moeda-' + (versoes[questao.id_questao] ?? 0)" :model-value="moedaDe(questao)" @input="esvaziaSemDigito" @update:model-value="definir(questao, $event)"></mc-currency-input>
                 </div>
 
                 <div v-else-if="tipoDoCampo(questao) === 'data'" class="field__input">
@@ -74,7 +74,7 @@ $this->import('
 
                 <opportunity-resultado-escolha v-else-if="tipoDoCampo(questao) === 'escolha'" :questao="questao" :valor="valorDe(questao)" @definir="definir(questao, $event)"></opportunity-resultado-escolha>
 
-                <opportunity-resultado-tabela v-else-if="tipoDoCampo(questao) === 'tabela'" :questao="questao" :linhas="linhasDe(questao)" @definir="definir(questao, $event)"></opportunity-resultado-tabela>
+                <opportunity-resultado-tabela v-else-if="tipoDoCampo(questao) === 'tabela'" :key="'tabela-' + (versoes[questao.id_questao] ?? 0)" :questao="questao" :linhas="linhasDe(questao)" @definir="definir(questao, $event)"></opportunity-resultado-tabela>
 
                 <div v-else-if="tipoDoCampo(questao) === 'texto' && mascaraDe(questao)" class="field__input">
                     <input type="text" :id="'resultado-questao-' + questao.id_questao" v-maska :data-maska="mascaraDe(questao)" :placeholder="questao.placeholder ?? ''" :value="valorDe(questao) ?? ''" @input="definirTexto(questao, $event.target.value)">

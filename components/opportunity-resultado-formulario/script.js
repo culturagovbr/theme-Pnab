@@ -19,6 +19,9 @@ const FORMULARIO_MASCARAS = {
 
 globalThis.resultadoMascara = (nome) => FORMULARIO_MASCARAS[nome] ?? null;
 
+const formularioJson = (valor) => JSON.stringify(valor ?? null);
+const formularioJsonPorQuestao = (respostas) => Object.fromEntries(Object.entries(respostas ?? {}).map(([id, valor]) => [id, formularioJson(valor)]));
+
 app.component('opportunity-resultado-formulario', {
     template: $TEMPLATES['opportunity-resultado-formulario'],
     emits: ['alterado', 'salvar', 'anexar', 'retirar'],
@@ -36,6 +39,11 @@ app.component('opportunity-resultado-formulario', {
         respostas: {
             type: Object,
             default: () => ({}),
+        },
+        // As gravadas no servidor, a cada estado recebido: o que mudou em outra guia entra na tela.
+        respostasGravadas: {
+            type: Object,
+            default: null,
         },
         respostasAutomaticas: {
             type: Object,
@@ -84,10 +92,16 @@ app.component('opportunity-resultado-formulario', {
     },
 
     data() {
+        const valores = this.clonarRespostas();
+
         return {
             // Cópia editável: o que o gestor digita fica na tela mesmo quando o servidor recusa.
-            valores: this.clonarRespostas(),
-            ultimoEnviado: JSON.stringify(this.clonarRespostas()),
+            valores,
+            // json por questão: o que esta tela já gravou e o que o servidor tem
+            gravados: formularioJsonPorQuestao(valores),
+            doServidor: formularioJsonPorQuestao(valores),
+            // o campo de moeda não relê o valor que muda por fora
+            versoes: {},
             autosaveTimeout: null,
         };
     },
@@ -97,7 +111,21 @@ app.component('opportunity-resultado-formulario', {
         respostas() {
             clearTimeout(this.autosaveTimeout);
             this.valores = this.clonarRespostas();
-            this.ultimoEnviado = JSON.stringify(this.valores);
+            this.gravados = formularioJsonPorQuestao(this.valores);
+            this.doServidor = { ...this.gravados };
+        },
+
+        respostasGravadas(respostas) {
+            if (respostas) {
+                this.adotar(respostas);
+            }
+        },
+
+        // A recusada segue como não gravada e vai de novo na próxima gravação.
+        erros(erros) {
+            for (const id of Object.keys(erros ?? {})) {
+                this.gravados[id] = this.doServidor[id] ?? formularioJson(null);
+            }
         },
 
         // Autosave: como as fases, sem botão.
@@ -106,7 +134,7 @@ app.component('opportunity-resultado-formulario', {
             handler() {
                 clearTimeout(this.autosaveTimeout);
 
-                if (JSON.stringify(this.valores) === this.ultimoEnviado) {
+                if (!this.pendentes.length) {
                     this.$emit('alterado', false);
                     return;
                 }
@@ -122,6 +150,12 @@ app.component('opportunity-resultado-formulario', {
     },
 
     computed: {
+        /** Questões com resposta na tela que esta tela ainda não gravou. */
+        pendentes() {
+            return Object.keys({ ...this.gravados, ...this.valores })
+                .filter((id) => formularioJson(this.valores[id]) !== (this.gravados[id] ?? formularioJson(null)));
+        },
+
         etapas() {
             return (this.estrutura.secoes ?? []).flatMap((secao) => secao.etapas ?? []);
         },
@@ -373,10 +407,48 @@ app.component('opportunity-resultado-formulario', {
             return Array.isArray(valor) ? valor : [];
         },
 
+        /** Traz o que mudou no servidor por outra guia, menos o que está em edição ou a caminho daqui. */
+        adotar(respostas) {
+            const novas = formularioJsonPorQuestao(respostas);
+            const pendentes = this.pendentes;
+
+            for (const id of Object.keys({ ...this.doServidor, ...novas })) {
+                const nova = novas[id] ?? formularioJson(null);
+                const anterior = this.doServidor[id] ?? formularioJson(null);
+                const aCaminho = (this.gravados[id] ?? formularioJson(null)) !== anterior;
+
+                if (nova === anterior || aCaminho || pendentes.includes(id)) {
+                    continue;
+                }
+
+                this.gravados[id] = nova;
+
+                if (nova !== formularioJson(this.valores[id])) {
+                    this.valores[id] = JSON.parse(nova);
+                    this.versoes[id] = (this.versoes[id] ?? 0) + 1;
+                }
+            }
+
+            this.doServidor = novas;
+        },
+
+        /** Só o que mudou: o formulário inteiro passaria por cima da edição de outra guia. */
         salvar() {
-            this.ultimoEnviado = JSON.stringify(this.valores);
+            clearTimeout(this.autosaveTimeout);
+            const ids = this.pendentes;
+
+            if (!ids.length) {
+                return;
+            }
+
+            const alteradas = JSON.parse(JSON.stringify(Object.fromEntries(ids.map((id) => [id, this.valores[id] ?? null]))));
+
+            for (const id of ids) {
+                this.gravados[id] = formularioJson(alteradas[id]);
+            }
+
             this.$emit('alterado', false);
-            this.$emit('salvar', JSON.parse(this.ultimoEnviado));
+            this.$emit('salvar', alteradas);
         },
     },
 });
