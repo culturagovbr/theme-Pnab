@@ -37,6 +37,9 @@ app.component('opportunity-resultado-beneficiarios', {
 
     created() {
         this.api = new API('aldirblanc', 'resultado-de-para', { cacheMode: 'no-store' });
+        // colunas escolhidas aqui e ainda não gravadas
+        this.colunasAlteradas = new Set();
+        this.equivalenciasAlteradas = new Set();
         this.carregar();
     },
 
@@ -128,6 +131,7 @@ app.component('opportunity-resultado-beneficiarios', {
 
         definirEquivalencia(coluna, valor, opcao) {
             this.equivalencias[coluna.coluna] = { ...(this.equivalencias[coluna.coluna] ?? {}), [valor]: opcao || null };
+            this.equivalenciasAlteradas.add(coluna.coluna);
             this.agendarSalvar();
         },
 
@@ -139,12 +143,14 @@ app.component('opportunity-resultado-beneficiarios', {
 
         definir(coluna, fonte) {
             this.mapeamento[coluna.coluna] = fonte || null;
+            this.colunasAlteradas.add(coluna.coluna);
             this.agendarSalvar();
         },
 
         /** Documento tem um campo por tipo de proponente. */
         definirPorTipo(coluna, tipo, fonte) {
             this.mapeamento[coluna.coluna] = { ...(this.mapeamento[coluna.coluna] ?? {}), [tipo]: fonte || null };
+            this.colunasAlteradas.add(coluna.coluna);
             this.agendarSalvar();
         },
 
@@ -167,17 +173,27 @@ app.component('opportunity-resultado-beneficiarios', {
             }
 
             this.isSaving = true;
+            const colunas = [...this.colunasAlteradas];
+            const equivalencias = [...this.equivalenciasAlteradas];
+            this.colunasAlteradas.clear();
+            this.equivalenciasAlteradas.clear();
+            const naoGravou = () => {
+                colunas.forEach((coluna) => this.colunasAlteradas.add(coluna));
+                equivalencias.forEach((coluna) => this.equivalenciasAlteradas.add(coluna));
+            };
 
             try {
+                // Só o que mudou: o mapa inteiro passaria por cima da escolha feita em outra guia.
                 const url = this.api.createUrl('resultadoDePara', {});
                 const response = await this.api.POST(url, {
                     opportunityId: this.entity.id,
-                    mapeamento: this.mapeamento,
-                    equivalencias: this.equivalencias,
+                    mapeamento: Object.fromEntries(colunas.map((coluna) => [coluna, this.mapeamento[coluna] ?? null])),
+                    equivalencias: Object.fromEntries(equivalencias.map((coluna) => [coluna, this.equivalencias[coluna] ?? {}])),
                 });
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
+                    naoGravou();
                     this.messages.error(body?.data?.message ?? body?.data ?? this.translateMessage('erro_salvar'));
                     return;
                 }
@@ -190,6 +206,7 @@ app.component('opportunity-resultado-beneficiarios', {
                 }
                 this.salvoEm = new Date();
             } catch (error) {
+                naoGravou();
                 this.messages.error(this.translateMessage('erro_salvar'));
             } finally {
                 this.isSaving = false;
