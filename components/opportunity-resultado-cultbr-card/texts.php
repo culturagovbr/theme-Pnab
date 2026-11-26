@@ -15,6 +15,7 @@ return [
     'diminuir' => i::__('Diminuir'),
     'erro_carregar' => i::__('Não foi possível carregar o formulário de resultado.'),
     'erro_salvar' => i::__('Não foi possível salvar o formulário.'),
+    'grade_nao_gravada' => i::__('A lista de beneficiários, aberta em outra guia, tem células que não foram gravadas. Grave-as lá antes de enviar.'),
     'nao_gravado' => i::__('Não foi possível salvar agora. O que está na tela ainda não foi gravado, e o envio fica bloqueado até gravar.'),
     'erro_anexo' => i::__('Não foi possível guardar a alteração do arquivo.'),
     'tentar_novamente' => i::__('Tentar novamente'),

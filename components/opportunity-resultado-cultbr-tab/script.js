@@ -1,4 +1,10 @@
 /** Aba "Envio de Resultado ao CultBR": GET único que decide se a aba aparece e já entrega o estado ao card. */
+
+/** Gravada pela grade de beneficiários, aberta em outra guia. */
+const ABA_MARCA_DA_GRADE = 'aldirblanc:resultado:grade-nao-gravada:';
+// a marca de uma guia que fechou sem avisar não segura o envio para sempre
+const ABA_VALIDADE_DA_MARCA_MS = 60 * 60 * 1000;
+
 app.component('opportunity-resultado-cultbr-tab', {
     template: $TEMPLATES['opportunity-resultado-cultbr-tab'],
 
@@ -15,6 +21,7 @@ app.component('opportunity-resultado-cultbr-tab', {
             estadoInicial: null,
             isEstadoInicialUsado: false,
             isDeParaPendente: false,
+            isGradeNaoGravada: false,
             subAba: 'formulario',
         };
     },
@@ -24,6 +31,12 @@ app.component('opportunity-resultado-cultbr-tab', {
         this.hashInicial = window.location.hash;
         this.api = new API('aldirblanc', 'resultado-formulario', { cacheMode: 'no-store' });
         this.verificar();
+        this.lerMarcaDaGrade();
+        window.addEventListener('storage', this.lerMarcaDaGrade);
+    },
+
+    unmounted() {
+        window.removeEventListener('storage', this.lerMarcaDaGrade);
     },
 
     computed: {
@@ -33,6 +46,15 @@ app.component('opportunity-resultado-cultbr-tab', {
     },
 
     methods: {
+        lerMarcaDaGrade() {
+            try {
+                const marcadaEm = Number(localStorage.getItem(ABA_MARCA_DA_GRADE + this.entity.id));
+                this.isGradeNaoGravada = marcadaEm > 0 && Date.now() - marcadaEm < ABA_VALIDADE_DA_MARCA_MS;
+            } catch (error) {
+                this.isGradeNaoGravada = false;
+            }
+        },
+
         selectSubAba(slug) {
             this.subAba = slug;
         },

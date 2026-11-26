@@ -87,6 +87,7 @@ $this->import('
             </div>
 
             <p v-if="temErros" class="resultado-cultbr-card__nota">{{ translateMessage('erros_no_formulario') }}</p>
+            <p v-if="gradeNaoGravada" class="resultado-cultbr-card__nota">{{ translateMessage('grade_nao_gravada') }}</p>
         </template>
 
         <mc-alert v-if="!travado && falhaAoSalvar" type="danger" class="resultado-cultbr-card__falha">

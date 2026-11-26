@@ -1,6 +1,9 @@
 /** Grade dos beneficiários do resultado: a tabela da aplicação lista as contempladas e cada célula é editável. */
 /** Largura de cada coluna, pelo tamanho do que o tipo dela carrega. */
 const LARGURA_DA_INSCRICAO = '160px';
+
+/** Lida pela guia do edital, que segura o envio enquanto a marca existir. */
+const GRADE_MARCA_NAO_GRAVADA = 'aldirblanc:resultado:grade-nao-gravada:';
 const LARGURA_PADRAO = '200px';
 const LARGURA_POR_TIPO = {
     cpf: '150px',
@@ -56,11 +59,21 @@ app.component('opportunity-beneficiarios-grade', {
 
     mounted() {
         window.addEventListener('beforeunload', this.gravarAntesDeSair);
+        // quem confirmou a saída deixou para trás o que não gravou
+        window.addEventListener('pagehide', this.retirarMarca);
     },
 
     beforeUnmount() {
         window.removeEventListener('beforeunload', this.gravarAntesDeSair);
+        window.removeEventListener('pagehide', this.retirarMarca);
         this.gravarPendentes();
+        this.retirarMarca();
+    },
+
+    watch: {
+        temNaoGravadas(isNaoGravada) {
+            this.marcarNaoGravadasParaOEdital(isNaoGravada);
+        },
     },
 
     unmounted() {
@@ -471,6 +484,22 @@ app.component('opportunity-beneficiarios-grade', {
             }
         },
 
+        marcarNaoGravadasParaOEdital(isNaoGravada) {
+            try {
+                if (isNaoGravada) {
+                    localStorage.setItem(GRADE_MARCA_NAO_GRAVADA + this.entity.id, String(Date.now()));
+                } else {
+                    localStorage.removeItem(GRADE_MARCA_NAO_GRAVADA + this.entity.id);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        retirarMarca() {
+            this.marcarNaoGravadasParaOEdital(false);
+        },
+
         /** O digitado fica na célula, marcado, e volta na próxima gravação da linha. */
         marcarNaoGravadas(registrationId, celulas, motivo = null) {
             const texto = typeof motivo === 'string' && motivo ? motivo : this.translateMessage('erro_salvar');
@@ -479,6 +508,7 @@ app.component('opportunity-beneficiarios-grade', {
             this.naoGravadas[registrationId] = { ...(this.naoGravadas[registrationId] ?? {}), ...marcadas };
             this.paraRegravar[registrationId] = { ...(this.paraRegravar[registrationId] ?? {}), ...celulas };
             delete this.salvoEm[registrationId];
+            this.marcarNaoGravadasParaOEdital(true);
         },
 
         /** Com edição mais nova em espera, o eco do servidor descartaria o que o gestor acabou de digitar. */

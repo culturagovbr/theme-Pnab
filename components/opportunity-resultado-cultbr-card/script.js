@@ -71,6 +71,11 @@ app.component('opportunity-resultado-cultbr-card', {
             type: Boolean,
             default: false,
         },
+        // A grade, aberta em outra guia, tem célula que não gravou.
+        gradeNaoGravada: {
+            type: Boolean,
+            default: false,
+        },
     },
 
     data() {
@@ -162,7 +167,7 @@ app.component('opportunity-resultado-cultbr-card', {
         podeEnviar() {
             return this.envioHabilitado && !this.isEnvioNoPrazo && !this.temErros
                 && !this.isAlterado && !this.isSaving && !this.isEnviando && this.anexando === null
-                && !this.falhaAoSalvar && !this.outraGravacaoPendente;
+                && !this.falhaAoSalvar && !this.outraGravacaoPendente && !this.gradeNaoGravada;
         },
 
         /** O pedido está na fila ou saindo para o CultBR, dentro do prazo. */
