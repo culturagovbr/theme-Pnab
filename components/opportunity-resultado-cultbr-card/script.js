@@ -85,6 +85,7 @@ app.component('opportunity-resultado-cultbr-card', {
             errosDosAnexos: {},
             ultimoEnvio: null,
             respostasGravadas: null,
+            revisao: null,
             releituraTimeout: null,
             isFormularioAtualizado: false,
             isAlterado: false,
@@ -255,6 +256,7 @@ app.component('opportunity-resultado-cultbr-card', {
             this.ultimoEnvio = body.ultimoEnvio ?? null;
             this.errosFormulario = body.erros ?? {};
             this.respostasGravadas = body.respostas ?? null;
+            this.revisao = body.revisao ?? null;
             this.agendarReleitura();
         },
 
@@ -328,7 +330,7 @@ app.component('opportunity-resultado-cultbr-card', {
 
             try {
                 const url = this.api.createUrl('resultadoEnviar', {});
-                const response = await this.api.POST(url, { opportunityId: this.entity.id });
+                const response = await this.api.POST(url, { opportunityId: this.entity.id, revisao: this.revisao });
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
