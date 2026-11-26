@@ -57,11 +57,13 @@ $this->import('
 
         <opportunity-resultado-formulario
             v-if="!travado"
+            ref="formulario"
             :estado="estado"
             :estado-label="estadoLabel"
             :estrutura="estrutura"
             :respostas="respostas"
             :respostas-gravadas="respostasGravadas"
+            :nao-gravadas="respostasNaoGravadas"
             :respostas-automaticas="respostasAutomaticas"
             :questoes-sem-fonte="questoesSemFonte"
             :erros="errosDosCampos"
@@ -86,6 +88,11 @@ $this->import('
 
             <p v-if="temErros" class="resultado-cultbr-card__nota">{{ translateMessage('erros_no_formulario') }}</p>
         </template>
+
+        <mc-alert v-if="!travado && falhaAoSalvar" type="danger" class="resultado-cultbr-card__falha">
+            <p>{{ falhaAoSalvar }}</p>
+            <button class="button button--sm button--text" :disabled="isSaving" @click="tentarSalvarDeNovo">{{ translateMessage('tentar_novamente') }}</button>
+        </mc-alert>
 
         <div v-if="!travado" class="resultado-cultbr-card__envio">
             <button class="button button--primary" :class="{ disabled: !podeEnviar }" :disabled="!podeEnviar" :aria-busy="isEnviando || isEnvioEmAndamento" @click="enviar">

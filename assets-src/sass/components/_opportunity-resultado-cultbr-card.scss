@@ -167,6 +167,10 @@
         }
     }
 
+    &__falha {
+        margin-top: size(12);
+    }
+
     &__impedimentos {
         margin-top: size(16);
         color: var(--mc-gray-700, #555);

@@ -97,6 +97,8 @@ app.component('opportunity-resultado-cultbr-card', {
             isEnviando: false,
             salvoEm: null,
             pendingSave: null,
+            falhaAoSalvar: null,
+            respostasNaoGravadas: {},
         };
     },
 
@@ -154,7 +156,8 @@ app.component('opportunity-resultado-cultbr-card', {
 
         podeEnviar() {
             return this.envioHabilitado && !this.isEnvioNoPrazo && !this.temErros
-                && !this.isAlterado && !this.isSaving && !this.isEnviando && this.anexando === null;
+                && !this.isAlterado && !this.isSaving && !this.isEnviando && this.anexando === null
+                && !this.falhaAoSalvar;
         },
 
         /** O pedido está na fila ou saindo para o CultBR, dentro do prazo. */
@@ -357,6 +360,16 @@ app.component('opportunity-resultado-cultbr-card', {
             }
         },
 
+        /** O que não gravou segue na tela, pendente, e o aviso fica até a próxima gravação dar certo. */
+        registrarFalha(valores, motivo = null) {
+            this.falhaAoSalvar = motivo ?? this.translateMessage('nao_gravado');
+            this.respostasNaoGravadas = { ...this.respostasNaoGravadas, ...valores };
+        },
+
+        tentarSalvarDeNovo() {
+            this.$refs.formulario?.salvar();
+        },
+
         /** Respostas e arquivos gravam o mesmo registro no servidor: uma gravação por vez. */
         gravar(url, dados) {
             const resposta = this.gravacao.then(() => this.api.POST(url, dados));
@@ -435,10 +448,12 @@ app.component('opportunity-resultado-cultbr-card', {
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
-                    const motivo = typeof body?.data === 'string' ? body.data : null;
-                    this.messages.error(motivo ?? this.translateMessage('erro_salvar'));
+                    this.registrarFalha(valores, typeof body?.data === 'string' ? body.data : null);
                     return;
                 }
+
+                this.falhaAoSalvar = null;
+                this.respostasNaoGravadas = {};
 
                 if (this.isOutraVersao(body)) {
                     // As respostas na fila são da versão que saiu.
@@ -451,7 +466,7 @@ app.component('opportunity-resultado-cultbr-card', {
                 // Autosave: sem toast a cada digitação — o formulário mostra "Salvo às HH:MM".
                 this.salvoEm = new Date();
             } catch (error) {
-                this.messages.error(this.translateMessage('erro_salvar'));
+                this.registrarFalha(valores);
             } finally {
                 this.isSaving = false;
 

@@ -45,6 +45,11 @@ app.component('opportunity-resultado-formulario', {
             type: Object,
             default: null,
         },
+        // O que o card mandou e não gravou.
+        naoGravadas: {
+            type: Object,
+            default: () => ({}),
+        },
         respostasAutomaticas: {
             type: Object,
             default: () => ({}),
@@ -118,6 +123,19 @@ app.component('opportunity-resultado-formulario', {
         respostasGravadas(respostas) {
             if (respostas) {
                 this.adotar(respostas);
+            }
+        },
+
+        // Volta a ser pendente, se ainda é o que está na tela, e segura o envio.
+        naoGravadas(respostas) {
+            for (const [id, valor] of Object.entries(respostas)) {
+                if (this.gravados[id] === formularioJson(valor)) {
+                    this.gravados[id] = this.doServidor[id] ?? formularioJson(null);
+                }
+            }
+
+            if (this.pendentes.length) {
+                this.$emit('alterado', true);
             }
         },
 

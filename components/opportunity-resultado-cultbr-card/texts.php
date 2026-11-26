@@ -15,6 +15,7 @@ return [
     'diminuir' => i::__('Diminuir'),
     'erro_carregar' => i::__('Não foi possível carregar o formulário de resultado.'),
     'erro_salvar' => i::__('Não foi possível salvar o formulário.'),
+    'nao_gravado' => i::__('Não foi possível salvar agora. O que está na tela ainda não foi gravado, e o envio fica bloqueado até gravar.'),
     'erro_anexo' => i::__('Não foi possível guardar a alteração do arquivo.'),
     'tentar_novamente' => i::__('Tentar novamente'),
     'formulario_atualizado' => i::__('O CultBR atualizou este formulário. As respostas da versão anterior não valem mais e precisam ser preenchidas de novo.'),
