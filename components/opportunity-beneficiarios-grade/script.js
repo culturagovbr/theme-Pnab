@@ -517,7 +517,9 @@ app.component('opportunity-beneficiarios-grade', {
                 return;
             }
 
-            this.celulasPorId[registrationId] = linha.celulas ?? {};
+            // o que não gravou segue na tela por cima do que o servidor tem
+            const naoGravadas = Object.entries(this.paraRegravar[registrationId] ?? {}).map(([coluna, valor]) => [coluna, { valor, fonte: 'gestor' }]);
+            this.celulasPorId[registrationId] = { ...(linha.celulas ?? {}), ...Object.fromEntries(naoGravadas) };
             this.pendenciasPorId[registrationId] = linha.pendencias ?? {};
         },
     },
