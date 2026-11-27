@@ -41,6 +41,11 @@
             white-space: normal;
         }
 
+        & > .field__input {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
         @media (max-width: size(600)) {
             flex-direction: column;
             align-items: stretch;
@@ -52,9 +57,39 @@
         }
     }
 
+    &__exigencia,
+    &__observacao {
+        display: block;
+        font-weight: 400;
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__exigencia--obrigatoria {
+        font-weight: 600;
+    }
+
+    &__tipos {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: size(8);
+    }
+
+    &__equivalencias {
+        display: grid;
+        gap: size(8);
+        margin-top: size(8);
+        padding-left: size(16);
+        border-left: size(2) solid var(--mc-gray-300);
+    }
+
     &__acoes {
         display: flex;
         justify-content: flex-end;
+        margin-top: size(16);
+    }
+
+    &__falha {
         margin-top: size(16);
     }
 
@@ -90,6 +125,10 @@
 
     &__item {
         margin-bottom: size(20);
+
+        > .alert {
+            margin-bottom: size(12);
+        }
     }
 
     &__box--loading {
@@ -116,6 +155,39 @@
         flex-direction: column;
         align-items: flex-start;
         gap: size(12);
+    }
+
+    // O alerta já define a cor do texto; a do link do tema some no vermelho.
+    &__situacao {
+        a {
+            color: inherit;
+            text-decoration: underline;
+        }
+
+        // No Pnab o tom claro do alerta de ajuda é o mesmo azul forte do ícone.
+        &.helper,
+        &.helper .alert__message .iconify {
+            color: var(--mc-white);
+        }
+    }
+
+    &__falha {
+        margin-top: size(12);
+    }
+
+    &__impedimentos {
+        margin-top: size(16);
+        color: var(--mc-gray-700, #555);
+
+        p {
+            margin: 0 0 size(4);
+            font-weight: 600;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: size(20);
+        }
     }
 
     &__envio {
@@ -259,8 +331,98 @@
         gap: size(8);
     }
 
-    &__outros {
-        margin-top: size(8);
+    &__opcao {
+        display: flex;
+        flex-direction: column;
+        gap: size(4);
+
+        .field__description {
+            padding-left: size(24);
+        }
+    }
+
+    &__complemento {
+        padding-left: size(24);
+    }
+
+    &__espelho {
+        margin: 0;
+        color: var(--mc-gray-700, #555);
+    }
+
+    &__aviso {
+        margin: 0;
+        padding: size(12) size(16);
+        border-radius: size(4);
+        background: var(--mc-gray-100, #f4f4f4);
+        color: var(--mc-gray-700, #555);
+
+        p {
+            margin: 0;
+        }
+
+        &--erro {
+            background: rgba(#c5161d, 0.08);
+            color: #c5161d;
+        }
+    }
+
+    &__anexo {
+        display: grid;
+        justify-items: start;
+        gap: size(8);
+    }
+
+    &__arquivos {
+        display: grid;
+        gap: size(4);
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    &__arquivo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: size(16);
+        padding: size(4) size(12);
+        border-radius: size(4);
+        background: var(--mc-gray-100, #f4f4f4);
+    }
+
+    &__arquivo-nome {
+        display: flex;
+        align-items: center;
+        gap: size(8);
+        min-width: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    &__anexar {
+        position: relative;
+        cursor: pointer;
+
+        // O campo cobre o botão: clique, foco e teclado são os dele.
+        input[type='file'] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            opacity: 0;
+            cursor: inherit;
+        }
+
+        &:focus-within {
+            outline: size(2) solid currentColor;
+            outline-offset: size(2);
+        }
+
+        &--bloqueado {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     }
 
     &__tabela {
@@ -283,7 +445,8 @@
         td {
             padding: size(4) size(8);
 
-            input {
+            input,
+            select {
                 width: 100%;
                 min-width: size(120);
             }

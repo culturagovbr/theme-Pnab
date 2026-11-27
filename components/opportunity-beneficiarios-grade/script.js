@@ -1,20 +1,16 @@
-/** Grade dos beneficiários do resultado: a tabela da aplicação lista as contempladas e cada célula de execução é editável. */
-/** Largura de cada coluna, pelo tamanho do que ela carrega: data cabe em pouco, vocabulário não. */
-const LARGURA_DA_COLUNA = {
-    number: '160px',
-    identificador_edital: '220px',
-    cpf_responsavel_execucao: '150px',
-    cnpj_responsavel_execucao: '170px',
-    valor_recebido_pnab: '150px',
-    data_recebimento_recurso: '120px',
-    data_inicio_execucao: '120px',
-    data_termino_execucao: '120px',
-    recebeu_recursos_outras_fontes: '280px',
-    valor_recursos_outras_fontes: '150px',
-    qtd_pessoas_remuneradas_exec: '110px',
-    cpfs_remunerados: '200px',
-    formato_execucao: '190px',
-    cep_local_execucao: '120px',
+/** Grade dos beneficiários do resultado: a tabela da aplicação lista as contempladas e cada célula é editável. */
+/** Largura de cada coluna, pelo tamanho do que o tipo dela carrega. */
+const LARGURA_DA_INSCRICAO = '160px';
+
+/** Lida pela guia do edital, que segura o envio enquanto a marca existir. */
+const GRADE_MARCA_NAO_GRAVADA = 'aldirblanc:resultado:grade-nao-gravada:';
+const LARGURA_PADRAO = '200px';
+const LARGURA_POR_TIPO = {
+    cpf: '150px',
+    cnpj: '170px',
+    cep: '120px',
+    monetario: '150px',
+    lista: '240px',
 };
 
 app.component('opportunity-beneficiarios-grade', {
@@ -36,7 +32,7 @@ app.component('opportunity-beneficiarios-grade', {
     data() {
         return {
             isLoading: true,
-            hasError: false,
+            erro: null,
             colunas: [],
             faseFinal: null,
             query: {},
@@ -45,8 +41,9 @@ app.component('opportunity-beneficiarios-grade', {
             celulasPorId: {},
             pendenciasPorId: {},
             editando: null,
-            selecaoAtiva: [],
             editadas: {},
+            naoGravadas: {},
+            paraRegravar: {},
             salvando: {},
             salvoEm: {},
             timeouts: {},
@@ -60,12 +57,35 @@ app.component('opportunity-beneficiarios-grade', {
         this.carregarColunas();
     },
 
+    mounted() {
+        window.addEventListener('beforeunload', this.gravarAntesDeSair);
+        // quem confirmou a saída deixou para trás o que não gravou
+        window.addEventListener('pagehide', this.retirarMarca);
+    },
+
+    beforeUnmount() {
+        window.removeEventListener('beforeunload', this.gravarAntesDeSair);
+        window.removeEventListener('pagehide', this.retirarMarca);
+        this.gravarPendentes();
+        this.retirarMarca();
+    },
+
+    watch: {
+        temNaoGravadas(isNaoGravada) {
+            this.marcarNaoGravadasParaOEdital(isNaoGravada);
+        },
+    },
+
     unmounted() {
         Object.values(this.timeouts).forEach((timeout) => clearTimeout(timeout));
         this.encerrarTelaCheia();
     },
 
     computed: {
+        temNaoGravadas() {
+            return Object.keys(this.paraRegravar).length > 0;
+        },
+
         proponentTypes() {
             return this.opcoesDe(this.entity.registrationProponentTypes, (tipo) => tipo);
         },
@@ -78,21 +98,14 @@ app.component('opportunity-beneficiarios-grade', {
             return 'id,number,proponentType,range,status,singleUrl';
         },
 
-        /** CPF e CNPJ ocupam a mesma coluna na tela: nunca vêm preenchidos juntos. */
-        colunasVisiveis() {
-            const ocultas = ['identificador_edital', 'cnpj_responsavel_execucao'];
-
-            return this.colunas.filter((coluna) => !ocultas.includes(coluna.chave));
-        },
-
         headers() {
-            const inscricao = { slug: 'number', text: this.translateMessage('inscricao'), value: 'number', visible: true, sticky: true, width: LARGURA_DA_COLUNA.number };
-            const demais = this.colunasVisiveis.map((coluna) => ({
-                slug: coluna.chave,
-                text: this.rotuloDaColuna(coluna),
-                value: coluna.chave,
+            const inscricao = { slug: 'number', text: this.translateMessage('inscricao'), value: 'number', visible: true, sticky: true, width: LARGURA_DA_INSCRICAO };
+            const demais = this.colunas.map((coluna) => ({
+                slug: coluna.coluna,
+                text: coluna.obrigatoriedade === 'obrigatorio' ? `${coluna.nome} *` : coluna.nome,
+                value: coluna.coluna,
                 visible: true,
-                width: LARGURA_DA_COLUNA[coluna.chave],
+                width: LARGURA_POR_TIPO[coluna.tipo] ?? LARGURA_PADRAO,
             }));
 
             return [inscricao, ...demais];
@@ -110,7 +123,7 @@ app.component('opportunity-beneficiarios-grade', {
     methods: {
         async carregarColunas() {
             this.isLoading = true;
-            this.hasError = false;
+            this.erro = null;
 
             try {
                 const url = this.api.createUrl('resultadoBeneficiarios', { opportunityId: this.entity.id, registrationIds: '' });
@@ -127,7 +140,7 @@ app.component('opportunity-beneficiarios-grade', {
                 // e a condição de contemplada é da tela, não um filtro que o gestor possa tirar. 10 é o maior status.
                 this.query = { '@opportunity': this.faseFinal, status: 'GTE(10)' };
             } catch (error) {
-                this.hasError = true;
+                this.erro = error.message || this.translateMessage('erro_carregar');
             } finally {
                 this.isLoading = false;
             }
@@ -174,7 +187,7 @@ app.component('opportunity-beneficiarios-grade', {
             }
         },
 
-        /** Tela cheia para a grade: com doze colunas, a largura do container não basta. */
+        /** Tela cheia para a grade: com tantas colunas, a largura do container não basta. */
         alternarTelaCheia() {
             this.telaCheia = !this.telaCheia;
 
@@ -229,24 +242,21 @@ app.component('opportunity-beneficiarios-grade', {
             entities.refresh();
         },
 
-        rotuloDaColuna(coluna) {
-            return coluna.chave === 'cpf_responsavel_execucao' ? this.translateMessage('documento') : coluna.label;
-        },
-
         celulasDe(entity) {
             return this.celulasPorId[entity.id] ?? {};
         },
 
+        /** O motivo de cada coluna que ainda impede o envio da linha. */
         pendenciasDe(entity) {
-            return this.pendenciasPorId[entity.id] ?? [];
+            return this.pendenciasPorId[entity.id] ?? {};
         },
 
         editandoCelula(entity, coluna) {
-            return this.editando?.id === entity.id && this.editando?.chave === coluna.chave;
+            return this.editando?.id === entity.id && this.editando?.coluna === coluna.coluna;
         },
 
         /**
-         * A célula vive como texto e só vira campo ao ser usada: com dez colunas editáveis e rolagem
+         * A célula vive como texto e só vira campo ao ser usada: com tantas colunas editáveis e rolagem
          * infinita, manter um input por célula enche a página de controles que ninguém está usando.
          */
         abrirEdicao(entity, coluna, evento) {
@@ -254,17 +264,12 @@ app.component('opportunity-beneficiarios-grade', {
                 return;
             }
 
-            this.editando = { id: entity.id, chave: coluna.chave };
-
-            // O multiselect edita o próprio array que recebe, então ele precisa ser estável entre renders.
-            if (coluna.opcoes && coluna.tipo !== 'selecao') {
-                this.selecaoAtiva = this.selecionadas(entity, coluna);
-            }
+            this.editando = { id: entity.id, coluna: coluna.coluna };
 
             const celula = evento.currentTarget.closest('td');
             this.$nextTick(() => {
                 // O mc-select abre no clique do próprio gatilho: sem isto, editar a célula custaria dois cliques.
-                if (coluna.tipo === 'selecao') {
+                if (coluna.tipo === 'lista') {
                     celula?.querySelector('.mc-select__selected-option')?.click();
                     return;
                 }
@@ -279,9 +284,7 @@ app.component('opportunity-beneficiarios-grade', {
 
         /** Enter grava na hora: esperar o autosave de cada célula atrasa quem preenche a linha inteira. */
         confirmarCelula(entity, coluna, evento) {
-            if (coluna.tipo === 'data') {
-                this.definirData(entity, coluna, evento.target.value);
-            } else if (coluna.tipo !== 'moeda' && coluna.tipo !== 'selecao' && !coluna.opcoes) {
+            if (this.isTexto(coluna)) {
                 this.definirCelula(entity, coluna, evento.target.value);
             }
 
@@ -290,34 +293,28 @@ app.component('opportunity-beneficiarios-grade', {
             this.encerrarEdicao();
         },
 
-        sairDaCelula(entity, coluna, evento) {
-            if (coluna.tipo === 'data') {
-                this.apagarData(entity, coluna, evento.target.value);
-            }
-
-            this.encerrarEdicao();
+        isTexto(coluna) {
+            return coluna.tipo !== 'lista' && coluna.tipo !== 'monetario';
         },
 
-        /** CPF e CNPJ dividem uma coluna só, e a cobrança do servidor vem no nome da dupla. */
-        celulaPendente(entity, coluna) {
-            const chave = coluna.chave === 'cpf_responsavel_execucao' ? 'responsavel_execucao' : coluna.chave;
-
-            return this.pendenciasDe(entity).includes(chave);
+        pendenciaDe(entity, coluna) {
+            return this.pendenciasDe(entity)[coluna.coluna] ?? null;
         },
 
-        valorAutomatico(entity, coluna) {
-            if (coluna.chave !== 'cpf_responsavel_execucao') {
-                return this.valorExibido(entity, coluna);
-            }
+        naoGravadaDe(entity, coluna) {
+            return this.naoGravadas[entity.id]?.[coluna.coluna] ?? null;
+        },
 
-            const celulas = this.celulasDe(entity);
-            const documento = celulas.cpf_responsavel_execucao?.valor ?? celulas.cnpj_responsavel_execucao?.valor ?? '';
+        dicaDaCelula(entity, coluna) {
+            return this.pendenciaDe(entity, coluna) ?? coluna.condicao ?? this.translateMessage('editar');
+        },
 
-            return this.mascarar('cpf_responsavel_execucao', documento);
+        isCompleta(entity) {
+            return Object.keys(this.pendenciasDe(entity)).length === 0;
         },
 
         situacaoDe(entity) {
-            const quantas = this.pendenciasDe(entity).length;
+            const quantas = Object.keys(this.pendenciasDe(entity)).length;
 
             if (quantas === 0) {
                 return this.translateMessage('completa');
@@ -334,34 +331,32 @@ app.component('opportunity-beneficiarios-grade', {
                 return this.translateMessage('salvando');
             }
 
+            if (this.naoGravadas[entity.id]) {
+                return this.translateMessage('nao_gravado');
+            }
+
             if (this.salvoEm[entity.id]) {
                 return this.translateMessage('salvo');
             }
 
-            return this.pendenciasDe(entity).length ? this.situacaoDe(entity) : '';
+            return this.isCompleta(entity) ? '' : this.situacaoDe(entity);
         },
 
         valorExibido(entity, coluna) {
-            const valor = this.celulasDe(entity)[coluna.chave]?.valor;
+            const valor = this.celulasDe(entity)[coluna.coluna]?.valor ?? '';
 
-            if (valor === null || valor === undefined) {
-                return '';
+            if (typeof valor === 'object') {
+                return Object.values(valor).filter((item) => item !== null && typeof item !== 'object').join(', ');
             }
 
-            if (coluna.tipo === 'moeda') {
-                return this.formatarMoeda(valor);
-            }
-
-            const comMascara = (item) => this.mascarar(coluna.chave, item);
-
-            return Array.isArray(valor) ? valor.map(comMascara).join(', ') : comMascara(valor);
+            return coluna.tipo === 'monetario' ? this.formatarMoeda(valor) : this.mascarar(coluna.tipo, valor);
         },
 
         /** O campo monetário da aplicação usa esta mesma moeda e locale; a leitura precisa casar com ele. */
         formatarMoeda(valor) {
-            const numero = Number(String(valor).replace(',', '.'));
+            const numero = this.numero(valor);
 
-            if (!isFinite(numero)) {
+            if (numero === null) {
                 return valor;
             }
 
@@ -379,119 +374,77 @@ app.component('opportunity-beneficiarios-grade', {
             this.encerrarEdicao();
         },
 
-        /** O multiselect indexa pelo rótulo, e vírgula no valor quebraria a lista do contrato. */
-        itensDaColuna(coluna) {
-            return Object.fromEntries((coluna.opcoes ?? []).map((opcao) => [opcao.replace(/,/g, '\\,'), opcao]));
-        },
-
-        selecionadas(entity, coluna) {
-            const valor = this.valorCru(entity, coluna);
-
-            return (Array.isArray(valor) ? valor : [valor]).filter((item) => item !== '');
-        },
-
-        /** A opção exclusiva da coluna (negar outras fontes) não convive com as demais nem com um valor. */
-        definirSelecao(entity, coluna) {
-            const exclusiva = coluna.opcaoExclusiva;
-            const negou = exclusiva !== null && this.selecaoAtiva.includes(exclusiva);
-
-            if (negou && this.selecaoAtiva.length > 1) {
-                this.selecaoAtiva.splice(0, this.selecaoAtiva.length, exclusiva);
-            }
-
-            this.definirCelula(entity, coluna, this.selecaoAtiva.join(', '));
-
-            if (negou) {
-                this.zerarValorDeOutrasFontes(entity);
-            }
-        },
-
-        zerarValorDeOutrasFontes(entity) {
-            const valor = this.colunas.find((coluna) => coluna.chave === 'valor_recursos_outras_fontes');
-
-            if (valor) {
-                this.definirCelula(entity, valor, '');
-            }
-        },
-
-        /** O que vai para dentro do campo é o valor sem máscara; a formatação é da célula em repouso. */
+        /** O que vai para dentro da lista é o valor como está; um que não é opção deixa a lista sem escolha. */
         valorCru(entity, coluna) {
-            const valor = this.celulasDe(entity)[coluna.chave]?.valor;
+            const valor = this.celulasDe(entity)[coluna.coluna]?.valor ?? '';
 
-            return valor === null || valor === undefined ? '' : valor;
+            return typeof valor === 'object' ? '' : valor;
         },
 
-        /** Máscara é de leitura: o que o validador do CultBr recebe continua só com os dígitos. */
-        mascarar(chave, valor) {
-            const digitos = String(valor ?? '').replace(/\D/g, '');
-
-            if (chave === 'cep_local_execucao' && digitos.length === 8) {
-                return digitos.replace(/(\d{5})(\d{3})/, '$1-$2');
-            }
-
-            if (chave !== 'cpf_responsavel_execucao' && chave !== 'cpfs_remunerados') {
-                return valor;
-            }
-
-            if (digitos.length === 11) {
-                return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-            }
-
-            return digitos.length === 14
-                ? digitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
-                : valor;
+        numero(valor) {
+            return valor === '' || valor === null || !isFinite(Number(valor)) ? null : Number(valor);
         },
 
-        /** O contrato pede o valor como string de duas casas ("15000.00"), e o campo monetário entrega número. */
-        paraOContrato(coluna, valor) {
-            if (coluna.tipo !== 'moeda' || valor === '' || valor === null || valor === undefined) {
-                return valor;
-            }
-
-            const numero = Number(valor);
-
-            return isFinite(numero) ? numero.toFixed(2) : valor;
-        },
-
-        /** O CultBr recebe o CPF só com dígitos e o CEP pontuado, como no payload de referência. */
-        semMascara(chave, valor) {
-            return chave === 'cpfs_remunerados' ? String(valor).replace(/\D/g, '') : valor;
-        },
-
-        /** O contrato do CultBr pede dd/mm/aaaa; o campo de data da aplicação fala ISO. */
-        dataParaCampo(entity, coluna) {
-            const partes = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(this.valorExibido(entity, coluna));
-
-            return partes ? `${partes[3]}-${partes[2]}-${partes[1]}` : '';
-        },
-
-        // O campo de data dispara change a cada segmento digitado, e o valor ainda incompleto chega vazio.
-        definirData(entity, coluna, valorIso) {
-            const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valorIso);
-
-            if (partes) {
-                this.definirCelula(entity, coluna, `${partes[3]}/${partes[2]}/${partes[1]}`);
+        // o campo de moeda lê texto sem dígito como zero
+        esvaziaSemDigito(event) {
+            if (!/\d/.test(event.target.value)) {
+                event.target.value = '';
             }
         },
 
-        /** Só ao sair do campo o vazio quer dizer apagar, em vez de digitação pela metade. */
-        apagarData(entity, coluna, valorIso) {
-            if (valorIso === '' && this.valorExibido(entity, coluna) !== '') {
-                this.definirCelula(entity, coluna, '');
+        /** Máscara é de leitura; a letra do CNPJ alfanumérico faz parte do documento. */
+        mascarar(tipo, valor) {
+            const limpo = String(valor).replace(/[.\-/\s]/g, '');
+
+            if (tipo === 'cpf' && /^\d{11}$/.test(limpo)) {
+                return limpo.replace(/(.{3})(.{3})(.{3})(.{2})/, '$1.$2.$3-$4');
             }
+
+            if (tipo === 'cnpj' && /^[A-Z0-9]{12}\d{2}$/.test(limpo)) {
+                return limpo.replace(/(.{2})(.{3})(.{3})(.{4})(.{2})/, '$1.$2.$3/$4-$5');
+            }
+
+            return tipo === 'cep' && /^\d{8}$/.test(limpo) ? limpo.replace(/(.{5})(.{3})/, '$1-$2') : valor;
         },
 
         definirCelula(entity, coluna, valorBruto) {
-            const valor = coluna.tipo === 'lista'
-                ? valorBruto.split(',').map((parte) => this.semMascara(coluna.chave, parte.trim())).filter((parte) => parte !== '')
-                : this.paraOContrato(coluna, this.semMascara(coluna.chave, valorBruto));
+            // O campo monetário entrega número, e o contrato pede "15000.00".
+            const digitado = coluna.tipo === 'monetario' ? this.numero(valorBruto)?.toFixed(2) ?? '' : valorBruto;
+            // Célula esvaziada vai como nula: volta ao valor da ficha.
+            const valor = digitado === '' ? null : digitado;
 
             const id = entity.id;
-            this.celulasPorId[id] = { ...this.celulasDe(entity), [coluna.chave]: { valor: valor === '' ? null : valor, fonte: 'gestor' } };
-            this.editadas[id] = { ...(this.editadas[id] ?? {}), [coluna.chave]: valor };
+            this.celulasPorId[id] = { ...this.celulasDe(entity), [coluna.coluna]: { valor, fonte: 'gestor' } };
+            this.editadas[id] = { ...(this.paraRegravar[id] ?? {}), ...(this.editadas[id] ?? {}), [coluna.coluna]: valor };
+            delete this.paraRegravar[id];
 
             clearTimeout(this.timeouts[id]);
             this.timeouts[id] = setTimeout(() => this.salvarLinha(id), 1200);
+        },
+
+        /** As linhas que esperavam o salvamento automático gravam agora. */
+        gravarPendentes() {
+            for (const id of Object.keys(this.editadas)) {
+                clearTimeout(this.timeouts[id]);
+                this.salvarLinha(Number(id));
+            }
+        },
+
+        gravarAntesDeSair(event) {
+            if (Object.keys(this.editadas).length || Object.keys(this.salvando).length || this.temNaoGravadas) {
+                this.gravarPendentes();
+                this.regravar();
+                event.preventDefault();
+            }
+        },
+
+        /** As células que não gravaram vão de novo, com o que está na tela. */
+        regravar() {
+            for (const id of Object.keys(this.paraRegravar)) {
+                this.editadas[id] = { ...this.paraRegravar[id], ...(this.editadas[id] ?? {}) };
+                delete this.paraRegravar[id];
+                this.salvarLinha(Number(id));
+            }
         },
 
         async salvarLinha(registrationId) {
@@ -513,16 +466,15 @@ app.component('opportunity-beneficiarios-grade', {
                 const body = await response.json().catch(() => ({}));
 
                 if (!response.ok) {
-                    this.messages.error(body?.data?.message ?? body?.data ?? this.translateMessage('erro_salvar'));
-                    // A célula foi pintada antes da resposta; recusada, a tela não pode seguir mostrando o que não gravou.
-                    await this.carregarCelulas([registrationId]);
+                    this.marcarNaoGravadas(registrationId, celulas, body?.data?.message ?? body?.data);
                     return;
                 }
 
+                delete this.naoGravadas[registrationId];
                 this.aplicarLinha(registrationId, body.linha);
                 this.salvoEm[registrationId] = new Date();
             } catch (error) {
-                this.messages.error(this.translateMessage('erro_salvar'));
+                this.marcarNaoGravadas(registrationId, celulas);
             } finally {
                 delete this.salvando[registrationId];
 
@@ -532,14 +484,43 @@ app.component('opportunity-beneficiarios-grade', {
             }
         },
 
+        marcarNaoGravadasParaOEdital(isNaoGravada) {
+            try {
+                if (isNaoGravada) {
+                    localStorage.setItem(GRADE_MARCA_NAO_GRAVADA + this.entity.id, String(Date.now()));
+                } else {
+                    localStorage.removeItem(GRADE_MARCA_NAO_GRAVADA + this.entity.id);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        retirarMarca() {
+            this.marcarNaoGravadasParaOEdital(false);
+        },
+
+        /** O digitado fica na célula, marcado, e volta na próxima gravação da linha. */
+        marcarNaoGravadas(registrationId, celulas, motivo = null) {
+            const texto = typeof motivo === 'string' && motivo ? motivo : this.translateMessage('erro_salvar');
+            const marcadas = Object.fromEntries(Object.keys(celulas).map((coluna) => [coluna, texto]));
+
+            this.naoGravadas[registrationId] = { ...(this.naoGravadas[registrationId] ?? {}), ...marcadas };
+            this.paraRegravar[registrationId] = { ...(this.paraRegravar[registrationId] ?? {}), ...celulas };
+            delete this.salvoEm[registrationId];
+            this.marcarNaoGravadasParaOEdital(true);
+        },
+
         /** Com edição mais nova em espera, o eco do servidor descartaria o que o gestor acabou de digitar. */
         aplicarLinha(registrationId, linha) {
             if (!linha || this.editadas[registrationId]) {
                 return;
             }
 
-            this.celulasPorId[registrationId] = linha.celulas ?? {};
-            this.pendenciasPorId[registrationId] = linha.pendencias ?? [];
+            // o que não gravou segue na tela por cima do que o servidor tem
+            const naoGravadas = Object.entries(this.paraRegravar[registrationId] ?? {}).map(([coluna, valor]) => [coluna, { valor, fonte: 'gestor' }]);
+            this.celulasPorId[registrationId] = { ...(linha.celulas ?? {}), ...Object.fromEntries(naoGravadas) };
+            this.pendenciasPorId[registrationId] = linha.pendencias ?? {};
         },
     },
 });

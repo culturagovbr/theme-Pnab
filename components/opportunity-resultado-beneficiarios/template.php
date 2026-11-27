@@ -24,52 +24,73 @@ $this->import('
                 <button class="button button--sm button--text" @click="carregar">{{ translateMessage('tentar_novamente') }}</button>
             </mc-alert>
 
+            <p v-else-if="!temPlanilha" class="resultado-beneficiarios__nota">{{ planilha?.motivo ?? translateMessage('sem_integracao') }}</p>
+
             <template v-else>
-                <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao') }}</p>
+                <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao', { modelo: planilha.nomeModelo }) }}</p>
 
                 <p v-if="!campos.length" class="resultado-beneficiarios__nota">{{ translateMessage('sem_campos') }}</p>
 
                 <div class="resultado-beneficiarios__campos">
-                    <div v-for="coluna in colunas" :key="coluna.chave" class="field field--horizontal resultado-beneficiarios__linha">
-                        <label class="field__title">{{ coluna.label }}</label>
-                        <div class="field__input">
-                            <select class="primary__border--solid"
-                                :value="mapeamento[coluna.chave] ?? ''"
-                                @change="definir(coluna.chave, $event.target.value)">
-                                <option value="">{{ translateMessage('nao_se_aplica') }}</option>
-                                <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
-                                    <option v-for="campo in grupo.campos" :key="campo.id" :value="campo.id">{{ campo.title }}</option>
-                                </optgroup>
-                            </select>
+                    <div v-for="coluna in colunas" :key="coluna.coluna" class="field field--horizontal resultado-beneficiarios__linha">
+                        <div class="field__title">
+                            <label :for="'de-para-' + coluna.coluna">{{ coluna.nome }}</label>
+                            <small class="resultado-beneficiarios__exigencia" :class="{ 'resultado-beneficiarios__exigencia--obrigatoria': coluna.obrigatoriedade === 'obrigatorio' }">{{ exigenciaDe(coluna) }}</small>
+                            <small v-if="coluna.observacao" class="resultado-beneficiarios__observacao">{{ coluna.observacao }}</small>
                         </div>
-                    </div>
-                </div>
 
-                <template v-if="tiposDeProponente.length">
-                    <p class="resultado-beneficiarios__descricao">{{ translateMessage('descricao_documento') }}</p>
-
-                    <div class="resultado-beneficiarios__campos">
-                        <div v-for="tipo in tiposDeProponente" :key="tipo" class="field field--horizontal resultado-beneficiarios__linha">
-                            <label class="field__title">{{ tipo }}</label>
-                            <div class="field__input">
-                                <select class="primary__border--solid"
-                                    :value="documentoPorTipo[tipo] ?? ''"
-                                    @change="definirDocumento(tipo, $event.target.value)">
-                                    <option value="">{{ translateMessage('nao_se_aplica') }}</option>
+                        <div v-if="coluna.porTipoDeProponente" class="resultado-beneficiarios__tipos">
+                            <div v-for="tipo in tiposDeProponente" :key="tipo" class="field__input">
+                                <small>{{ tipo }}</small>
+                                <select class="primary__border--solid" :aria-label="coluna.nome + ' - ' + tipo" :value="fonteDe(coluna, tipo)" @change="definirPorTipo(coluna, tipo, $event.target.value)">
+                                    <option value="">{{ translateMessage('sem_fonte') }}</option>
+                                    <option v-if="isCampoAusente(fonteDe(coluna, tipo))" :value="fonteDe(coluna, tipo)">{{ translateMessage('campo_ausente') }}</option>
                                     <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
-                                        <option v-for="campo in grupo.campos" :key="campo.id" :value="campo.id">{{ campo.title }}</option>
+                                        <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
                                     </optgroup>
                                 </select>
+                                <small v-if="isCampoAusente(fonteDe(coluna, tipo))" class="field__error" role="alert">{{ translateMessage('campo_ausente_aviso') }}</small>
+                                <small v-if="recusaDe(coluna, tipo)" class="field__error" role="alert">{{ recusaDe(coluna, tipo) }}</small>
+                            </div>
+                        </div>
+
+                        <div v-else class="field__input">
+                            <select :id="'de-para-' + coluna.coluna" class="primary__border--solid" :value="fonteDe(coluna)" @change="definir(coluna, $event.target.value)">
+                                <option value="">{{ translateMessage('sem_fonte') }}</option>
+                                <option v-if="isCampoAusente(fonteDe(coluna))" :value="fonteDe(coluna)">{{ translateMessage('campo_ausente') }}</option>
+                                <optgroup :label="translateMessage('da_inscricao')">
+                                    <option v-for="dado in dadosDaInscricao" :key="dado.fonte" :value="dado.fonte">{{ dado.title }}</option>
+                                </optgroup>
+                                <optgroup v-for="grupo in gruposDeCampos" :key="grupo.titulo" :label="grupo.titulo">
+                                    <option v-for="campo in grupo.campos" :key="campo.id" :value="'campo:' + campo.id">{{ campo.title }}</option>
+                                </optgroup>
+                            </select>
+                            <small v-if="isCampoAusente(fonteDe(coluna))" class="field__error" role="alert">{{ translateMessage('campo_ausente_aviso') }}</small>
+
+                            <div v-if="valoresDe(coluna).length" class="resultado-beneficiarios__equivalencias">
+                                <small>{{ translateMessage('equivalencias') }}</small>
+                                <div v-for="valor in valoresDe(coluna)" :key="valor" class="field__input resultado-beneficiarios__equivalencia">
+                                    <small>{{ valor }}</small>
+                                    <select class="primary__border--solid" :aria-label="coluna.nome + ' - ' + valor" :value="equivalenciaDe(coluna, valor)" @change="definirEquivalencia(coluna, valor, $event.target.value)">
+                                        <option value="">{{ translateMessage('sem_equivalencia') }}</option>
+                                        <option v-for="opcao in coluna.opcoes" :key="opcao" :value="opcao">{{ opcao }}</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </template>
+                </div>
 
                 <div class="resultado-beneficiarios__acoes">
                     <mc-link class="button button--primary" :entity="entity" route="resultadoBeneficiarios" icon="list" target="_blank" rel="noopener">
                         {{ translateMessage('abrir_grade') }}
                     </mc-link>
                 </div>
+
+                <mc-alert v-if="falhaAoSalvar" type="danger" class="resultado-beneficiarios__falha">
+                    <p>{{ falhaAoSalvar }}</p>
+                    <button class="button button--sm button--text" :disabled="isSaving" @click="salvar">{{ translateMessage('tentar_novamente') }}</button>
+                </mc-alert>
 
                 <div class="resultado-beneficiarios__status" aria-live="polite">
                     <template v-if="isSaving">{{ translateMessage('salvando') }}</template>
